@@ -42,6 +42,7 @@ const userId = '8b461287-8416-412e-84e7-b5c77615ea2a';
  */
 @ApiTags('Catálogos - Interés')
 @Controller('interes')
+@ApiTags('Catálogos / Intereses')
 export class InteresController {
   constructor(private readonly interesService: InteresService) {}
   /**

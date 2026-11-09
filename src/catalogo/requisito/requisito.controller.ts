@@ -1,9 +1,11 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import { RequisitoService } from './requisito.service';
 import { CreateRequisitoDto } from './dto/create-requisito.dto';
 import { UpdateRequisitoDto } from './dto/update-requisito.dto';
 
 @Controller('requisito')
+@ApiTags('Catálogos / Requisitos')
 export class RequisitoController {
   constructor(private readonly requisitoService: RequisitoService) {}
 

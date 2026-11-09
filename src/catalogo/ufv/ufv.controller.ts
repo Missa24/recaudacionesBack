@@ -45,6 +45,7 @@ const userId = '8b461287-8416-412e-84e7-b5c77615ea2a';
  */
 @ApiTags('Catálogos - UFV')
 @Controller('ufv')
+@ApiTags('Catálogos / UFV')
 export class UfvController {
   constructor(
     private readonly ufvService: UfvService,

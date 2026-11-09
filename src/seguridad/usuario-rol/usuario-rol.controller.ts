@@ -1,9 +1,11 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import { UsuarioRolService } from './usuario-rol.service';
 import { CreateUsuarioRolDto } from './dto/create-usuario-rol.dto';
 import { UpdateUsuarioRolDto } from './dto/update-usuario-rol.dto';
 
 @Controller('usuario-rol')
+@ApiTags('Seguridad / Usuarios y roles')
 export class UsuarioRolController {
   constructor(private readonly usuarioRolService: UsuarioRolService) {}
 

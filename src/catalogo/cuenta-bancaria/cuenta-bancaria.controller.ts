@@ -1,9 +1,11 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import { CuentaBancariaService } from './cuenta-bancaria.service';
 import { CreateCuentaBancariaDto } from './dto/create-cuenta-bancaria.dto';
 import { UpdateCuentaBancariaDto } from './dto/update-cuenta-bancaria.dto';
 
 @Controller('cuenta-bancaria')
+@ApiTags('Catálogos / Cuentas bancarias')
 export class CuentaBancariaController {
   constructor(private readonly cuentaBancariaService: CuentaBancariaService) {}
 

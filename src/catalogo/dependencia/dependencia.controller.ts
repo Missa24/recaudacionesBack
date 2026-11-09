@@ -41,6 +41,7 @@ const userId = '8b461287-8416-412e-84e7-b5c77615ea2a';
  */
 @ApiTags('Catálogos - Dependencia')
 @Controller('dependencia')
+@ApiTags('Catálogos / Dependencias')
 export class DependenciaController {
   constructor(private readonly dependenciaService: DependenciaService) {}
 

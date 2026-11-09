@@ -1,9 +1,11 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import { SesionService } from './sesion.service';
 import { CreateSesionDto } from './dto/create-sesion.dto';
 import { UpdateSesionDto } from './dto/update-sesion.dto';
 
 @Controller('sesion')
+@ApiTags('Seguridad / Sesiones')
 export class SesionController {
   constructor(private readonly sesionService: SesionService) {}
 
