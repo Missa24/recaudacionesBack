@@ -28,7 +28,7 @@ import { ApiToken } from './entities/api-token.entity';
 import { BitacoraInterceptor } from '../bitacora/interceptors/bitacora.interceptor';
 import { RegistrarBitacora } from '../bitacora/bitacora.decorator';
 
-@ApiTags('API Tokens')
+@ApiTags('Seguridad / API Tokens')
 @UseGuards(AuthGuard('jwt'))
 @ApiBearerAuth('JWT')
 @Controller('api-tokens')

@@ -26,7 +26,7 @@ import {
 
 @Controller('bitacora')
 @UseGuards(AuthGuard('jwt'))
-@ApiTags('Bitácora')
+@ApiTags('Auditoría / Bitácora')
 @ApiBearerAuth('JWT')
 export class BitacoraController {
   constructor(private readonly bitacoraService: BitacoraService) {}

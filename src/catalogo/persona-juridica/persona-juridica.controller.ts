@@ -1,9 +1,11 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import { PersonaJuridicaService } from './persona-juridica.service';
 import { CreatePersonaJuridicaDto } from './dto/create-persona-juridica.dto';
 import { UpdatePersonaJuridicaDto } from './dto/update-persona-juridica.dto';
 
 @Controller('persona-juridica')
+@ApiTags('Catálogos / Personas jurídicas')
 export class PersonaJuridicaController {
   constructor(private readonly personaJuridicaService: PersonaJuridicaService) {}
 

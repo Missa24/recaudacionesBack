@@ -1,9 +1,11 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import { UfvService } from './ufv.service';
 import { CreateUfvDto } from './dto/create-ufv.dto';
 import { UpdateUfvDto } from './dto/update-ufv.dto';
 
 @Controller('ufv')
+@ApiTags('Catálogos / UFV')
 export class UfvController {
   constructor(private readonly ufvService: UfvService) {}
 

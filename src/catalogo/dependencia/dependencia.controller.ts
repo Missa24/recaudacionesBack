@@ -1,9 +1,11 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import { DependenciaService } from './dependencia.service';
 import { CreateDependenciaDto } from './dto/create-dependencia.dto';
 import { UpdateDependenciaDto } from './dto/update-dependencia.dto';
 
 @Controller('dependencia')
+@ApiTags('Catálogos / Dependencias')
 export class DependenciaController {
   constructor(private readonly dependenciaService: DependenciaService) {}
 

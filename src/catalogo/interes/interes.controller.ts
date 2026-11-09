@@ -1,9 +1,11 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import { InteresService } from './interes.service';
 import { CreateIntereDto } from './dto/create-intere.dto';
 import { UpdateIntereDto } from './dto/update-intere.dto';
 
 @Controller('interes')
+@ApiTags('Catálogos / Intereses')
 export class InteresController {
   constructor(private readonly interesService: InteresService) {}
 

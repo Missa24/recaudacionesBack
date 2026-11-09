@@ -35,7 +35,7 @@ class AdGroupsQueryDto extends PaginationDto {
   search?: string;
 }
 
-@ApiTags('Auth')
+@ApiTags('Seguridad / Autenticación')
 @ApiBearerAuth('JWT')
 @Controller('auth')
 export class AuthController {
