@@ -1,34 +1,201 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+/**
+ * Módulo: Catálogo - UFV
+ * Archivo: ufv.controller.ts
+ * Descripción:
+ * Controlador encargado de exponer los endpoints para el registro,
+ * consulta, actualización, sincronización y cambio de estado de los valores UFV.
+ *
+ * Desarrollado por: Missael Apaza
+ */
+
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Query,
+} from '@nestjs/common';
+
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
+  ApiOkResponse,
+} from '@nestjs/swagger';
+
 import { UfvService } from './ufv.service';
 import { CreateUfvDto } from './dto/create-ufv.dto';
 import { UpdateUfvDto } from './dto/update-ufv.dto';
+import { UfvApiService } from './ufv-api.service';
+import { QueryUfvDto } from './dto/query-ufv.dto';
 
+// Identificador temporal del usuario responsable de las operaciones.
+const userId = '8b461287-8416-412e-84e7-b5c77615ea2a';
+
+/**
+ * Controlador: UfvController
+ * Descripción:
+ * Gestiona las solicitudes HTTP relacionadas con los valores UFV
+ * y delega su procesamiento a los servicios correspondientes.
+ *
+ * Desarrollado por: Missael Apaza
+ */
+@ApiTags('Catálogos - UFV')
 @Controller('ufv')
 export class UfvController {
-  constructor(private readonly ufvService: UfvService) {}
+  constructor(
+    private readonly ufvService: UfvService,
+    private readonly usfApiService: UfvApiService,
+  ) {}
 
+  /**
+   * Registra un nuevo valor UFV mediante los datos proporcionados.
+   *
+   * Desarrollado por: Missael Apaza
+   */
   @Post()
-  create(@Body() createUfvDto: CreateUfvDto) {
-    return this.ufvService.create(createUfvDto);
+  @ApiOperation({
+    summary: 'Registrar UFV',
+    description: 'Registra un nuevo valor de UFV para una fecha determinada.',
+  })
+  @ApiResponse({ status: 201, description: 'UFV registrada correctamente.' })
+  @ApiResponse({ status: 400, description: 'Datos de entrada inválidos.' })
+  @ApiResponse({
+    status: 409,
+    description: 'Ya existe una UFV para esa fecha.',
+  })
+  crear(@Body() dto: CreateUfvDto) {
+    return this.ufvService.crear(dto, userId);
   }
 
+  /**
+   * Ejecuta la sincronización de valores UFV desde una fuente externa.
+   *
+   * Desarrollado por: Missael Apaza
+   */
+  @Post('sincronizar')
+  @ApiOperation({
+    summary: 'Sincronizar UFV',
+    description: 'Obtiene y sincroniza los valores UFV desde una API externa.',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Sincronización ejecutada correctamente.',
+  })
+  @ApiResponse({ status: 500, description: 'Error durante la sincronización.' })
+  sincronizar() {
+    return this.usfApiService.sincronizar();
+  }
+
+  /**
+   * Obtiene los registros UFV aplicando filtros y paginación.
+   *
+   * Desarrollado por: Missael Apaza
+   */
+  @ApiOperation({
+    summary: 'Listar registros UFV',
+    description:
+      'Permite buscar, filtrar, ordenar y paginar los registros UFV.',
+  })
+  @ApiOkResponse({
+    description: 'Listado de registros UFV obtenido correctamente.',
+  })
   @Get()
-  findAll() {
-    return this.ufvService.findAll();
+  listar(@Query() query: QueryUfvDto) {
+    return this.ufvService.listar(query);
   }
-
+  /**
+   * Obtiene un registro UFV mediante su identificador único.
+   *
+   * Desarrollado por: Missael Apaza
+   */
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.ufvService.findOne(+id);
+  @ApiOperation({
+    summary: 'Obtener UFV por ID',
+    description: 'Busca un registro de UFV mediante su identificador.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'Identificador UUID del registro.',
+    example: '8b461287-8416-412e-84e7-b5c77615ea2a',
+  })
+  @ApiResponse({ status: 200, description: 'Registro encontrado.' })
+  @ApiResponse({ status: 404, description: 'Registro no encontrado.' })
+  obtenerPorId(@Param('id') id: string) {
+    return this.ufvService.buscarPorId(id);
   }
 
+  /**
+   * Obtiene un registro UFV correspondiente a una fecha específica.
+   *
+   * Desarrollado por: Missael Apaza
+   */
+  @Get('fecha/:fecha')
+  @ApiOperation({
+    summary: 'Obtener UFV por fecha',
+    description:
+      'Busca un registro de UFV correspondiente a una fecha específica.',
+  })
+  @ApiParam({
+    name: 'fecha',
+    description: 'Fecha de consulta en formato AAAA-MM-DD.',
+    example: '2026-11-07',
+  })
+  @ApiResponse({ status: 200, description: 'Registro encontrado.' })
+  @ApiResponse({ status: 404, description: 'No existe UFV para esa fecha.' })
+  obtenerPorFecha(@Param('fecha') fecha: string) {
+    return this.ufvService.buscarPorFecha(fecha);
+  }
+
+  /**
+   * Actualiza parcialmente los datos de un registro UFV existente.
+   *
+   * Desarrollado por: Missael Apaza
+   */
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateUfvDto: UpdateUfvDto) {
-    return this.ufvService.update(+id, updateUfvDto);
+  @ApiOperation({
+    summary: 'Actualizar UFV',
+    description: 'Modifica los datos de un registro UFV existente.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'Identificador UUID del registro.',
+    example: '8b461287-8416-412e-84e7-b5c77615ea2a',
+  })
+  @ApiResponse({ status: 200, description: 'UFV actualizada correctamente.' })
+  @ApiResponse({
+    status: 400,
+    description: 'Datos de actualización inválidos.',
+  })
+  @ApiResponse({ status: 404, description: 'Registro no encontrado.' })
+  actualizar(@Param('id') id: string, @Body() dto: UpdateUfvDto) {
+    return this.ufvService.actualizar(id, dto, userId);
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.ufvService.remove(+id);
+  /**
+   * Cambia el estado de un registro UFV entre ACTIVO e INACTIVO.
+   *
+   * Desarrollado por: Missael Apaza
+   */
+  @Patch(':id/estado')
+  @ApiOperation({
+    summary: 'Cambiar estado de UFV',
+    description: 'Alterna el estado del registro entre ACTIVO e INACTIVO.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'Identificador UUID del registro.',
+    example: '8b461287-8416-412e-84e7-b5c77615ea2a',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Estado actualizado correctamente.',
+  })
+  @ApiResponse({ status: 404, description: 'Registro no encontrado.' })
+  cambiarEstado(@Param('id') id: string) {
+    return this.ufvService.cambiarEstado(id, userId);
   }
 }
