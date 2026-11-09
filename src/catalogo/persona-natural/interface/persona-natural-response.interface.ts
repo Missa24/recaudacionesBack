@@ -1,0 +1,72 @@
+/**
+ * Interfaz: PersonaNaturalResponsable
+ * Descripción:
+ * Define los datos del usuario responsable de una operación.
+ *
+ * Desarrollado por: Missael Apaza
+ */
+export interface PersonaNaturalResponsable {
+  username: string;
+}
+
+/**
+ * Interfaz: PersonaNaturalResponse
+ * Descripción:
+ * Define los datos que se mostrarán al consultar una persona natural.
+ *
+ * Desarrollado por: Missael Apaza
+ */
+export interface PersonaNaturalResponse {
+  id: string;
+  tipo_documento: string;
+  numero_documento: string;
+  complemento: string;
+  expedido: string;
+  nombres: string;
+  apellido_paterno: string | null;
+  apellido_materno: string | null;
+  domicilio: string | null;
+  telefono: string | null;
+  email: string | null;
+  fecha_nacimiento: string | null;
+  apellido_casada: string | null;
+  estado_civil: string;
+  estado: string;
+  responsable_creacion: PersonaNaturalResponsable | null;
+  responsable_actualizacion: PersonaNaturalResponsable | null;
+}
+
+/**
+ * Interfaz: PersonaNaturalMessageResponse
+ * Descripción:
+ * Define la respuesta de una operación mediante un mensaje.
+ *
+ * Desarrollado por: Missael Apaza
+ */
+export interface PersonaNaturalMessageResponse {
+  message: string;
+}
+
+/**
+ * Interfaz: PersonaNaturalCreateResponse
+ * Descripción:
+ * Define los datos devueltos después de registrar una persona natural.
+ *
+ * Desarrollado por: Missael Apaza
+ */
+export interface PersonaNaturalCreateResponse extends PersonaNaturalMessageResponse {
+  id: string;
+}
+
+/**
+ * Interfaz: BuscarPersonaNaturalResponse
+ * Descripción:
+ * Define el resultado de la búsqueda de personas naturales
+ * mediante sus datos documentales.
+ *
+ * Desarrollado por: Missael Apaza
+ */
+export interface BuscarPersonaNaturalResponse {
+  encontrada: boolean;
+  persona: PersonaNaturalResponse[];
+}
