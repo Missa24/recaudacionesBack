@@ -9,6 +9,6 @@ import { Usuario } from 'src/seguridad/usuario/entities/usuario.entity';
   imports: [TypeOrmModule.forFeature([Banco, Usuario])],
   controllers: [BancoController],
   providers: [BancoService],
-  exports: [BancoService]
+  exports: [BancoService],
 })
 export class BancoModule {}
