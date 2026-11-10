@@ -6,7 +6,7 @@
  * Gestiona registros manuales, sincronización externa, consultas,
  * actualizaciones y cambios de estado, incluyendo el control de auditoría.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 import {
   BadRequestException,
@@ -37,14 +37,14 @@ import { Usuario } from 'src/seguridad/usuario/entities/usuario.entity';
  * Implementa las operaciones de negocio para administrar los registros de Dependencia,
  * utilizando TypeORM para interactuar con la base de datos.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 @Injectable()
 export class DependenciaService {
   /**
    * Logger del servicio para trazabilidad de operaciones.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   private readonly logger = new Logger(DependenciaService.name);
 
@@ -58,7 +58,7 @@ export class DependenciaService {
    * Verifica que no exista otro registro para el mismo código
    * y asocia al usuario responsable de la creación.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   async crear(
     dto: CreateDependenciaDto,
@@ -121,7 +121,7 @@ export class DependenciaService {
    * Obtiene los registros de Dependencia aplicando filtros, búsqueda,
    * ordenamiento y paginación.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   async listar(
     query: QueryDependenciaDto,
@@ -263,7 +263,7 @@ export class DependenciaService {
    * Busca un registro de Dependencia mediante su identificador único.
    * Incluye los nombres de usuario asociados a su creación y actualización.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   async buscarPorId(id: string): Promise<DependenciaResponse> {
     this.logger.log(`Buscando Dependencia por ID: ${id}`);
@@ -298,7 +298,7 @@ export class DependenciaService {
    * Busca un registro de Dependencia por un código específico.
    * Solo considera registros activos y que no hayan sido eliminados.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   async buscarPorCodigo(codigo: string): Promise<DependenciaResponse> {
     this.logger.log(`Buscando Dependencia por código: ${codigo}`);
@@ -339,7 +339,7 @@ export class DependenciaService {
    * Verifica su existencia, estado y posibles duplicados de código.
    * También actualiza los campos de auditoría correspondientes.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   async actualizar(
     id: string,
@@ -405,7 +405,7 @@ export class DependenciaService {
    * Al desactivar, registra los datos de eliminación lógica.
    * Al reactivar, limpia dichos datos y registra la actualización.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   async cambiarEstado(
     id: string,

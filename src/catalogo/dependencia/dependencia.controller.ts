@@ -5,7 +5,7 @@
  * Controlador encargado de exponer los endpoints para el registro,
  * consulta, actualización, sincronización y cambio de estado de los valores de Dependencia.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 
 import {
@@ -46,7 +46,7 @@ const userId = '8b461287-8416-412e-84e7-b5c77615ea2a';
  * Gestiona las solicitudes HTTP relacionadas con los valores de Dependencia
  * y delega su procesamiento a los servicios correspondientes.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 @ApiTags('Catálogos / Dependencias')
 @ApiBearerAuth('JWT')
@@ -58,7 +58,7 @@ export class DependenciaController {
   /**
    * Registra un nuevo valor de Dependencia mediante los datos proporcionados.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   @Post()
   @ApiOperation({
@@ -84,7 +84,7 @@ export class DependenciaController {
   /**
    * Lista las dependencias aplicando filtros y paginación.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   @Get()
   @ApiOperation({
@@ -112,7 +112,7 @@ export class DependenciaController {
   /**
    * Obtiene un registro de Dependencia mediante su identificador único.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   @Get(':id')
   @ApiOperation({
@@ -134,7 +134,7 @@ export class DependenciaController {
   /**
    * Obtiene un registro de Dependencia correspondiente a un código específico.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   @Get('codigo/:codigo')
   @ApiOperation({
@@ -162,7 +162,7 @@ export class DependenciaController {
   /**
    * Actualiza los datos de una dependencia existente.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   @Patch(':id')
   @ApiOperation({
@@ -203,7 +203,7 @@ export class DependenciaController {
   /**
    * Cambia el estado de un registro de Dependencia entre ACTIVO e INACTIVO.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   @Patch('estado/:id')
   @ApiOperation({

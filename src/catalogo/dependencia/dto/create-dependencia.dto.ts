@@ -5,7 +5,7 @@
  * Define las propiedades necesarias para registrar
  * una dependencia
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 
 import { ApiProperty } from '@nestjs/swagger';
@@ -16,7 +16,7 @@ import { IsString, MaxLength } from 'class-validator';
  * Descripción:
  * Define los datos para registrar una Dependencia.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 export class CreateDependenciaDto {
   // Código funcional único de la dependencia

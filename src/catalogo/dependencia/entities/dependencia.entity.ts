@@ -5,7 +5,7 @@
  * Define la estructura y las relaciones de la entidad Dependencia,
  * correspondiente a la tabla dependencia del esquema catalogo.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 
 import { Usuario } from 'src/seguridad/usuario/entities/usuario.entity';
@@ -23,7 +23,7 @@ import {
  * Catálogo compartido de oficinas y unidades
  * ejecutoras o receptoras de derivaciones.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 
 @Entity({ schema: 'catalogo', name: 'dependencia' })

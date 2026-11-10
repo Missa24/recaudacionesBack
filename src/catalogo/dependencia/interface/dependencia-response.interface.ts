@@ -3,7 +3,7 @@
  * Descripción:
  * Define los datos que se mostrarán al consultar la Dependencia.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 export interface DependenciaResponse {
   id: string;
@@ -21,7 +21,7 @@ export interface DependenciaResponse {
  * Descripción:
  * Define la respuesta de una operación mediante un mensaje.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 export interface DependenciaMessageResponse {
   message: string;
