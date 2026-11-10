@@ -8,9 +8,6 @@
  * Desarrollado por: Missael Apaza
  */
 
-import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsIn, IsOptional } from 'class-validator';
-
 import { QueryPaginatedDto } from 'src/shared/dto/query-paginated.dto';
 
 /**
@@ -20,19 +17,4 @@ import { QueryPaginatedDto } from 'src/shared/dto/query-paginated.dto';
  *
  * Desarrollado por: Missael Apaza
  */
-export class QueryPersonaJuridicaDto extends QueryPaginatedDto {
-  /**
-   * Estado del registro utilizado para filtrar los resultados.
-   */
-  @ApiPropertyOptional({
-    example: 'ACTIVO',
-    enum: ['ACTIVO', 'INACTIVO'],
-    description: 'Filtra por el estado actual del registro.',
-  })
-  @IsOptional()
-  @IsIn(['ACTIVO', 'INACTIVO'], {
-    message:
-      'El estado debe ser uno de los siguientes valores: ACTIVO o INACTIVO',
-  })
-  declare status?: string;
-}
+export class QueryPersonaJuridicaDto extends QueryPaginatedDto {}

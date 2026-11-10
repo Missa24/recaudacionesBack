@@ -71,10 +71,10 @@ export class PersonaJuridicaService {
    */
   async crear(
     dto: CreatePersonaJuridicaDto,
-    id_usuario: string,
+    idUsuario: string,
   ): Promise<PersonaJuridicaCreateResponse> {
     this.logger.log(
-      `Iniciando creación de persona jurídica. NIT: ${dto.nit}, Razón social: ${dto.razon_social}, Usuario: ${id_usuario}`,
+      `Iniciando creación de persona jurídica. NIT: ${dto.nit}, Razón social: ${dto.razon_social}, Usuario: ${idUsuario}`,
     );
 
     const existente = await this.personaJuridicaRepository.findOne({
@@ -95,15 +95,15 @@ export class PersonaJuridicaService {
       estado: 'ACTIVO',
       _created_at: new Date(),
       _updated_at: new Date(),
-      _user_created: id_usuario,
-      usuario_creador: { id_usuario } as Usuario,
+      _user_created: idUsuario,
+      usuario_creador: { idUsuario } as Usuario,
     });
 
     try {
       const guardada = await this.personaJuridicaRepository.save(persona);
 
       this.logger.log(
-        `Persona jurídica creada exitosamente. ID: ${guardada.id}, NIT: ${guardada.nit}, Usuario: ${id_usuario}`,
+        `Persona jurídica creada exitosamente. ID: ${guardada.id}, NIT: ${guardada.nit}, Usuario: ${idUsuario}`,
       );
 
       return {
@@ -121,7 +121,7 @@ export class PersonaJuridicaService {
       }
 
       this.logger.error(
-        `Error al crear persona jurídica. NIT: ${dto.nit}, Usuario: ${id_usuario}`,
+        `Error al crear persona jurídica. NIT: ${dto.nit}, Usuario: ${idUsuario}`,
         error instanceof Error ? error.stack : String(error),
       );
       throw error;
@@ -186,9 +186,20 @@ export class PersonaJuridicaService {
       );
     }
 
-    queryBuilder.andWhere('persona.estado = :estado', {
-      estado: status ?? 'ACTIVO',
-    });
+    // Aplicar filtro de estado, mostrando activos por defecto.
+    if (status && status !== 'TODOS') {
+      this.logger.debug(`Aplicando filtro estado: ${status}`);
+      queryBuilder.andWhere('persona.estado = :estado', {
+        estado: status,
+      });
+    } else if (!status) {
+      this.logger.debug('Aplicando filtro estado por defecto: ACTIVO');
+      queryBuilder.andWhere('persona.estado = :estado', {
+        estado: 'ACTIVO',
+      });
+    } else {
+      this.logger.debug('Consultando personas juridicas de todos los estados');
+    }
 
     if (startDate) {
       this.logger.debug(`Aplicando filtro startDate: ${startDate}`);
@@ -307,10 +318,10 @@ export class PersonaJuridicaService {
   async actualizar(
     id: string,
     dto: UpdatePersonaJuridicaDto,
-    id_usuario: string,
+    idUsuario: string,
   ): Promise<PersonaJuridicaMessageResponse> {
     this.logger.log(
-      `Iniciando actualización de persona jurídica. ID: ${id}, Usuario: ${id_usuario}`,
+      `Iniciando actualización de persona jurídica. ID: ${id}, Usuario: ${idUsuario}`,
     );
 
     const persona = await this.personaJuridicaRepository.findOne({
@@ -365,14 +376,14 @@ export class PersonaJuridicaService {
     if (dto.email !== undefined) persona.email = dto.email;
 
     persona._updated_at = new Date();
-    persona._user_update = id_usuario;
-    persona.usuario_actualizador = { id_usuario } as Usuario;
+    persona._user_update = idUsuario;
+    persona.usuario_actualizador = { idUsuario } as Usuario;
 
     try {
       await this.personaJuridicaRepository.save(persona);
 
       this.logger.log(
-        `Persona jurídica actualizada correctamente. ID: ${id}, NIT: ${persona.nit}, Usuario: ${id_usuario}`,
+        `Persona jurídica actualizada correctamente. ID: ${id}, NIT: ${persona.nit}, Usuario: ${idUsuario}`,
       );
 
       return {
@@ -405,10 +416,10 @@ export class PersonaJuridicaService {
    */
   async cambiarEstado(
     id: string,
-    id_usuario: string,
+    idUsuario: string,
   ): Promise<PersonaJuridicaMessageResponse> {
     this.logger.log(
-      `Iniciando cambio de estado de persona jurídica. ID: ${id}, Usuario: ${id_usuario}`,
+      `Iniciando cambio de estado de persona jurídica. ID: ${id}, Usuario: ${idUsuario}`,
     );
 
     const persona = await this.personaJuridicaRepository.findOne({
@@ -428,13 +439,13 @@ export class PersonaJuridicaService {
 
     persona.estado = persona.estado === 'ACTIVO' ? 'INACTIVO' : 'ACTIVO';
     persona._updated_at = new Date();
-    persona._user_update = id_usuario;
-    persona.usuario_actualizador = { id_usuario } as Usuario;
+    persona._user_update = idUsuario;
+    persona.usuario_actualizador = { idUsuario } as Usuario;
 
     if (persona.estado === 'INACTIVO') {
       persona._deleted_at = new Date();
-      persona._user_delete = id_usuario;
-      persona.usuario_eliminador = { id_usuario } as Usuario;
+      persona._user_delete = idUsuario;
+      persona.usuario_eliminador = { idUsuario } as Usuario;
     } else {
       persona._deleted_at = null;
       persona._user_delete = null;
@@ -445,11 +456,11 @@ export class PersonaJuridicaService {
       await this.personaJuridicaRepository.save(persona);
 
       this.logger.log(
-        `Estado de persona jurídica cambiado correctamente. ID: ${id}, Estado anterior: ${estadoAnterior}, Estado nuevo: ${persona.estado}, Usuario: ${id_usuario}`,
+        `Estado de persona jurídica cambiado correctamente. ID: ${id}, Estado anterior: ${estadoAnterior}, Estado nuevo: ${persona.estado}, Usuario: ${idUsuario}`,
       );
 
       return {
-        message: `Persona jurídica ${persona.estado === 'ACTIVO' ? 'activada' : 'inactivada'} correctamente.`,
+        message: `Registro de la Persona Juridica ${persona.estado === 'ACTIVO' ? 'activado' : 'inactivado'} correctamente.`,
       };
     } catch (error) {
       this.logger.error(

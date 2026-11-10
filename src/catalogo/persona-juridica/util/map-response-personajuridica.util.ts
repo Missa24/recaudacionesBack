@@ -16,11 +16,7 @@ export function mapearRespuesta(
     telefono: persona.telefono,
     email: persona.email,
     estado: persona.estado,
-    responsable_creacion: persona.usuario_creador
-      ? { username: persona.usuario_creador.username }
-      : null,
-    responsable_actualizacion: persona.usuario_actualizador
-      ? { username: persona.usuario_actualizador.username }
-      : null,
+    responsable_creacion: persona.usuario_creador?.username ?? null,
+    responsable_actualizacion: persona.usuario_actualizador?.username ?? null,
   };
 }

@@ -17,9 +17,17 @@ import {
   Patch,
   Post,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 
-import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { AuthGuard } from '@nestjs/passport';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiParam,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 
 import { PersonaJuridicaService } from './persona-juridica.service';
 
@@ -38,7 +46,7 @@ import {
 import { PaginatedResponse } from 'src/shared/interface/paginated-response.interface';
 
 /* ID TEMPORAL */
-const id_usuario = '8b461287-8416-412e-84e7-b5c77615ea2a';
+const idUsuario = '8b461287-8416-412e-84e7-b5c77615ea2a';
 
 /**
  * Controlador encargado de gestionar las solicitudes HTTP
@@ -46,7 +54,9 @@ const id_usuario = '8b461287-8416-412e-84e7-b5c77615ea2a';
  *
  * Desarrollado por: Missael Apaza
  */
-@ApiTags('Catálogos - Personas Jurídicas')
+@ApiTags('Catálogos / Personas Jurídicas')
+@ApiBearerAuth('JWT')
+@UseGuards(AuthGuard('jwt'))
 @Controller('catalogos/personas-juridicas')
 export class PersonaJuridicaController {
   constructor(
@@ -70,6 +80,7 @@ export class PersonaJuridicaController {
     status: 400,
     description: 'Datos de entrada inválidos.',
   })
+  @ApiResponse({ status: 403, description: 'Acceso denegado' })
   @ApiResponse({
     status: 409,
     description: 'Ya existe una persona jurídica registrada con ese NIT.',
@@ -81,7 +92,7 @@ export class PersonaJuridicaController {
   async crear(
     @Body() dto: CreatePersonaJuridicaDto,
   ): Promise<PersonaJuridicaCreateResponse> {
-    return this.personaJuridicaService.crear(dto, id_usuario);
+    return this.personaJuridicaService.crear(dto, idUsuario);
   }
 
   /**
@@ -101,6 +112,7 @@ export class PersonaJuridicaController {
     status: 400,
     description: 'Parámetros de consulta inválidos.',
   })
+  @ApiResponse({ status: 403, description: 'Acceso denegado' })
   @ApiResponse({
     status: 500,
     description: 'Error interno del servidor.',
@@ -128,6 +140,7 @@ export class PersonaJuridicaController {
     status: 400,
     description: 'Parámetros de búsqueda inválidos.',
   })
+  @ApiResponse({ status: 403, description: 'Acceso denegado' })
   @ApiResponse({
     status: 500,
     description: 'Error interno del servidor.',
@@ -159,6 +172,7 @@ export class PersonaJuridicaController {
     status: 400,
     description: 'El identificador proporcionado no es un UUID válido.',
   })
+  @ApiResponse({ status: 403, description: 'Acceso denegado' })
   @ApiResponse({
     status: 404,
     description: 'No se encontró la persona jurídica solicitada.',
@@ -195,6 +209,7 @@ export class PersonaJuridicaController {
     description:
       'Datos inválidos o intento de actualizar una persona jurídica inactiva.',
   })
+  @ApiResponse({ status: 403, description: 'Acceso denegado' })
   @ApiResponse({
     status: 404,
     description: 'No se encontró la persona jurídica solicitada.',
@@ -211,7 +226,7 @@ export class PersonaJuridicaController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdatePersonaJuridicaDto,
   ): Promise<PersonaJuridicaMessageResponse> {
-    return this.personaJuridicaService.actualizar(id, dto, id_usuario);
+    return this.personaJuridicaService.actualizar(id, dto, idUsuario);
   }
 
   /**
@@ -235,6 +250,7 @@ export class PersonaJuridicaController {
     status: 400,
     description: 'El identificador proporcionado no es un UUID válido.',
   })
+  @ApiResponse({ status: 403, description: 'Acceso denegado' })
   @ApiResponse({
     status: 404,
     description: 'No se encontró la persona jurídica solicitada.',
@@ -246,6 +262,6 @@ export class PersonaJuridicaController {
   async cambiarEstado(
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<PersonaJuridicaMessageResponse> {
-    return this.personaJuridicaService.cambiarEstado(id, id_usuario);
+    return this.personaJuridicaService.cambiarEstado(id, idUsuario);
   }
 }

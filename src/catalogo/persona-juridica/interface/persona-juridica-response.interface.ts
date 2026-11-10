@@ -9,14 +9,6 @@
  */
 
 /**
- * Interfaz: PersonaJuridicaResponsable
- * Define los datos del usuario responsable de una operación.
- */
-export interface PersonaJuridicaResponsable {
-  username: string;
-}
-
-/**
  * Interfaz: PersonaJuridicaResponse
  * Define los datos que se mostrarán al consultar
  * una persona jurídica.
@@ -29,8 +21,8 @@ export interface PersonaJuridicaResponse {
   telefono: string | null;
   email: string | null;
   estado: string;
-  responsable_creacion: PersonaJuridicaResponsable | null;
-  responsable_actualizacion: PersonaJuridicaResponsable | null;
+  responsable_creacion: string | null;
+  responsable_actualizacion: string | null;
 }
 
 /**
