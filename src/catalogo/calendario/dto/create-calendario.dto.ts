@@ -1,29 +1,13 @@
-/**
- * Módulo: Catálogos - Calendario
- * Archivo: create-calendario.dto.ts
- * Descripción:
- * Define las propiedades necesarias para registrar una fecha
- * en el calendario institucional.
- *
- * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
- */
-
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsBoolean,
   IsDateString,
+  IsNotEmpty,
   IsOptional,
   IsString,
   MaxLength,
 } from 'class-validator';
 
-/**
- * DTO: CreateCalendarioDto
- * Descripción:
- * Define los datos para registrar una fecha en el calendario.
- *
- * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
- */
 export class CreateCalendarioDto {
   /**
    * Fecha que se registrará en el calendario.
@@ -32,7 +16,8 @@ export class CreateCalendarioDto {
     example: '2026-01-01',
     description: 'Fecha del calendario en formato YYYY-MM-DD.',
   })
-  @IsDateString()
+  @IsNotEmpty({ message: 'La fecha es obligatoria.' })
+  @IsDateString({}, { message: 'La fecha debe tener formato YYYY-MM-DD.' })
   fecha!: string;
 
   /**
@@ -44,7 +29,7 @@ export class CreateCalendarioDto {
     description: 'Indica si la fecha es hábil.',
   })
   @IsOptional()
-  @IsBoolean()
+  @IsBoolean({ message: 'El campo habil debe ser booleano.' })
   habil?: boolean;
 
   /**
@@ -56,7 +41,7 @@ export class CreateCalendarioDto {
     description: 'Descripción o motivo de la fecha registrada.',
   })
   @IsOptional()
-  @IsString()
-  @MaxLength(120)
+  @IsString({ message: 'La descripción debe ser texto.' })
+  @MaxLength(120, { message: 'La descripción no debe superar 120 caracteres.' })
   descripcion?: string | null;
 }

@@ -38,9 +38,4 @@ export class QueryCalendarioDto extends QueryPaginatedDto {
   })
   @IsBoolean()
   habil?: boolean;
-
-  /**
-   * Estado del registro: ACTIVO o INACTIVO.
-   */
-  declare status?: string;
 }
