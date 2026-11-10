@@ -21,7 +21,14 @@ import { CreateInteresDto } from './dto/create-interes.dto';
 import { UpdateInteresDto } from './dto/update-interes.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Interes } from './entities/interes.entity';
-import { Repository } from 'typeorm';
+import {
+  Between,
+  FindOptionsWhere,
+  IsNull,
+  LessThanOrEqual,
+  MoreThanOrEqual,
+  Repository,
+} from 'typeorm';
 import { esErrorDuplicado } from 'src/shared/util/errores-duplicados.util';
 import {
   InteresMessageResponse,
@@ -64,19 +71,12 @@ export class InteresService {
     dto: CreateInteresDto,
     idUsuario: string,
   ): Promise<InteresMessageResponse> {
-    this.logger.log(
-      `Iniciando creación de Interés. Fecha publicación: ${dto.fecha_publicacion}, Valor: ${dto.valor}, Usuario: ${idUsuario}`,
-    );
-
     // Comprueba si ya existe un registro para la fecha proporcionada.
     const existe = await this.interesRepository.findOne({
       where: { fecha_publicacion: dto.fecha_publicacion },
     });
 
     if (existe) {
-      this.logger.warn(
-        `Conflicto al crear Interés: ya existe registro para la fecha ${dto.fecha_publicacion}`,
-      );
       throw new ConflictException('Ya existe un Interés para esa fecha');
     }
 
@@ -87,20 +87,13 @@ export class InteresService {
     });
 
     try {
-      const guardado = await this.interesRepository.save(interes);
-
-      this.logger.log(
-        `Interés registrado exitosamente. ID: ${guardado.id}, Fecha: ${guardado.fecha_publicacion}, Valor: ${guardado.valor}, Usuario: ${idUsuario}`,
-      );
+      await this.interesRepository.save(interes);
 
       return {
         message: 'Interés registrado exitosamente',
       };
     } catch (error: unknown) {
       if (esErrorDuplicado(error)) {
-        this.logger.warn(
-          `Error de duplicado al crear Interés. Fecha: ${dto.fecha_publicacion}`,
-        );
         throw new ConflictException('Ya existe un interés para esa fecha');
       }
 
@@ -123,123 +116,76 @@ export class InteresService {
   async listar(
     query: QueryInteresDto,
   ): Promise<PaginatedResponse<InteresResponse>> {
-    this.logger.log(
-      `Listando Intereses. Página: ${query.page ?? 1}, Límite: ${query.limit ?? 10}, Search: ${query.search ?? 'N/A'}, StartDate: ${query.startDate ?? 'N/A'}, EndDate: ${query.endDate ?? 'N/A'}, Estado: ${query.status ?? 'ACTIVO'}`,
-    );
-
     const {
       page = 1,
       limit = 10,
       sortBy = 'createdAt',
       sortOrder = 'DESC',
-      search,
       startDate,
       endDate,
       status,
     } = query;
 
-    // Validar el rango de fechas
+    // Validar rango de fechas
     if (startDate && endDate && startDate > endDate) {
-      this.logger.warn(
-        `Rango de fechas inválido al listar Intereses: startDate ${startDate} > endDate ${endDate}`,
-      );
       throw new BadRequestException(
         'La fecha inicial no puede ser mayor que la fecha final.',
       );
     }
 
-    // Crear la consulta principal.
-    const queryBuilder = this.interesRepository
-      .createQueryBuilder('interes')
-      .leftJoinAndSelect('interes.usuario_creador', 'usuario_creador')
-      .leftJoinAndSelect(
-        'interes.usuario_actualizador',
-        'usuario_actualizador',
-      );
-
-    if (status && status !== 'TODOS') {
-      this.logger.debug(`Aplicando filtro estado: ${status}`);
-      queryBuilder.andWhere('interes.estado = :estado', {
-        estado: status,
-      });
-    } else if (!status) {
-      this.logger.debug('Aplicando filtro estado por defecto: ACTIVO');
-      queryBuilder.andWhere('interes.estado = :estado', {
-        estado: 'ACTIVO',
-      });
-    } else {
-      this.logger.debug('Consultando los Interes de todos los estados');
-    }
-
-    // Aplicar filtro por fecha inicial.
-    if (startDate) {
-      this.logger.debug(`Aplicando filtro startDate: ${startDate}`);
-      queryBuilder.andWhere('interes.fecha_publicacion >= :startDate', {
-        startDate,
-      });
-    }
-
-    // Aplicar filtro por fecha final.
-    if (endDate) {
-      this.logger.debug(`Aplicando filtro endDate: ${endDate}`);
-      queryBuilder.andWhere('interes.fecha_publicacion <= :endDate', {
-        endDate,
-      });
-    }
-
-    // Aplicar búsqueda general sobre los campos de interes.
-    if (search?.trim()) {
-      this.logger.debug(`Aplicando filtro de búsqueda: "${search.trim()}"`);
-      queryBuilder.andWhere(
-        `(
-        CAST(interes.fecha_publicacion AS TEXT) ILIKE :search
-        OR CAST(interes.valor AS TEXT) ILIKE :search
-      )`,
-        {
-          search: `%${search.trim()}%`,
-        },
-      );
-    }
-
-    // Definir los campos permitidos para ordenar.
-    const camposOrdenamiento: Record<string, string> = {
-      createdAt: 'interes._created_at',
-      fecha_publicacion: 'interes.fecha_publicacion',
-      valor: 'interes.valor',
+    // Definir campos permitidos para ordenar
+    const camposOrdenamiento: Record<string, keyof Interes> = {
+      createdAt: '_created_at',
+      fecha_publicacion: 'fecha_publicacion',
+      valor: 'valor',
     };
 
     const campoOrdenamiento = camposOrdenamiento[sortBy];
 
     if (!campoOrdenamiento) {
-      this.logger.warn(`Campo de ordenamiento inválido solicitado: ${sortBy}`);
       throw new BadRequestException(
         'El campo de ordenamiento solicitado no es válido.',
       );
     }
 
-    // Aplicar ordenamiento.
-    queryBuilder.orderBy(campoOrdenamiento, sortOrder);
+    // Construir filtros
+    const where: FindOptionsWhere<Interes> = {};
 
-    // Aplicar paginación y obtener registros junto con el total.
-    const skip = (page - 1) * limit;
+    // Filtro por estado
+    if (status && status !== 'TODOS') {
+      where.estado = status;
+    } else if (!status) {
+      where.estado = 'ACTIVO';
+    }
+
+    // Filtro por rango de fechas
+    if (startDate && endDate) {
+      where.fecha_publicacion = Between(startDate, endDate);
+    } else if (startDate) {
+      where.fecha_publicacion = MoreThanOrEqual(startDate);
+    } else if (endDate) {
+      where.fecha_publicacion = LessThanOrEqual(endDate);
+    }
 
     try {
-      const [registros, total] = await queryBuilder
-        .skip(skip)
-        .take(limit)
-        .getManyAndCount();
+      const [registros, total] = await this.interesRepository.findAndCount({
+        where,
+        relations: {
+          usuario_creador: true,
+          usuario_actualizador: true,
+        },
+        order: {
+          [campoOrdenamiento]: sortOrder,
+        },
+        skip: (page - 1) * limit,
+        take: limit,
+      });
 
-      // Mapear las entidades a la estructura de respuesta.
       const items: InteresResponse[] = registros.map((registro) =>
         mapearRespuesta(registro),
       );
 
-      // Calcular información de paginación.
       const totalPages = Math.ceil(total / limit);
-
-      this.logger.log(
-        `Listado de Intereses obtenido. Total: ${total}, Página: ${page}/${totalPages || 1}, Items devueltos: ${items.length}`,
-      );
 
       return {
         items,
@@ -257,6 +203,7 @@ export class InteresService {
         `Error al listar Intereses. Página: ${page}, Límite: ${limit}`,
         error instanceof Error ? error.stack : String(error),
       );
+
       throw error;
     }
   }
@@ -267,32 +214,19 @@ export class InteresService {
    *
    * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
-  async buscarPorId(id: string) {
-    this.logger.log(`Buscando Interés por ID: ${id}`);
-
-    const interes = await this.interesRepository
-      .createQueryBuilder('interes')
-      .leftJoin('interes.usuario_creador', 'creador')
-      .leftJoin('interes.usuario_actualizador', 'actualizador')
-      .select([
-        'interes.id',
-        'interes.fecha_publicacion',
-        'interes.valor',
-        'interes.estado',
-        'creador.username',
-        'actualizador.username',
-      ])
-      .where('interes.id = :id', { id })
-      .getOne();
+  async buscarPorId(id: string): Promise<InteresResponse> {
+    const interes = await this.interesRepository.findOne({
+      where: { id },
+      relations: {
+        usuario_creador: true,
+        usuario_actualizador: true,
+      },
+    });
 
     if (!interes) {
-      this.logger.warn(`Interés no encontrado con ID: ${id}`);
       throw new NotFoundException('No existe un interés con ese identificador');
     }
 
-    this.logger.log(
-      `Interés encontrado. ID: ${id}, Fecha: ${interes.fecha_publicacion}`,
-    );
     return mapearRespuesta(interes);
   }
 
@@ -303,34 +237,24 @@ export class InteresService {
    * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   async buscarPorFecha(fecha: string): Promise<InteresResponse> {
-    this.logger.log(`Buscando Interés por fecha: ${fecha}`);
-
-    const interes = await this.interesRepository
-      .createQueryBuilder('interes')
-      .leftJoin('interes.usuario_creador', 'creador')
-      .leftJoin('interes.usuario_actualizador', 'actualizador')
-      .select([
-        'interes.id',
-        'interes.fecha_publicacion',
-        'interes.valor',
-        'interes.estado',
-        'creador.username',
-        'actualizador.username',
-      ])
-      .where('interes.fecha_publicacion = :fecha', { fecha })
-      .andWhere('interes.estado = :estado', { estado: 'ACTIVO' })
-      .andWhere('interes._deleted_at IS NULL')
-      .getOne();
+    const interes = await this.interesRepository.findOne({
+      where: {
+        fecha_publicacion: fecha,
+        estado: 'ACTIVO',
+        _deleted_at: IsNull(),
+      },
+      relations: {
+        usuario_creador: true,
+        usuario_actualizador: true,
+      },
+    });
 
     if (!interes) {
-      this.logger.warn(`Interés activo no encontrado para la fecha: ${fecha}`);
       throw new NotFoundException('No existe un interés activo para esa fecha');
     }
 
-    this.logger.log(`Interés encontrado para la fecha: ${fecha}`);
     return mapearRespuesta(interes);
   }
-
   /**
    * Actualiza parcialmente un registro de Interés existente.
    * Verifica su existencia, estado y posibles duplicados de fecha.
@@ -343,16 +267,11 @@ export class InteresService {
     dto: UpdateInteresDto,
     idUsuario: string,
   ): Promise<InteresMessageResponse> {
-    this.logger.log(
-      `Iniciando actualización de Interés. ID: ${id}, Usuario: ${idUsuario}`,
-    );
-
     const interes = await this.interesRepository.findOne({
       where: { id: id },
     });
 
     if (!interes) {
-      this.logger.warn(`No se encontró Interés para actualizar. ID: ${id}`);
       throw new NotFoundException(
         'No existe un interés con ese identificador.',
       );
@@ -360,9 +279,6 @@ export class InteresService {
 
     // Impide modificar registros inactivos o eliminados.
     if (interes.estado !== 'ACTIVO' || interes._deleted_at) {
-      this.logger.warn(
-        `Intento de actualización sobre Interés no actualizable. ID: ${id}, Estado: ${interes.estado}}`,
-      );
       throw new ConflictException('No se puede actualizar el Interés.');
     }
 
@@ -371,18 +287,11 @@ export class InteresService {
       dto.fecha_publicacion &&
       dto.fecha_publicacion !== interes.fecha_publicacion
     ) {
-      this.logger.debug(
-        `Cambio de fecha detectado. Anterior: ${interes.fecha_publicacion}, Nueva: ${dto.fecha_publicacion}`,
-      );
-
       const fechaDuplicada = await this.interesRepository.findOne({
         where: { fecha_publicacion: dto.fecha_publicacion },
       });
 
       if (fechaDuplicada) {
-        this.logger.warn(
-          `Conflicto al actualizar Interés: ya existe otro registro para la fecha ${dto.fecha_publicacion}. ID actual: ${id}`,
-        );
         throw new ConflictException(
           'Ya existe otro Interés registrado para esa fecha',
         );
@@ -398,19 +307,11 @@ export class InteresService {
 
     try {
       await this.interesRepository.save(interes);
-
-      this.logger.log(
-        `Interés actualizado correctamente. ID: ${id}, Usuario: ${idUsuario}`,
-      );
-
       return {
         message: 'Interes actualizado correctamente',
       };
     } catch (error: unknown) {
       if (esErrorDuplicado(error)) {
-        this.logger.warn(
-          `Error de duplicado al actualizar Interés. ID: ${id}, Fecha: ${dto.fecha_publicacion ?? interes.fecha_publicacion}`,
-        );
         throw new ConflictException(
           'Ya existe otro Interés registrado para esa fecha',
         );
@@ -438,16 +339,11 @@ export class InteresService {
     id: string,
     idUsuario: string,
   ): Promise<InteresMessageResponse> {
-    this.logger.log(
-      `Iniciando cambio de estado de Interés. ID: ${id}, Usuario: ${idUsuario}`,
-    );
-
     const interes = await this.interesRepository.findOne({
       where: { id: id },
     });
 
     if (!interes) {
-      this.logger.warn(`No se encontró Interés para cambiar estado. ID: ${id}`);
       throw new NotFoundException(
         'No existe un Interés con esa identificación',
       );
@@ -475,10 +371,6 @@ export class InteresService {
 
     try {
       await this.interesRepository.save(interes);
-
-      this.logger.log(
-        `Estado de Interés cambiado correctamente. ID: ${id}, Estado anterior: ${estadoAnterior}, Estado nuevo: ${nuevoEstado}, Usuario: ${idUsuario}`,
-      );
 
       return {
         message: `Registro del interes ${interes.estado === 'ACTIVO' ? 'activado' : 'inactivado'} correctamente.`,

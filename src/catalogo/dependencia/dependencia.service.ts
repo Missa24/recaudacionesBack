@@ -21,7 +21,15 @@ import {
   DependenciaMessageResponse,
   DependenciaResponse,
 } from './interface/dependencia-response.interface';
-import { Brackets, Repository } from 'typeorm';
+import {
+  And,
+  FindOptionsWhere,
+  ILike,
+  IsNull,
+  LessThanOrEqual,
+  MoreThanOrEqual,
+  Repository,
+} from 'typeorm';
 import { Dependencia } from './entities/dependencia.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { esErrorDuplicado } from 'src/shared/util/errores-duplicados.util';
@@ -64,10 +72,6 @@ export class DependenciaService {
     dto: CreateDependenciaDto,
     idUsuario: string,
   ): Promise<DependenciaMessageResponse> {
-    this.logger.log(
-      `Iniciando creación de Dependencia. Código: ${dto.codigo}, Usuario: ${idUsuario}`,
-    );
-
     // Comprueba si ya existe un registro con el código proporcionado.
     const existe = await this.dependenciaRepository.findOne({
       where: {
@@ -76,9 +80,6 @@ export class DependenciaService {
     });
 
     if (existe) {
-      this.logger.warn(
-        `Conflicto al crear Dependencia: ya existe registro con código ${dto.codigo}`,
-      );
       throw new ConflictException('Ya existe una Dependencia con ese código');
     }
 
@@ -89,21 +90,13 @@ export class DependenciaService {
     });
 
     try {
-      const guardada = await this.dependenciaRepository.save(dependencia);
-
-      this.logger.log(
-        `Dependencia creada correctamente. ID: ${guardada.id}, Código: ${guardada.codigo}, Usuario: ${idUsuario}`,
-      );
-
+      await this.dependenciaRepository.save(dependencia);
       return {
         message: 'Dependencia registrada correctamente',
       };
     } catch (error: unknown) {
       // Controla posibles duplicados producidos durante el guardado.
       if (esErrorDuplicado(error)) {
-        this.logger.warn(
-          `Error de duplicado al crear Dependencia. Código: ${dto.codigo}`,
-        );
         throw new ConflictException(
           'Ya existe una Dependencia para ese código',
         );
@@ -126,13 +119,9 @@ export class DependenciaService {
   async listar(
     query: QueryDependenciaDto,
   ): Promise<PaginatedResponse<DependenciaResponse>> {
-    this.logger.log(
-      `Listando Dependencias. Página: ${query.page}, Límite: ${query.limit}, Search: ${query.search ?? 'N/A'}, Código: ${query.codigo ?? 'N/A'}, Estado: ${query.status ?? 'ACTIVO'}`,
-    );
-
     const {
-      page,
-      limit,
+      page = 1,
+      limit = 10,
       search,
       codigo,
       abreviacion,
@@ -144,100 +133,91 @@ export class DependenciaService {
       sortOrder,
     } = query;
 
-    const camposOrdenamiento: Record<string, string> = {
-      createdAt: 'dependencia._created_at',
+    // Validar rango de fechas
+    if (startDate && endDate && startDate > endDate) {
+      throw new BadRequestException(
+        'La fecha inicial no puede ser mayor que la fecha final.',
+      );
+    }
+
+    // Campos permitidos para ordenar
+    const camposOrdenamiento: Record<string, keyof Dependencia> = {
+      createdAt: '_created_at',
     };
 
-    const campoOrdenamiento =
-      camposOrdenamiento[sortBy] ?? 'dependencia._created_at';
+    const campoOrdenamiento = camposOrdenamiento[sortBy] ?? '_created_at';
 
-    const queryBuilder = this.dependenciaRepository
-      .createQueryBuilder('dependencia')
-      .leftJoinAndSelect('dependencia.usuario_creador', 'usuario_creador')
-      .leftJoinAndSelect(
-        'dependencia.usuario_actualizador',
-        'usuario_actualizador',
-      );
+    // Construir filtros comunes
+    const filtros: FindOptionsWhere<Dependencia> = {};
 
-    if (search) {
-      this.logger.debug(`Aplicando filtro de búsqueda: "${search}"`);
-      queryBuilder.andWhere(
-        new Brackets((qb) => {
-          qb.where('dependencia.codigo ILIKE :search', {
-            search: `%${search}%`,
-          }).orWhere('dependencia.nombre ILIKE :search', {
-            search: `%${search}%`,
-          });
-        }),
-      );
-    }
-
+    // Filtro por código
     if (codigo) {
-      this.logger.debug(`Aplicando filtro código: ${codigo}`);
-      queryBuilder.andWhere('dependencia.codigo = :codigo', {
-        codigo,
-      });
-    }
-    // Aplicar filtro de estado, mostrando activos por defecto.
-    if (status && status !== 'TODOS') {
-      this.logger.debug(`Aplicando filtro estado: ${status}`);
-      queryBuilder.andWhere('dependencia.estado = :estado', {
-        estado: status,
-      });
-    } else if (!status) {
-      this.logger.debug('Aplicando filtro estado por defecto: ACTIVO');
-      queryBuilder.andWhere('dependencia.estado = :estado', {
-        estado: 'ACTIVO',
-      });
-    } else {
-      this.logger.debug('Consultando la Dependencia de todos los estados');
+      filtros.codigo = codigo;
     }
 
+    // Filtro por abreviación
     if (abreviacion) {
-      this.logger.debug(`Aplicando filtro abreviación: ${abreviacion}`);
-      queryBuilder.andWhere('dependencia.abreviacion = :abreviacion', {
-        abreviacion,
-      });
+      filtros.abreviacion = abreviacion;
     }
 
-    if (es_unidad_desconcentrada) {
-      this.logger.debug(
-        `Aplicando filtro es_unidad_desconcentrada: ${es_unidad_desconcentrada}`,
+    // Filtro por unidad desconcentrada
+    if (es_unidad_desconcentrada !== undefined) {
+      filtros.es_unidad_desconcentrada = es_unidad_desconcentrada;
+    }
+
+    // Filtro por estado
+    if (status && status !== 'TODOS') {
+      filtros.estado = status;
+    } else if (!status) {
+      filtros.estado = 'ACTIVO';
+    }
+
+    // Filtro por rango de fechas (Bolivia)
+    if (startDate && endDate) {
+      filtros._created_at = And(
+        MoreThanOrEqual(new Date(`${startDate}T00:00:00.000`)),
+        LessThanOrEqual(new Date(`${endDate}T23:59:59.999`)),
       );
-      queryBuilder.andWhere(
-        'dependencia.es_unidad_desconcentrada = :es_unidad_desconcentrada',
-        {
-          es_unidad_desconcentrada,
-        },
+    } else if (startDate) {
+      filtros._created_at = MoreThanOrEqual(
+        new Date(`${startDate}T00:00:00.000`),
+      );
+    } else if (endDate) {
+      filtros._created_at = LessThanOrEqual(
+        new Date(`${endDate}T23:59:59.999`),
       );
     }
 
-    if (startDate) {
-      this.logger.debug(`Aplicando filtro startDate: ${startDate}`);
-      queryBuilder.andWhere('dependencia._created_at >= :startDate', {
-        startDate: `${startDate} 00:00:00`,
-      });
-    }
+    // Construir condiciones OR para búsqueda general
+    const condiciones: FindOptionsWhere<Dependencia>[] = [];
 
-    if (endDate) {
-      this.logger.debug(`Aplicando filtro endDate: ${endDate}`);
-      queryBuilder.andWhere('dependencia._created_at <= :endDate', {
-        endDate: `${endDate} 23:59:59.999`,
-      });
+    if (search?.trim()) {
+      const busqueda = ILike(`%${search.trim()}%`);
+
+      condiciones.push(
+        { ...filtros, codigo: busqueda },
+        { ...filtros, nombre: busqueda },
+      );
+    } else {
+      condiciones.push(filtros);
     }
 
     try {
-      const [dependencias, total] = await queryBuilder
-        .orderBy(campoOrdenamiento, sortOrder ?? 'DESC')
-        .skip((page - 1) * limit)
-        .take(limit)
-        .getManyAndCount();
+      const [dependencias, total] =
+        await this.dependenciaRepository.findAndCount({
+          where: condiciones,
+          relations: {
+            usuario_creador: true,
+            usuario_actualizador: true,
+          },
+          order: {
+            [campoOrdenamiento]: sortOrder ?? 'DESC',
+          },
+          skip: (page - 1) * limit,
+          take: limit,
+        });
 
       const totalPages = Math.ceil(total / limit);
-
-      this.logger.log(
-        `Listado de Dependencias obtenido. Total: ${total}, Página: ${page}/${totalPages || 1}, Items devueltos: ${dependencias.length}`,
-      );
 
       return {
         items: dependencias.map((dependencia) => mapearRespuesta(dependencia)),
@@ -255,6 +235,7 @@ export class DependenciaService {
         `Error al listar Dependencias. Página: ${page}, Límite: ${limit}`,
         error instanceof Error ? error.stack : String(error),
       );
+
       throw error;
     }
   }
@@ -266,31 +247,18 @@ export class DependenciaService {
    * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   async buscarPorId(id: string): Promise<DependenciaResponse> {
-    this.logger.log(`Buscando Dependencia por ID: ${id}`);
-
-    const dependencia = await this.dependenciaRepository
-      .createQueryBuilder('dependencia')
-      .leftJoin('dependencia.usuario_creador', 'creador')
-      .leftJoin('dependencia.usuario_actualizador', 'actualizador')
-      .select([
-        'dependencia.id',
-        'dependencia.codigo',
-        'dependencia.nombre',
-        'dependencia.abreviacion',
-        'dependencia.estado',
-        'dependencia.es_unidad_desconcentrada',
-        'creador.username',
-        'actualizador.username',
-      ])
-      .where('dependencia.id = :id', { id })
-      .getOne();
+    const dependencia = await this.dependenciaRepository.findOne({
+      where: { id },
+      relations: {
+        usuario_creador: true,
+        usuario_actualizador: true,
+      },
+    });
 
     if (!dependencia) {
-      this.logger.warn(`Dependencia no encontrada con ID: ${id}`);
       throw new NotFoundException('No existe una Dependencia con ese Id');
     }
 
-    this.logger.log(`Dependencia encontrada. ID: ${id}`);
     return mapearRespuesta(dependencia);
   }
 
@@ -301,39 +269,26 @@ export class DependenciaService {
    * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   async buscarPorCodigo(codigo: string): Promise<DependenciaResponse> {
-    this.logger.log(`Buscando Dependencia por código: ${codigo}`);
-
-    const dependencia = await this.dependenciaRepository
-      .createQueryBuilder('dependencia')
-      .leftJoin('dependencia.usuario_creador', 'creador')
-      .leftJoin('dependencia.usuario_actualizador', 'actualizador')
-      .select([
-        'dependencia.id',
-        'dependencia.codigo',
-        'dependencia.nombre',
-        'dependencia.abreviacion',
-        'dependencia.es_unidad_desconcentrada',
-        'creador.username',
-        'actualizador.username',
-      ])
-      .where('dependencia.codigo = :codigo', { codigo })
-      .andWhere('dependencia.estado = :estado', { estado: 'ACTIVO' })
-      .andWhere('dependencia._deleted_at IS NULL')
-      .getOne();
+    const dependencia = await this.dependenciaRepository.findOne({
+      where: {
+        codigo,
+        estado: 'ACTIVO',
+        _deleted_at: IsNull(),
+      },
+      relations: {
+        usuario_creador: true,
+        usuario_actualizador: true,
+      },
+    });
 
     if (!dependencia) {
-      this.logger.warn(
-        `Dependencia activa no encontrada para el código: ${codigo}`,
-      );
       throw new NotFoundException(
         'No existe una Dependencia activa para ese codigo',
       );
     }
 
-    this.logger.log(`Dependencia encontrada por código: ${codigo}`);
     return mapearRespuesta(dependencia);
   }
-
   /**
    * Actualiza parcialmente un registro de Dependencia existente.
    * Verifica su existencia, estado y posibles duplicados de código.
@@ -346,23 +301,15 @@ export class DependenciaService {
     dto: UpdateDependenciaDto,
     idUsuario: string,
   ): Promise<DependenciaMessageResponse> {
-    this.logger.log(
-      `Iniciando actualización de Dependencia. ID: ${id}, Usuario: ${idUsuario}`,
-    );
-
     const dependencia = await this.dependenciaRepository.findOne({
       where: { id: id },
     });
 
     if (!dependencia) {
-      this.logger.warn(`No se encontró Dependencia para actualizar. ID: ${id}`);
       throw new NotFoundException('No se encontro la dependencia solicitada.');
     }
 
     if (dependencia.estado !== 'ACTIVO') {
-      this.logger.warn(
-        `Intento de actualización sobre Dependencia inactiva. ID: ${id}, Estado: ${dependencia.estado}`,
-      );
       throw new BadRequestException(
         'No se puede actualizar una dependencia inactiva.',
       );
@@ -376,18 +323,11 @@ export class DependenciaService {
     try {
       await this.dependenciaRepository.save(dependencia);
 
-      this.logger.log(
-        `Dependencia actualizada correctamente. ID: ${id}, Usuario: ${idUsuario}`,
-      );
-
       return {
         message: 'Dependencia actualizada correctamente.',
       };
     } catch (error) {
       if (esErrorDuplicado(error)) {
-        this.logger.warn(
-          `Error de duplicado al actualizar Dependencia. ID: ${id}, Código: ${dto.codigo ?? dependencia.codigo}`,
-        );
         throw new ConflictException('Ya existe una dependencia con ese código');
       }
 

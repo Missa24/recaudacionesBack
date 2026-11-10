@@ -21,7 +21,15 @@ import { CreateBancoDto } from './dto/create-banco.dto';
 import { UpdateBancoDto } from './dto/update-banco.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Banco } from './entities/banco.entity';
-import { Brackets, Repository } from 'typeorm';
+import {
+  And,
+  FindOptionsWhere,
+  ILike,
+  IsNull,
+  LessThan,
+  MoreThanOrEqual,
+  Repository,
+} from 'typeorm';
 import {
   BancoMessageResponse,
   BancoResponse,
@@ -61,10 +69,6 @@ export class BancoService {
     dto: CreateBancoDto,
     idUsuario: string,
   ): Promise<BancoMessageResponse> {
-    this.logger.log(
-      `Iniciando creación de Banco. Banco: ${dto.nombre}, Usuario: ${idUsuario}`,
-    );
-
     // Comprueba si ya existe un registro con el nombre proporcionado.
     const existe = await this.bancoRepository.findOne({
       where: {
@@ -72,9 +76,6 @@ export class BancoService {
       },
     });
     if (existe) {
-      this.logger.warn(
-        `Conflicto al crear Banco: ya existe registro con el nombre ${dto.nombre}`,
-      );
       throw new ConflictException('Ya existe un Banco con ese mismo nombre');
     }
     // Prepara la entidad asociando los datos del usuario creador
@@ -83,16 +84,12 @@ export class BancoService {
       usuario_creador: { idUsuario },
     });
     try {
-      const guardada = await this.bancoRepository.save(banco);
-      this.logger.log(`Banco creada correctamente. ID: ${guardada.id}`);
+      await this.bancoRepository.save(banco);
       return {
         message: 'Banco registrado correctamente',
       };
     } catch (error: unknown) {
       if (esErrorDuplicado(error)) {
-        this.logger.warn(
-          `Error de duplicado al crear Banco. nombre: ${dto.nombre}`,
-        );
         throw new ConflictException('Ya existe un Banco para ese nombre');
       }
       this.logger.error(
@@ -108,17 +105,12 @@ export class BancoService {
    *
    * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
-
   async listar(
     query: QueryBancoDto,
   ): Promise<PaginatedResponse<BancoResponse>> {
-    this.logger.log(
-      `Listando Dependencias. Página: ${query.page}, Límite: ${query.limit}, Search: ${query.search ?? 'N/A'}, Estado: ${query.status ?? 'ACTIVO'}`,
-    );
-
     const {
-      page,
-      limit,
+      page = 1,
+      limit = 10,
       search,
       status,
       startDate,
@@ -127,68 +119,75 @@ export class BancoService {
       sortOrder,
     } = query;
 
-    const camposOrdenamiento: Record<string, string> = {
-      createdAt: 'banco._created_at',
-    };
-
-    const campoOrdenamiento = camposOrdenamiento[sortBy] ?? 'banco._created_at';
-
-    const queryBuilder = this.bancoRepository
-      .createQueryBuilder('banco')
-      .leftJoinAndSelect('banco.usuario_creador', 'usuario_creador')
-      .leftJoinAndSelect('banco.usuario_actualizador', 'usuario_actualizador');
-
-    if (search) {
-      this.logger.debug(`Aplicando filtro de búsqueda: "${search}"`);
-      queryBuilder.andWhere(
-        new Brackets((qb) => {
-          qb.where('banco.nombre ILIKE :search', {
-            search: `%${search}%`,
-          });
-        }),
+    // Validar rango de fechas
+    if (startDate && endDate && startDate > endDate) {
+      throw new BadRequestException(
+        'La fecha inicial no puede ser posterior a la fecha final.',
       );
     }
-    // Aplicar filtro de estado, mostrando activos por defecto.
+
+    // Campos permitidos para ordenar
+    const camposOrdenamiento: Record<string, keyof Banco> = {
+      createdAt: '_created_at',
+    };
+
+    const campoOrdenamiento = camposOrdenamiento[sortBy] ?? '_created_at';
+
+    // Construir filtros
+    const filtros: FindOptionsWhere<Banco> = {};
+
+    // Filtro por estado
     if (status && status !== 'TODOS') {
-      this.logger.debug(`Aplicando filtro estado: ${status}`);
-      queryBuilder.andWhere('banco.estado = :estado', {
-        estado: status,
-      });
+      filtros.estado = status;
     } else if (!status) {
-      this.logger.debug('Aplicando filtro estado por defecto: ACTIVO');
-      queryBuilder.andWhere('banco.estado = :estado', {
-        estado: 'ACTIVO',
+      filtros.estado = 'ACTIVO';
+    }
+
+    // Filtro por rango de fechas (Bolivia)
+    if (startDate && endDate) {
+      filtros._created_at = And(
+        MoreThanOrEqual(new Date(`${startDate}T00:00:00.000`)),
+        LessThan(
+          new Date(new Date(`${endDate}T00:00:00.000`).getTime() + 86400000),
+        ),
+      );
+    } else if (startDate) {
+      filtros._created_at = MoreThanOrEqual(
+        new Date(`${startDate}T00:00:00.000`),
+      );
+    } else if (endDate) {
+      filtros._created_at = LessThan(
+        new Date(new Date(`${endDate}T00:00:00.000`).getTime() + 86400000),
+      );
+    }
+
+    // Construir condiciones de búsqueda
+    const condiciones: FindOptionsWhere<Banco>[] = [];
+
+    if (search?.trim()) {
+      condiciones.push({
+        ...filtros,
+        nombre: ILike(`%${search.trim()}%`),
       });
     } else {
-      this.logger.debug('Consultando bancos de todos los estados');
-    }
-
-    if (startDate) {
-      this.logger.debug(`Aplicando filtro startDate: ${startDate}`);
-      queryBuilder.andWhere('banco._created_at >= :startDate', {
-        startDate: `${startDate} 00:00:00`,
-      });
-    }
-
-    if (endDate) {
-      this.logger.debug(`Aplicando filtro endDate: ${endDate}`);
-      queryBuilder.andWhere('banco._created_at <= :endDate', {
-        endDate: `${endDate} 23:59:59.999`,
-      });
+      condiciones.push(filtros);
     }
 
     try {
-      const [bancos, total] = await queryBuilder
-        .orderBy(campoOrdenamiento, sortOrder ?? 'DESC')
-        .skip((page - 1) * limit)
-        .take(limit)
-        .getManyAndCount();
+      const [bancos, total] = await this.bancoRepository.findAndCount({
+        where: condiciones,
+        relations: {
+          usuario_creador: true,
+          usuario_actualizador: true,
+        },
+        order: {
+          [campoOrdenamiento]: sortOrder ?? 'DESC',
+        },
+        skip: (page - 1) * limit,
+        take: limit,
+      });
 
       const totalPages = Math.ceil(total / limit);
-
-      this.logger.log(
-        `Listado de Bancos obtenido. Total: ${total}, Página: ${page}/${totalPages || 1}, Items devueltos: ${bancos.length}`,
-      );
 
       return {
         items: bancos.map((banco) => mapearRespuesta(banco)),
@@ -203,9 +202,10 @@ export class BancoService {
       };
     } catch (error) {
       this.logger.error(
-        `Error al listar Dependencias. Página: ${page}, Límite: ${limit}`,
+        `Error al listar bancos. Página: ${page}, Límite: ${limit}`,
         error instanceof Error ? error.stack : String(error),
       );
+
       throw error;
     }
   }
@@ -216,27 +216,18 @@ export class BancoService {
    * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   async buscarPorId(id: string): Promise<BancoResponse> {
-    this.logger.log(`Buscando Banco por ID: ${id}`);
-    const banco = await this.bancoRepository
-      .createQueryBuilder('banco')
-      .leftJoin('banco.usuario_creador', 'creador')
-      .leftJoin('banco.usuario_actualizador', 'actualizador')
-      .select([
-        'banco.id',
-        'banco.nombre',
-        'banco.codigo_bc',
-        'banco.estado',
-        'creador.username',
-        'actualizador.username',
-      ])
-      .where('banco.id = :id', { id })
-      .getOne();
+    const banco = await this.bancoRepository.findOne({
+      where: { id },
+      relations: {
+        usuario_creador: true,
+        usuario_actualizador: true,
+      },
+    });
 
     if (!banco) {
-      this.logger.warn(`Banco no encontrado con ID: ${id}`);
       throw new NotFoundException('No existe un Banco con ese Id');
     }
-    this.logger.log(`Banco encontrado. ID: ${id}`);
+
     return mapearRespuesta(banco);
   }
 
@@ -247,30 +238,22 @@ export class BancoService {
    * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   async buscarPorNombre(nombre: string): Promise<BancoResponse> {
-    this.logger.log(`Buscando Dependencia por nombre: ${nombre}`);
-    const banco = await this.bancoRepository
-      .createQueryBuilder('banco')
-      .leftJoin('banco.usuario_creador', 'creador')
-      .leftJoin('banco.usuario_actualizador', 'actualizador')
-      .select([
-        'banco.id',
-        'banco.nombre',
-        'banco.codigo_bc',
-        'banco.estado',
-        'creador.username',
-        'actualizador.username',
-      ])
-      .where('banco.nombre = :nombre', { nombre })
-      .andWhere('banco.estado = :estado', { estado: 'ACTIVO' })
-      .andWhere('banco._deleted_at IS NULL')
-      .getOne();
+    const banco = await this.bancoRepository.findOne({
+      where: {
+        nombre,
+        estado: 'ACTIVO',
+        _deleted_at: IsNull(),
+      },
+      relations: {
+        usuario_creador: true,
+        usuario_actualizador: true,
+      },
+    });
 
     if (!banco) {
-      this.logger.warn(`Banco activa no encontrada para el nombre: ${nombre}`);
       throw new NotFoundException('No existe un Banco activo para ese nombre');
     }
 
-    this.logger.log(`Banco encontrada por nombre: ${nombre}`);
     return mapearRespuesta(banco);
   }
 
@@ -286,22 +269,15 @@ export class BancoService {
     dto: UpdateBancoDto,
     idUsuario: string,
   ): Promise<BancoMessageResponse> {
-    this.logger.log(
-      `Iniciando actualización de Banco. ID: ${id}, Usuario: ${idUsuario}`,
-    );
     const banco = await this.bancoRepository.findOne({
       where: { id: id },
     });
 
     if (!banco) {
-      this.logger.warn(`No se encontró Banco para actualizar. ID: ${id}`);
       throw new NotFoundException('No se encontro el Banco solicitado');
     }
 
     if (banco.estado !== 'ACTIVO') {
-      this.logger.warn(
-        `Intento de actualización sobre Banco inactiva. ID: ${id}, Estado: ${banco.estado}`,
-      );
       throw new BadRequestException(
         'No se puede actualizar un banco inactiva.',
       );
@@ -314,15 +290,11 @@ export class BancoService {
 
     try {
       await this.bancoRepository.save(banco);
-      this.logger.log(
-        `Banco actualizada correctamente. ID: ${id}, Usuario: ${idUsuario}`,
-      );
       return {
         message: 'Banco actualizado correctamente.',
       };
     } catch (error: unknown) {
       if (esErrorDuplicado(error)) {
-        this.logger.warn(`Error de duplicado al actualizar Banco. ID: ${id}`);
         throw new ConflictException('Ya existe una dependencia con ese código');
       }
 
@@ -346,17 +318,11 @@ export class BancoService {
     id: string,
     idUsuario: string,
   ): Promise<BancoMessageResponse> {
-    this.logger.log(
-      `Iniciando cambio de estado de Banco. ID: ${id}, Usuario: ${idUsuario}`,
-    );
     const banco = await this.bancoRepository.findOne({
       where: { id: id },
     });
 
     if (!banco) {
-      this.logger.warn(
-        `No se encontró un Banco para cambiar estado. ID: ${id}`,
-      );
       throw new NotFoundException('No existe un Banco con esa identificacion');
     }
 
@@ -378,9 +344,6 @@ export class BancoService {
 
     try {
       await this.bancoRepository.save(banco);
-      this.logger.log(
-        `Estado de Banco cambiado correctamente. ID: ${id}, Estado anterior: ${estadoAnterior}, Estado nuevo: ${nuevoEstado}, Usuario: ${idUsuario}`,
-      );
       return {
         message: 'Estado del Banco cambiado correctamente',
       };

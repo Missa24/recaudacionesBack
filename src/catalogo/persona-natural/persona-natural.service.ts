@@ -16,7 +16,15 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Brackets, Repository } from 'typeorm';
+import {
+  And,
+  FindOptionsWhere,
+  ILike,
+  LessThanOrEqual,
+  MoreThanOrEqual,
+  Not,
+  Repository,
+} from 'typeorm';
 
 import { PersonaNatural } from './entities/persona-natural.entity';
 import { Usuario } from 'src/seguridad/usuario/entities/usuario.entity';
@@ -73,10 +81,6 @@ export class PersonaNaturalService {
     dto: CreatePersonaNaturalDto,
     idUsuario: string,
   ): Promise<PersonaNaturalCreateResponse> {
-    this.logger.log(
-      `Iniciando creación de persona natural. Tipo: ${dto.tipo_documento}, Número: ${dto.numero_documento}, Usuario: ${idUsuario}`,
-    );
-
     const complemento = dto.complemento ?? '';
     const expedido = dto.expedido ?? '';
 
@@ -90,9 +94,6 @@ export class PersonaNaturalService {
     });
 
     if (existente) {
-      this.logger.warn(
-        `Conflicto al crear persona natural: ya existe registro con Tipo: ${dto.tipo_documento}, Número: ${dto.numero_documento}, Complemento: ${complemento}, Expedido: ${expedido}`,
-      );
       throw new ConflictException(
         'Ya existe una persona registrada con esos datos documentales.',
       );
@@ -102,9 +103,6 @@ export class PersonaNaturalService {
       dto.fecha_nacimiento &&
       dto.fecha_nacimiento > new Date().toISOString().slice(0, 10)
     ) {
-      this.logger.warn(
-        `Fecha de nacimiento inválida al crear persona natural: ${dto.fecha_nacimiento}`,
-      );
       throw new BadRequestException(
         'La fecha de nacimiento no puede ser posterior a la fecha actual.',
       );
@@ -124,19 +122,12 @@ export class PersonaNaturalService {
     try {
       const guardada = await this.personaNaturalRepository.save(persona);
 
-      this.logger.log(
-        `Persona natural creada exitosamente. ID: ${guardada.id}, Usuario: ${idUsuario}`,
-      );
-
       return {
         message: 'Persona registrada exitosamente',
         id: guardada.id,
       };
     } catch (error) {
       if (esErrorDuplicado(error)) {
-        this.logger.warn(
-          `Error de duplicado al crear persona natural. Tipo: ${dto.tipo_documento}, Número: ${dto.numero_documento}`,
-        );
         throw new ConflictException(
           'Ya existe una persona registrada con esos datos documentales.',
         );
@@ -160,13 +151,9 @@ export class PersonaNaturalService {
   async listar(
     query: QueryPersonaNaturalDto,
   ): Promise<PaginatedResponse<PersonaNaturalResponse>> {
-    this.logger.log(
-      `Listando personas naturales. Página: ${query.page}, Límite: ${query.limit}, Search: ${query.search ?? 'N/A'}, Tipo: ${query.tipo_documento ?? 'N/A'}, Estado: ${query.status ?? 'ACTIVO'}`,
-    );
-
     const {
-      page,
-      limit,
+      page = 1,
+      limit = 10,
       search,
       tipo_documento,
       status,
@@ -177,101 +164,92 @@ export class PersonaNaturalService {
       sortOrder,
     } = query;
 
-    const camposOrdenamiento: Record<string, string> = {
-      createdAt: 'persona._created_at',
-      nombres: 'persona.nombres',
-      numero_documento: 'persona.numero_documento',
-      fecha_nacimiento: 'persona.fecha_nacimiento',
+    // Validar rango de fechas
+    if (startDate && endDate && startDate > endDate) {
+      throw new BadRequestException(
+        'La fecha inicial no puede ser mayor que la fecha final.',
+      );
+    }
+
+    // Definir campos permitidos para ordenar
+    const camposOrdenamiento: Record<string, keyof PersonaNatural> = {
+      createdAt: '_created_at',
+      nombres: 'nombres',
+      numero_documento: 'numero_documento',
+      fecha_nacimiento: 'fecha_nacimiento',
     };
 
-    const campoOrdenamiento =
-      camposOrdenamiento[sortBy] ?? 'persona._created_at';
+    const campoOrdenamiento = camposOrdenamiento[sortBy] ?? '_created_at';
 
-    const queryBuilder = this.personaNaturalRepository
-      .createQueryBuilder('persona')
-      .leftJoinAndSelect('persona.usuario_creador', 'usuario_creador')
-      .leftJoinAndSelect(
-        'persona.usuario_actualizador',
-        'usuario_actualizador',
-      );
+    // Construir filtros comunes
+    const filtros: FindOptionsWhere<PersonaNatural> = {};
 
-    if (search) {
-      this.logger.debug(`Aplicando filtro de búsqueda: "${search}"`);
-      queryBuilder.andWhere(
-        new Brackets((qb) => {
-          qb.where('persona.nombres ILIKE :search', {
-            search: `%${search}%`,
-          })
-            .orWhere('persona.apellido_paterno ILIKE :search', {
-              search: `%${search}%`,
-            })
-            .orWhere('persona.apellido_materno ILIKE :search', {
-              search: `%${search}%`,
-            })
-            .orWhere('persona.numero_documento ILIKE :search', {
-              search: `%${search}%`,
-            })
-            .orWhere('persona.email ILIKE :search', {
-              search: `%${search}%`,
-            });
-        }),
-      );
-    }
-
+    // Filtro por tipo de documento
     if (tipo_documento) {
-      this.logger.debug(`Aplicando filtro tipo_documento: ${tipo_documento}`);
-      queryBuilder.andWhere('persona.tipo_documento = :tipo_documento', {
-        tipo_documento,
-      });
+      filtros.tipo_documento = tipo_documento;
     }
 
-    // Aplicar filtro de estado, mostrando activos por defecto.
+    // Filtro por estado
     if (status && status !== 'TODOS') {
-      this.logger.debug(`Aplicando filtro estado: ${status}`);
-      queryBuilder.andWhere('persona.estado = :estado', {
-        estado: status,
-      });
+      filtros.estado = status;
     } else if (!status) {
-      this.logger.debug('Aplicando filtro estado por defecto: ACTIVO');
-      queryBuilder.andWhere('persona.estado = :estado', {
-        estado: 'ACTIVO',
-      });
-    } else {
-      this.logger.debug('Consultando personas naturales de todos los estados');
+      filtros.estado = 'ACTIVO';
     }
+
+    // Filtro por estado civil
     if (estado_civil) {
-      this.logger.debug(`Aplicando filtro estado_civil: ${estado_civil}`);
-      queryBuilder.andWhere('persona.estado_civil = :estado_civil', {
-        estado_civil,
-      });
+      filtros.estado_civil = estado_civil;
     }
 
-    if (startDate) {
-      this.logger.debug(`Aplicando filtro startDate: ${startDate}`);
-      queryBuilder.andWhere('persona._created_at >= :startDate', {
-        startDate: `${startDate} 00:00:00`,
-      });
+    // Filtro por rango de fechas (Bolivia UTC-4)
+    if (startDate && endDate) {
+      filtros._created_at = And(
+        MoreThanOrEqual(new Date(`${startDate}T00:00:00.000`)),
+        LessThanOrEqual(new Date(`${endDate}T23:59:59.999`)),
+      );
+    } else if (startDate) {
+      filtros._created_at = MoreThanOrEqual(
+        new Date(`${startDate}T00:00:00.000`),
+      );
+    } else if (endDate) {
+      filtros._created_at = LessThanOrEqual(
+        new Date(`${endDate}T23:59:59.999`),
+      );
     }
 
-    if (endDate) {
-      this.logger.debug(`Aplicando filtro endDate: ${endDate}`);
-      queryBuilder.andWhere('persona._created_at <= :endDate', {
-        endDate: `${endDate} 23:59:59.999`,
-      });
+    // Construir condiciones OR para búsqueda general
+    const condiciones: FindOptionsWhere<PersonaNatural>[] = [];
+
+    if (search?.trim()) {
+      const busqueda = ILike(`%${search.trim()}%`);
+
+      condiciones.push(
+        { ...filtros, nombres: busqueda },
+        { ...filtros, apellido_paterno: busqueda },
+        { ...filtros, apellido_materno: busqueda },
+        { ...filtros, numero_documento: busqueda },
+        { ...filtros, email: busqueda },
+      );
+    } else {
+      condiciones.push(filtros);
     }
 
     try {
-      const [personas, total] = await queryBuilder
-        .orderBy(campoOrdenamiento, sortOrder ?? 'DESC')
-        .skip((page - 1) * limit)
-        .take(limit)
-        .getManyAndCount();
+      const [personas, total] =
+        await this.personaNaturalRepository.findAndCount({
+          where: condiciones,
+          relations: {
+            usuario_creador: true,
+            usuario_actualizador: true,
+          },
+          order: {
+            [campoOrdenamiento]: sortOrder ?? 'DESC',
+          },
+          skip: (page - 1) * limit,
+          take: limit,
+        });
 
       const totalPages = Math.ceil(total / limit);
-
-      this.logger.log(
-        `Listado de personas naturales obtenido. Total: ${total}, Página: ${page}/${totalPages || 1}, Items devueltos: ${personas.length}`,
-      );
 
       return {
         items: personas.map((persona) => mapearRespuesta(persona)),
@@ -289,6 +267,7 @@ export class PersonaNaturalService {
         `Error al listar personas naturales. Página: ${page}, Límite: ${limit}`,
         error instanceof Error ? error.stack : String(error),
       );
+
       throw error;
     }
   }
@@ -303,51 +282,31 @@ export class PersonaNaturalService {
   async buscarPorDocumento(
     dto: BuscarPersonaNaturalDto,
   ): Promise<BuscarPersonaNaturalResponse> {
-    this.logger.log(
-      `Buscando persona natural por documento. Tipo: ${dto.tipo_documento}, Número: ${dto.numero_documento}, Complemento: ${dto.complemento ?? 'N/A'}, Expedido: ${dto.expedido ?? 'N/A'}`,
-    );
-
-    const queryBuilder = this.personaNaturalRepository
-      .createQueryBuilder('persona')
-      .leftJoinAndSelect('persona.usuario_creador', 'usuario_creador')
-      .leftJoinAndSelect('persona.usuario_actualizador', 'usuario_actualizador')
-      .where('persona.tipo_documento = :tipo_documento', {
-        tipo_documento: dto.tipo_documento,
-      })
-      .andWhere('persona.numero_documento = :numero_documento', {
-        numero_documento: dto.numero_documento,
-      });
+    const where: FindOptionsWhere<PersonaNatural> = {
+      tipo_documento: dto.tipo_documento,
+      numero_documento: dto.numero_documento,
+    };
 
     if (dto.complemento !== undefined) {
-      queryBuilder.andWhere('persona.complemento = :complemento', {
-        complemento: dto.complemento,
-      });
+      where.complemento = dto.complemento;
     }
 
     if (dto.expedido !== undefined) {
-      queryBuilder.andWhere('persona.expedido = :expedido', {
-        expedido: dto.expedido,
-      });
+      where.expedido = dto.expedido;
     }
 
-    try {
-      const personas = await queryBuilder.getMany();
+    const personas = await this.personaNaturalRepository.find({
+      where,
+      relations: {
+        usuario_creador: true,
+        usuario_actualizador: true,
+      },
+    });
 
-      this.logger.log(
-        `Búsqueda por documento finalizada. Tipo: ${dto.tipo_documento}, Número: ${dto.numero_documento}, Resultados: ${personas.length}`,
-      );
-
-      return {
-        encontrada: personas.length > 0,
-        persona: personas.map((persona) => mapearRespuesta(persona)),
-      };
-    } catch (error) {
-      this.logger.error(
-        `Error al buscar persona natural por documento. Tipo: ${dto.tipo_documento}, Número: ${dto.numero_documento}`,
-        error instanceof Error ? error.stack : String(error),
-      );
-      throw error;
-    }
+    return {
+      encontrada: personas.length > 0,
+      persona: personas.map((persona) => mapearRespuesta(persona)),
+    };
   }
 
   /**
@@ -358,26 +317,22 @@ export class PersonaNaturalService {
    * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   async buscarPorId(id: string): Promise<PersonaNaturalResponse> {
-    this.logger.log(`Buscando persona natural por ID: ${id}`);
-
-    const persona = await this.personaNaturalRepository
-      .createQueryBuilder('persona')
-      .leftJoinAndSelect('persona.usuario_creador', 'usuario_creador')
-      .leftJoinAndSelect('persona.usuario_actualizador', 'usuario_actualizador')
-      .where('persona.id = :id', { id })
-      .getOne();
+    const persona = await this.personaNaturalRepository.findOne({
+      where: { id },
+      relations: {
+        usuario_creador: true,
+        usuario_actualizador: true,
+      },
+    });
 
     if (!persona) {
-      this.logger.warn(`Persona natural no encontrada con ID: ${id}`);
       throw new NotFoundException(
         'No se encontró la persona natural solicitada.',
       );
     }
 
-    this.logger.log(`Persona natural encontrada. ID: ${id}`);
     return mapearRespuesta(persona);
   }
-
   /**
    * Actualiza la información de una persona natural existente.
    * Verifica su estado, la fecha de nacimiento y la unicidad
@@ -390,27 +345,17 @@ export class PersonaNaturalService {
     dto: UpdatePersonaNaturalDto,
     idUsuario: string,
   ): Promise<PersonaNaturalMessageResponse> {
-    this.logger.log(
-      `Iniciando actualización de persona natural. ID: ${id}, Usuario: ${idUsuario}`,
-    );
-
     const persona = await this.personaNaturalRepository.findOne({
       where: { id: id },
     });
 
     if (!persona) {
-      this.logger.warn(
-        `No se encontró persona natural para actualizar. ID: ${id}`,
-      );
       throw new NotFoundException(
         'No se encontró la persona natural solicitada.',
       );
     }
 
     if (persona.estado !== 'ACTIVO') {
-      this.logger.warn(
-        `Intento de actualización sobre persona inactiva. ID: ${id}, Estado: ${persona.estado}`,
-      );
       throw new BadRequestException(
         'No se puede actualizar una persona inactiva.',
       );
@@ -422,9 +367,6 @@ export class PersonaNaturalService {
       fechaNacimiento &&
       fechaNacimiento > new Date().toISOString().slice(0, 10)
     ) {
-      this.logger.warn(
-        `Fecha de nacimiento inválida al actualizar persona natural. ID: ${id}, Fecha: ${fechaNacimiento}`,
-      );
       throw new BadRequestException(
         'La fecha de nacimiento no puede ser posterior a la fecha actual.',
       );
@@ -437,10 +379,6 @@ export class PersonaNaturalService {
       dto.expedido !== undefined;
 
     if (identidadCambio) {
-      this.logger.debug(
-        `Se detectó cambio en datos documentales. Validando unicidad para ID: ${id}`,
-      );
-
       const identidad = {
         tipo_documento: dto.tipo_documento ?? persona.tipo_documento,
         numero_documento: dto.numero_documento ?? persona.numero_documento,
@@ -448,27 +386,17 @@ export class PersonaNaturalService {
         expedido: dto.expedido ?? persona.expedido,
       };
 
-      const existente = await this.personaNaturalRepository
-        .createQueryBuilder('persona')
-        .where('persona.tipo_documento = :tipo_documento', {
+      const existente = await this.personaNaturalRepository.findOne({
+        where: {
           tipo_documento: identidad.tipo_documento,
-        })
-        .andWhere('persona.numero_documento = :numero_documento', {
           numero_documento: identidad.numero_documento,
-        })
-        .andWhere('persona.complemento = :complemento', {
           complemento: identidad.complemento,
-        })
-        .andWhere('persona.expedido = :expedido', {
           expedido: identidad.expedido,
-        })
-        .andWhere('persona.id != :id', { id })
-        .getOne();
+          id: Not(id),
+        },
+      });
 
       if (existente) {
-        this.logger.warn(
-          `Conflicto al actualizar: ya existe otra persona con los mismos datos documentales. ID: ${id}, Tipo: ${identidad.tipo_documento}, Número: ${identidad.numero_documento}`,
-        );
         throw new ConflictException(
           'Ya existe otra persona registrada con esos datos documentales.',
         );
@@ -483,18 +411,11 @@ export class PersonaNaturalService {
     try {
       await this.personaNaturalRepository.save(persona);
 
-      this.logger.log(
-        `Persona natural actualizada correctamente. ID: ${id}, Usuario: ${idUsuario}`,
-      );
-
       return {
         message: 'Persona natural actualizada correctamente.',
       };
     } catch (error) {
       if (esErrorDuplicado(error)) {
-        this.logger.warn(
-          `Error de duplicado al actualizar persona natural. ID: ${id}`,
-        );
         throw new ConflictException(
           'Ya existe otra persona registrada con esos datos documentales.',
         );
@@ -519,18 +440,11 @@ export class PersonaNaturalService {
     id: string,
     idUsuario: string,
   ): Promise<PersonaNaturalMessageResponse> {
-    this.logger.log(
-      `Iniciando cambio de estado de persona natural. ID: ${id}, Usuario: ${idUsuario}`,
-    );
-
     const persona = await this.personaNaturalRepository.findOne({
       where: { id: id },
     });
 
     if (!persona) {
-      this.logger.warn(
-        `No se encontró persona natural para cambiar estado. ID: ${id}`,
-      );
       throw new NotFoundException(
         'No se encontró la persona natural solicitada.',
       );
@@ -554,11 +468,6 @@ export class PersonaNaturalService {
 
     try {
       await this.personaNaturalRepository.save(persona);
-
-      this.logger.log(
-        `Estado de persona natural cambiado correctamente. ID: ${id}, Estado anterior: ${estadoAnterior}, Estado nuevo: ${persona.estado}, Usuario: ${idUsuario}`,
-      );
-
       return {
         message: `Registro de la persona natural ${persona.estado === 'ACTIVO' ? 'activado' : 'inactivado'} correctamente.`,
       };

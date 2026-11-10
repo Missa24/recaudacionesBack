@@ -16,7 +16,15 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Brackets, Repository } from 'typeorm';
+import {
+  And,
+  FindOptionsWhere,
+  ILike,
+  LessThanOrEqual,
+  MoreThanOrEqual,
+  Not,
+  Repository,
+} from 'typeorm';
 
 import { PersonaJuridica } from './entities/persona-juridica.entity';
 import { Usuario } from 'src/seguridad/usuario/entities/usuario.entity';
@@ -73,18 +81,11 @@ export class PersonaJuridicaService {
     dto: CreatePersonaJuridicaDto,
     idUsuario: string,
   ): Promise<PersonaJuridicaCreateResponse> {
-    this.logger.log(
-      `Iniciando creación de persona jurídica. NIT: ${dto.nit}, Razón social: ${dto.razon_social}, Usuario: ${idUsuario}`,
-    );
-
     const existente = await this.personaJuridicaRepository.findOne({
       where: { nit: dto.nit },
     });
 
     if (existente) {
-      this.logger.warn(
-        `Conflicto al crear persona jurídica: ya existe registro con NIT ${dto.nit}`,
-      );
       throw new ConflictException(
         'Ya existe una persona jurídica registrada con ese NIT.',
       );
@@ -102,19 +103,12 @@ export class PersonaJuridicaService {
     try {
       const guardada = await this.personaJuridicaRepository.save(persona);
 
-      this.logger.log(
-        `Persona jurídica creada exitosamente. ID: ${guardada.id}, NIT: ${guardada.nit}, Usuario: ${idUsuario}`,
-      );
-
       return {
         message: 'Persona jurídica registrada exitosamente.',
         id: guardada.id,
       };
     } catch (error) {
       if (esErrorDuplicado(error)) {
-        this.logger.warn(
-          `Error de duplicado al crear persona jurídica. NIT: ${dto.nit}`,
-        );
         throw new ConflictException(
           'Ya existe una persona jurídica registrada con ese NIT.',
         );
@@ -137,13 +131,9 @@ export class PersonaJuridicaService {
   async listar(
     query: QueryPersonaJuridicaDto,
   ): Promise<PaginatedResponse<PersonaJuridicaResponse>> {
-    this.logger.log(
-      `Listando personas jurídicas. Página: ${query.page}, Límite: ${query.limit}, Search: ${query.search ?? 'N/A'}, Estado: ${query.status ?? 'ACTIVO'}, StartDate: ${query.startDate ?? 'N/A'}, EndDate: ${query.endDate ?? 'N/A'}`,
-    );
-
     const {
-      page,
-      limit,
+      page = 1,
+      limit = 10,
       search,
       status,
       startDate,
@@ -152,81 +142,78 @@ export class PersonaJuridicaService {
       sortOrder,
     } = query;
 
-    const camposOrdenamiento: Record<string, string> = {
-      createdAt: 'persona._created_at',
-      nit: 'persona.nit',
-      razon_social: 'persona.razon_social',
+    // Validar rango de fechas
+    if (startDate && endDate && startDate > endDate) {
+      throw new BadRequestException(
+        'La fecha inicial no puede ser mayor que la fecha final.',
+      );
+    }
+
+    // Definir campos permitidos para ordenar
+    const camposOrdenamiento: Record<string, keyof PersonaJuridica> = {
+      createdAt: '_created_at',
+      nit: 'nit',
+      razon_social: 'razon_social',
     };
 
-    const campoOrdenamiento =
-      camposOrdenamiento[sortBy] ?? 'persona._created_at';
+    const campoOrdenamiento = camposOrdenamiento[sortBy] ?? '_created_at';
 
-    const queryBuilder = this.personaJuridicaRepository
-      .createQueryBuilder('persona')
-      .leftJoinAndSelect('persona.usuario_creador', 'usuario_creador')
-      .leftJoinAndSelect(
-        'persona.usuario_actualizador',
-        'usuario_actualizador',
-      );
+    // Construir filtros
+    const filtros: FindOptionsWhere<PersonaJuridica> = {};
 
-    if (search) {
-      this.logger.debug(`Aplicando filtro de búsqueda: "${search}"`);
-      queryBuilder.andWhere(
-        new Brackets((qb) => {
-          qb.where('persona.nit ILIKE :search', {
-            search: `%${search}%`,
-          })
-            .orWhere('persona.razon_social ILIKE :search', {
-              search: `%${search}%`,
-            })
-            .orWhere('persona.email ILIKE :search', {
-              search: `%${search}%`,
-            });
-        }),
-      );
-    }
-
-    // Aplicar filtro de estado, mostrando activos por defecto.
+    // Filtro por estado
     if (status && status !== 'TODOS') {
-      this.logger.debug(`Aplicando filtro estado: ${status}`);
-      queryBuilder.andWhere('persona.estado = :estado', {
-        estado: status,
-      });
+      filtros.estado = status;
     } else if (!status) {
-      this.logger.debug('Aplicando filtro estado por defecto: ACTIVO');
-      queryBuilder.andWhere('persona.estado = :estado', {
-        estado: 'ACTIVO',
-      });
+      filtros.estado = 'ACTIVO';
+    }
+
+    // Filtro por rango de fechas (horario local de Bolivia)
+    if (startDate && endDate) {
+      filtros._created_at = And(
+        MoreThanOrEqual(new Date(`${startDate}T00:00:00.000`)),
+        LessThanOrEqual(new Date(`${endDate}T23:59:59.999`)),
+      );
+    } else if (startDate) {
+      filtros._created_at = MoreThanOrEqual(
+        new Date(`${startDate}T00:00:00.000`),
+      );
+    } else if (endDate) {
+      filtros._created_at = LessThanOrEqual(
+        new Date(`${endDate}T23:59:59.999`),
+      );
+    }
+    // Construir condiciones de búsqueda OR
+    const condiciones: FindOptionsWhere<PersonaJuridica>[] = [];
+
+    if (search?.trim()) {
+      const busqueda = ILike(`%${search.trim()}%`);
+
+      condiciones.push(
+        { ...filtros, nit: busqueda },
+        { ...filtros, razon_social: busqueda },
+        { ...filtros, email: busqueda },
+      );
     } else {
-      this.logger.debug('Consultando personas juridicas de todos los estados');
-    }
-
-    if (startDate) {
-      this.logger.debug(`Aplicando filtro startDate: ${startDate}`);
-      queryBuilder.andWhere('persona._created_at >= :startDate', {
-        startDate: `${startDate} 00:00:00`,
-      });
-    }
-
-    if (endDate) {
-      this.logger.debug(`Aplicando filtro endDate: ${endDate}`);
-      queryBuilder.andWhere('persona._created_at <= :endDate', {
-        endDate: `${endDate} 23:59:59.999`,
-      });
+      condiciones.push(filtros);
     }
 
     try {
-      const [personas, total] = await queryBuilder
-        .orderBy(campoOrdenamiento, sortOrder ?? 'DESC')
-        .skip((page - 1) * limit)
-        .take(limit)
-        .getManyAndCount();
+      const [personas, total] =
+        await this.personaJuridicaRepository.findAndCount({
+          where: condiciones,
+          relations: {
+            usuario_creador: true,
+            usuario_actualizador: true,
+          },
+          order: {
+            [campoOrdenamiento]: sortOrder ?? 'DESC',
+          },
+          skip: (page - 1) * limit,
+          take: limit,
+        });
 
       const totalPages = Math.ceil(total / limit);
-
-      this.logger.log(
-        `Listado de personas jurídicas obtenido. Total: ${total}, Página: ${page}/${totalPages || 1}, Items devueltos: ${personas.length}`,
-      );
 
       return {
         items: personas.map((persona) => mapearRespuesta(persona)),
@@ -244,6 +231,7 @@ export class PersonaJuridicaService {
         `Error al listar personas jurídicas. Página: ${page}, Límite: ${limit}`,
         error instanceof Error ? error.stack : String(error),
       );
+
       throw error;
     }
   }
@@ -257,22 +245,17 @@ export class PersonaJuridicaService {
   async buscarPorNit(
     dto: BuscarPersonaJuridicaDto,
   ): Promise<BuscarPersonaJuridicaResponse> {
-    this.logger.log(`Buscando persona jurídica por NIT: ${dto.nit}`);
+    const persona = await this.personaJuridicaRepository.findOne({
+      where: { nit: dto.nit },
+      relations: {
+        usuario_creador: true,
+        usuario_actualizador: true,
+      },
+    });
 
-    const persona = await this.personaJuridicaRepository
-      .createQueryBuilder('persona')
-      .leftJoinAndSelect('persona.usuario_creador', 'usuario_creador')
-      .leftJoinAndSelect('persona.usuario_actualizador', 'usuario_actualizador')
-      .where('persona.nit = :nit', { nit: dto.nit })
-      .getOne();
-
-    if (persona) {
-      this.logger.log(
-        `Persona jurídica encontrada por NIT: ${dto.nit}, ID: ${persona.id}`,
-      );
-    } else {
-      this.logger.warn(
-        `Persona jurídica no encontrada para el NIT: ${dto.nit}`,
+    if (!persona) {
+      throw new NotFoundException(
+        'No se encontró la persona jurídica solicitada.',
       );
     }
 
@@ -289,23 +272,20 @@ export class PersonaJuridicaService {
    * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   async buscarPorId(id: string): Promise<PersonaJuridicaResponse> {
-    this.logger.log(`Buscando persona jurídica por ID: ${id}`);
-
-    const persona = await this.personaJuridicaRepository
-      .createQueryBuilder('persona')
-      .leftJoinAndSelect('persona.usuario_creador', 'usuario_creador')
-      .leftJoinAndSelect('persona.usuario_actualizador', 'usuario_actualizador')
-      .where('persona.id = :id', { id })
-      .getOne();
+    const persona = await this.personaJuridicaRepository.findOne({
+      where: { id },
+      relations: {
+        usuario_creador: true,
+        usuario_actualizador: true,
+      },
+    });
 
     if (!persona) {
-      this.logger.warn(`Persona jurídica no encontrada con ID: ${id}`);
       throw new NotFoundException(
         'No se encontró la persona jurídica solicitada.',
       );
     }
 
-    this.logger.log(`Persona jurídica encontrada. ID: ${id}`);
     return mapearRespuesta(persona);
   }
 
@@ -320,47 +300,31 @@ export class PersonaJuridicaService {
     dto: UpdatePersonaJuridicaDto,
     idUsuario: string,
   ): Promise<PersonaJuridicaMessageResponse> {
-    this.logger.log(
-      `Iniciando actualización de persona jurídica. ID: ${id}, Usuario: ${idUsuario}`,
-    );
-
     const persona = await this.personaJuridicaRepository.findOne({
       where: { id: id },
     });
 
     if (!persona) {
-      this.logger.warn(
-        `No se encontró persona jurídica para actualizar. ID: ${id}`,
-      );
       throw new NotFoundException(
         'No se encontró la persona jurídica solicitada.',
       );
     }
 
     if (persona.estado !== 'ACTIVO') {
-      this.logger.warn(
-        `Intento de actualización sobre persona jurídica inactiva. ID: ${id}, Estado: ${persona.estado}`,
-      );
       throw new BadRequestException(
         'No se puede actualizar una persona jurídica inactiva.',
       );
     }
 
     if (dto.nit !== undefined && dto.nit !== persona.nit) {
-      this.logger.debug(
-        `Cambio de NIT detectado. Anterior: ${persona.nit}, Nuevo: ${dto.nit}`,
-      );
-
-      const existente = await this.personaJuridicaRepository
-        .createQueryBuilder('persona')
-        .where('persona.nit = :nit', { nit: dto.nit })
-        .andWhere('persona.id != :id', { id })
-        .getOne();
+      const existente = await this.personaJuridicaRepository.findOne({
+        where: {
+          nit: dto.nit,
+          id: Not(id),
+        },
+      });
 
       if (existente) {
-        this.logger.warn(
-          `Conflicto al actualizar NIT: ya existe otra persona jurídica con NIT ${dto.nit}. ID actual: ${id}`,
-        );
         throw new ConflictException(
           'Ya existe otra persona jurídica registrada con ese NIT.',
         );
@@ -382,18 +346,11 @@ export class PersonaJuridicaService {
     try {
       await this.personaJuridicaRepository.save(persona);
 
-      this.logger.log(
-        `Persona jurídica actualizada correctamente. ID: ${id}, NIT: ${persona.nit}, Usuario: ${idUsuario}`,
-      );
-
       return {
         message: 'Persona jurídica actualizada correctamente.',
       };
     } catch (error) {
       if (esErrorDuplicado(error)) {
-        this.logger.warn(
-          `Error de duplicado al actualizar persona jurídica. ID: ${id}, NIT: ${dto.nit ?? persona.nit}`,
-        );
         throw new ConflictException(
           'Ya existe otra persona jurídica registrada con ese NIT.',
         );
@@ -418,18 +375,11 @@ export class PersonaJuridicaService {
     id: string,
     idUsuario: string,
   ): Promise<PersonaJuridicaMessageResponse> {
-    this.logger.log(
-      `Iniciando cambio de estado de persona jurídica. ID: ${id}, Usuario: ${idUsuario}`,
-    );
-
     const persona = await this.personaJuridicaRepository.findOne({
       where: { id: id },
     });
 
     if (!persona) {
-      this.logger.warn(
-        `No se encontró persona jurídica para cambiar estado. ID: ${id}`,
-      );
       throw new NotFoundException(
         'No se encontró la persona jurídica solicitada.',
       );
@@ -454,10 +404,6 @@ export class PersonaJuridicaService {
 
     try {
       await this.personaJuridicaRepository.save(persona);
-
-      this.logger.log(
-        `Estado de persona jurídica cambiado correctamente. ID: ${id}, Estado anterior: ${estadoAnterior}, Estado nuevo: ${persona.estado}, Usuario: ${idUsuario}`,
-      );
 
       return {
         message: `Registro de la Persona Juridica ${persona.estado === 'ACTIVO' ? 'activado' : 'inactivado'} correctamente.`,

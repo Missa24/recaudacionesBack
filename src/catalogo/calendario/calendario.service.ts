@@ -16,7 +16,17 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Brackets, DataSource, Repository } from 'typeorm';
+import {
+  Between,
+  DataSource,
+  FindOptionsWhere,
+  ILike,
+  In,
+  LessThanOrEqual,
+  MoreThanOrEqual,
+  Not,
+  Repository,
+} from 'typeorm';
 
 import { Calendario } from './entities/calendario.entity';
 import { Usuario } from 'src/seguridad/usuario/entities/usuario.entity';
@@ -79,10 +89,6 @@ export class CalendarioService {
     dto: CreateCalendarioDto,
     idUsuario: string,
   ): Promise<CalendarioCreateResponse> {
-    this.logger.log(
-      `Iniciando creación de fecha en calendario. Fecha: ${dto.fecha}, Usuario: ${idUsuario}`,
-    );
-
     validarFecha(dto.fecha);
 
     const existente = await this.calendarioRepository.findOne({
@@ -90,9 +96,6 @@ export class CalendarioService {
     });
 
     if (existente) {
-      this.logger.warn(
-        `Conflicto al crear fecha de calendario: ya existe registro para la fecha ${dto.fecha}`,
-      );
       throw new ConflictException(
         'La fecha ya se encuentra registrada en el calendario.',
       );
@@ -112,19 +115,12 @@ export class CalendarioService {
     try {
       const guardado = await this.calendarioRepository.save(calendario);
 
-      this.logger.log(
-        `Fecha registrada correctamente en calendario. ID: ${guardado.id}, Fecha: ${guardado.fecha}, Habil: ${guardado.habil}, Usuario: ${idUsuario}`,
-      );
-
       return {
         message: 'La fecha fue registrada correctamente.',
         id: guardado.id,
       };
     } catch (error) {
       if (esErrorDuplicado(error)) {
-        this.logger.warn(
-          `Error de duplicado al crear fecha de calendario. Fecha: ${dto.fecha}`,
-        );
         throw new ConflictException(
           'La fecha ya se encuentra registrada en el calendario.',
         );
@@ -149,10 +145,6 @@ export class CalendarioService {
     dto: CreateCalendarioRangoDto,
     idUsuario: string,
   ): Promise<CalendarioLoteResponse> {
-    this.logger.log(
-      `Iniciando creación de rango. Desde: ${dto.fecha_inicio}, Hasta: ${dto.fecha_fin}, Usuario: ${idUsuario}`,
-    );
-
     // 1. Validaciones
     validarFecha(dto.fecha_inicio);
     validarFecha(dto.fecha_fin);
@@ -175,12 +167,10 @@ export class CalendarioService {
           const repository = manager.getRepository(Calendario);
 
           // 2. Consultar fechas existentes
-          const existentes = await repository
-            .createQueryBuilder('calendario')
-            .select('calendario.fecha', 'fecha')
-            .where('calendario.fecha IN (:...fechas)', { fechas })
-            .getRawMany<{ fecha: string }>();
-
+          const existentes = await repository.find({
+            where: { fecha: In(fechas) },
+            select: { fecha: true },
+          });
           const setExistentes = new Set(existentes.map(({ fecha }) => fecha));
 
           // 3. Separar fechas nuevas y omitidas
@@ -190,10 +180,6 @@ export class CalendarioService {
 
           const fechasOmitidas = fechas.filter((fecha) =>
             setExistentes.has(fecha),
-          );
-
-          this.logger.debug(
-            `Rango procesado: ${fechas.length} totales, ${fechasNuevas.length} nuevas, ${fechasOmitidas.length} omitidas.`,
           );
 
           // 4. Insertar únicamente fechas nuevas
@@ -236,10 +222,6 @@ export class CalendarioService {
         },
       );
 
-      this.logger.log(
-        `Rango finalizado. Insertados: ${resultado.total}, Omitidos: ${resultado.fechas_omitidas?.length}, Usuario: ${idUsuario}`,
-      );
-
       return resultado;
     } catch (error) {
       this.logger.error(
@@ -257,16 +239,13 @@ export class CalendarioService {
    *
    * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
+
   async listar(
     query: QueryCalendarioDto,
   ): Promise<PaginatedResponse<CalendarioResponse>> {
-    this.logger.log(
-      `Listando calendario. Página: ${query.page}, Límite: ${query.limit}, Search: ${query.search ?? 'N/A'}, Estado: ${query.status ?? 'ACTIVO'}, Habil: ${query.habil ?? 'N/A'}, StartDate: ${query.startDate ?? 'N/A'}, EndDate: ${query.endDate ?? 'N/A'}`,
-    );
-
     const {
-      page,
-      limit,
+      page = 1,
+      limit = 10,
       search,
       status,
       habil,
@@ -276,99 +255,86 @@ export class CalendarioService {
       sortOrder,
     } = query;
 
-    const camposOrdenamiento: Record<string, string> = {
-      fecha: 'calendario.fecha',
-      habil: 'calendario.habil',
-      descripcion: 'calendario.descripcion',
-      createdAt: 'calendario._created_at',
-      updatedAt: 'calendario._updated_at',
-    };
-
-    const campoOrdenamiento =
-      camposOrdenamiento[sortBy ?? 'fecha'] ?? 'calendario.fecha';
-
-    const queryBuilder = this.calendarioRepository
-      .createQueryBuilder('calendario')
-      .leftJoinAndSelect('calendario.usuario_creador', 'usuario_creador')
-      .leftJoinAndSelect(
-        'calendario.usuario_actualizador',
-        'usuario_actualizador',
-      );
-
-    if (search) {
-      this.logger.debug(`Aplicando filtro de búsqueda: "${search}"`);
-      queryBuilder.andWhere(
-        new Brackets((qb) => {
-          qb.where('CAST(calendario.fecha AS TEXT) ILIKE :search', {
-            search: `%${search}%`,
-          }).orWhere('calendario.descripcion ILIKE :search', {
-            search: `%${search}%`,
-          });
-        }),
-      );
-    }
-
-    // Aplicar filtro de estado, mostrando activos por defecto.
-    if (status && status !== 'TODOS') {
-      this.logger.debug(`Aplicando filtro estado: ${status}`);
-      queryBuilder.andWhere('calendario.estado = :estado', {
-        estado: status,
-      });
-    } else if (!status) {
-      this.logger.debug('Aplicando filtro estado por defecto: ACTIVO');
-      queryBuilder.andWhere('calendario.estado = :estado', {
-        estado: 'ACTIVO',
-      });
-    } else {
-      this.logger.debug('Consultando el Calendario de todos los estados');
-    }
-
-    if (habil !== undefined) {
-      this.logger.debug(`Aplicando filtro habil: ${habil}`);
-      queryBuilder.andWhere('calendario.habil = :habil', {
-        habil,
-      });
-    }
-
+    // Validar fechas
     if (startDate) {
-      this.logger.debug(`Aplicando filtro startDate: ${startDate}`);
       validarFecha(startDate);
-
-      queryBuilder.andWhere('calendario.fecha >= :startDate', {
-        startDate,
-      });
     }
 
     if (endDate) {
-      this.logger.debug(`Aplicando filtro endDate: ${endDate}`);
       validarFecha(endDate);
-
-      queryBuilder.andWhere('calendario.fecha <= :endDate', {
-        endDate,
-      });
     }
 
+    // Validar rango de fechas
     if (startDate && endDate && startDate > endDate) {
-      this.logger.warn(
-        `Rango de fechas inválido: startDate ${startDate} > endDate ${endDate}`,
-      );
       throw new BadRequestException(
         'La fecha inicial no puede ser posterior a la fecha final.',
       );
     }
 
+    // Campos permitidos para ordenar
+    const camposOrdenamiento: Record<string, keyof Calendario> = {
+      fecha: 'fecha',
+      habil: 'habil',
+      descripcion: 'descripcion',
+      createdAt: '_created_at',
+      updatedAt: '_updated_at',
+    };
+
+    const campoOrdenamiento = camposOrdenamiento[sortBy ?? 'fecha'] ?? 'fecha';
+
+    // Construir filtros comunes
+    const filtros: FindOptionsWhere<Calendario> = {};
+
+    // Filtro por estado
+    if (status && status !== 'TODOS') {
+      filtros.estado = status;
+    } else if (!status) {
+      filtros.estado = 'ACTIVO';
+    }
+
+    // Filtro por día hábil
+    if (habil !== undefined) {
+      filtros.habil = habil;
+    }
+
+    // Filtro por rango de fechas
+    if (startDate && endDate) {
+      filtros.fecha = Between(startDate, endDate);
+    } else if (startDate) {
+      filtros.fecha = MoreThanOrEqual(startDate);
+    } else if (endDate) {
+      filtros.fecha = LessThanOrEqual(endDate);
+    }
+
+    // Construir condiciones OR para búsqueda
+    const condiciones: FindOptionsWhere<Calendario>[] = [];
+
+    if (search?.trim()) {
+      const busqueda = ILike(`%${search.trim()}%`);
+
+      condiciones.push(
+        { ...filtros, descripcion: busqueda },
+        { ...filtros, fecha: ILike(`%${search.trim()}%`) },
+      );
+    } else {
+      condiciones.push(filtros);
+    }
+
     try {
-      const [registros, total] = await queryBuilder
-        .orderBy(campoOrdenamiento, sortOrder ?? 'DESC')
-        .skip((page - 1) * limit)
-        .take(limit)
-        .getManyAndCount();
+      const [registros, total] = await this.calendarioRepository.findAndCount({
+        where: condiciones,
+        relations: {
+          usuario_creador: true,
+          usuario_actualizador: true,
+        },
+        order: {
+          [campoOrdenamiento]: sortOrder ?? 'DESC',
+        },
+        skip: (page - 1) * limit,
+        take: limit,
+      });
 
       const totalPages = Math.ceil(total / limit);
-
-      this.logger.log(
-        `Listado de calendario obtenido. Total: ${total}, Página: ${page}/${totalPages || 1}, Items devueltos: ${registros.length}`,
-      );
 
       return {
         items: registros.map((registro) => mapearCalendario(registro)),
@@ -386,10 +352,10 @@ export class CalendarioService {
         `Error al listar calendario. Página: ${page}, Límite: ${limit}`,
         error instanceof Error ? error.stack : String(error),
       );
+
       throw error;
     }
   }
-
   /**
    * Busca una fecha específica y determina su condición
    * de día hábil según la configuración o el día de la semana.
@@ -397,25 +363,20 @@ export class CalendarioService {
    * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   async buscarPorFecha(fecha: string): Promise<CalendarioFechaResponse> {
-    this.logger.log(`Buscando fecha en calendario: ${fecha}`);
-
     validarFecha(fecha);
 
-    const calendario = await this.calendarioRepository
-      .createQueryBuilder('calendario')
-      .leftJoinAndSelect('calendario.usuario_creador', 'usuario_creador')
-      .leftJoinAndSelect(
-        'calendario.usuario_actualizador',
-        'usuario_actualizador',
-      )
-      .where('calendario.fecha = :fecha', { fecha })
-      .andWhere('calendario.estado = :estado', { estado: 'ACTIVO' })
-      .getOne();
+    const calendario = await this.calendarioRepository.findOne({
+      where: {
+        fecha,
+        estado: 'ACTIVO',
+      },
+      relations: {
+        usuario_creador: true,
+        usuario_actualizador: true,
+      },
+    });
 
     if (calendario) {
-      this.logger.log(
-        `Fecha encontrada en configuración. Fecha: ${fecha}, Habil: ${calendario.habil}`,
-      );
       return {
         fecha: calendario.fecha,
         habil: calendario.habil,
@@ -426,9 +387,6 @@ export class CalendarioService {
     }
 
     const habilCalculado = calcularDiaHabil(fecha);
-    this.logger.log(
-      `Fecha no configurada, se calcula por día de semana. Fecha: ${fecha}, Habil: ${habilCalculado}`,
-    );
 
     return {
       fecha,
@@ -446,28 +404,20 @@ export class CalendarioService {
    * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   async buscarPorId(id: string): Promise<CalendarioResponse> {
-    this.logger.log(`Buscando registro de calendario por ID: ${id}`);
-
-    const calendario = await this.calendarioRepository
-      .createQueryBuilder('calendario')
-      .leftJoinAndSelect('calendario.usuario_creador', 'usuario_creador')
-      .leftJoinAndSelect(
-        'calendario.usuario_actualizador',
-        'usuario_actualizador',
-      )
-      .where('calendario.id = :id', { id })
-      .getOne();
+    const calendario = await this.calendarioRepository.findOne({
+      where: { id },
+      relations: {
+        usuario_creador: true,
+        usuario_actualizador: true,
+      },
+    });
 
     if (!calendario) {
-      this.logger.warn(`Registro de calendario no encontrado. ID: ${id}`);
       throw new NotFoundException(
         'No se encontró el registro del calendario solicitado.',
       );
     }
 
-    this.logger.log(
-      `Registro de calendario encontrado. ID: ${id}, Fecha: ${calendario.fecha}`,
-    );
     return mapearCalendario(calendario);
   }
 
@@ -482,48 +432,33 @@ export class CalendarioService {
     dto: UpdateCalendarioDto,
     idUsuario: string,
   ): Promise<CalendarioMessageResponse> {
-    this.logger.log(
-      `Iniciando actualización de registro de calendario. ID: ${id}, Usuario: ${idUsuario}`,
-    );
-
     const calendario = await this.calendarioRepository.findOne({
       where: { id },
     });
 
     if (!calendario) {
-      this.logger.warn(
-        `No se encontró registro de calendario para actualizar. ID: ${id}`,
-      );
       throw new NotFoundException(
         'No se encontró el registro del calendario solicitado.',
       );
     }
 
     if (calendario.estado !== 'ACTIVO') {
-      this.logger.warn(
-        `Intento de actualización sobre registro inactivo del calendario. ID: ${id}, Estado: ${calendario.estado}`,
-      );
       throw new BadRequestException(
         'No se puede actualizar un registro inactivo del calendario.',
       );
     }
 
     if (dto.fecha !== undefined && dto.fecha !== calendario.fecha) {
-      this.logger.debug(
-        `Cambio de fecha detectado. Anterior: ${calendario.fecha}, Nueva: ${dto.fecha}`,
-      );
       validarFecha(dto.fecha);
 
-      const existente = await this.calendarioRepository
-        .createQueryBuilder('calendario')
-        .where('calendario.fecha = :fecha', { fecha: dto.fecha })
-        .andWhere('calendario.id != :id', { id })
-        .getOne();
+      const existente = await this.calendarioRepository.findOne({
+        where: {
+          fecha: dto.fecha,
+          id: Not(id),
+        },
+      });
 
       if (existente) {
-        this.logger.warn(
-          `Conflicto al actualizar fecha: ya existe otro registro con la fecha ${dto.fecha}. ID actual: ${id}`,
-        );
         throw new ConflictException(
           'La fecha ya se encuentra registrada en el calendario.',
         );
@@ -547,18 +482,11 @@ export class CalendarioService {
     try {
       await this.calendarioRepository.save(calendario);
 
-      this.logger.log(
-        `Registro de calendario actualizado correctamente. ID: ${id}, Fecha: ${calendario.fecha}, Usuario: ${idUsuario}`,
-      );
-
       return {
         message: 'El registro del calendario fue actualizado correctamente.',
       };
     } catch (error) {
       if (esErrorDuplicado(error)) {
-        this.logger.warn(
-          `Error de duplicado al actualizar registro de calendario. ID: ${id}, Fecha: ${calendario.fecha}`,
-        );
         throw new ConflictException(
           'La fecha ya se encuentra registrada en el calendario.',
         );
@@ -571,7 +499,6 @@ export class CalendarioService {
       throw error;
     }
   }
-
   /**
    * Alterna el estado de un registro del calendario entre ACTIVO e INACTIVO.
    * Actualiza los datos de auditoría y registra o limpia la información
@@ -583,18 +510,11 @@ export class CalendarioService {
     id: string,
     idUsuario: string,
   ): Promise<CalendarioMessageResponse> {
-    this.logger.log(
-      `Iniciando cambio de estado de registro de calendario. ID: ${id}, Usuario: ${idUsuario}`,
-    );
-
     const calendario = await this.calendarioRepository.findOne({
       where: { id },
     });
 
     if (!calendario) {
-      this.logger.warn(
-        `No se encontró registro de calendario para cambiar estado. ID: ${id}`,
-      );
       throw new NotFoundException(
         'No se encontró el registro del calendario solicitado.',
       );
@@ -619,10 +539,6 @@ export class CalendarioService {
 
     try {
       await this.calendarioRepository.save(calendario);
-
-      this.logger.log(
-        `Estado de registro de calendario cambiado correctamente. ID: ${id}, Estado anterior: ${estadoAnterior}, Estado nuevo: ${calendario.estado}, Usuario: ${idUsuario}`,
-      );
 
       return {
         message: `Registro del calendario ${calendario.estado === 'ACTIVO' ? 'activado' : 'inactivado'} correctamente.`,
