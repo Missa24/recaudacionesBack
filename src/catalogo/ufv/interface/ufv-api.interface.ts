@@ -5,7 +5,7 @@
  * Define la estructura de la respuesta proporcionada por la API externa
  * utilizada para obtener los valores y fechas de actualización de la UFV.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 
 /**
@@ -14,7 +14,7 @@
  * Representa la estructura de respuesta de la API externa,
  * incluyendo el estado de la consulta, los datos obtenidos y posibles errores.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 export interface UfvApiResponse {
   ok: boolean;

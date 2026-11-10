@@ -6,7 +6,7 @@
  * obtenido desde la API externa, incluyendo el identificador
  * del usuario técnico responsable de la operación.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 
 import {
@@ -24,12 +24,12 @@ import {
  * Establece la estructura y validaciones de los datos
  * utilizados durante el registro de UFV desde una fuente externa.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 export class CreateUfvApiDto {
   /**
    * Fecha correspondiente al valor UFV obtenido desde la API.
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   @IsDateString(
     {},
@@ -40,7 +40,7 @@ export class CreateUfvApiDto {
 
   /**
    * Valor numérico de UFV recibido desde la fuente externa.
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   @IsNumber({}, { message: 'El valor debe ser un número' })
   @IsNotEmpty({ message: 'El valor no puede estar vacio' })
@@ -50,7 +50,7 @@ export class CreateUfvApiDto {
 
   /**
    * Identificador UUID del usuario responsable del registro.
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   @IsUUID()
   userId!: string;

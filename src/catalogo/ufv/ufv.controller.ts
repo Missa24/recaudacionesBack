@@ -5,7 +5,7 @@
  * Controlador encargado de exponer los endpoints para el registro,
  * consulta, actualización, sincronización y cambio de estado de los valores UFV.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 
 import {
@@ -44,7 +44,7 @@ const userId = '8b461287-8416-412e-84e7-b5c77615ea2a';
  * Gestiona las solicitudes HTTP relacionadas con los valores UFV
  * y delega su procesamiento a los servicios correspondientes.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 @ApiTags('Catálogos / UFV')
 @ApiBearerAuth('JWT')
@@ -59,7 +59,7 @@ export class UfvController {
   /**
    * Registra un nuevo valor UFV mediante los datos proporcionados.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   @Post()
   @ApiOperation({
@@ -80,7 +80,7 @@ export class UfvController {
   /**
    * Ejecuta la sincronización de valores UFV desde una fuente externa.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   @Post('sincronizar')
   @ApiOperation({
@@ -100,7 +100,7 @@ export class UfvController {
   /**
    * Obtiene los registros UFV aplicando filtros y paginación.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   @ApiOperation({
     summary: 'Listar registros UFV',
@@ -119,7 +119,7 @@ export class UfvController {
   /**
    * Obtiene un registro UFV mediante su identificador único.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   @Get(':id')
   @ApiOperation({
@@ -141,7 +141,7 @@ export class UfvController {
   /**
    * Obtiene un registro UFV correspondiente a una fecha específica.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   @Get('fecha/:fecha')
   @ApiOperation({
@@ -164,7 +164,7 @@ export class UfvController {
   /**
    * Actualiza parcialmente los datos de un registro UFV existente.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   @Patch(':id')
   @ApiOperation({
@@ -190,7 +190,7 @@ export class UfvController {
   /**
    * Cambia el estado de un registro UFV entre ACTIVO e INACTIVO.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   @Patch(':id/estado')
   @ApiOperation({

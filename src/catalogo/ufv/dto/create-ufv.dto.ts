@@ -5,7 +5,7 @@
  * Define los datos requeridos para registrar un nuevo valor UFV,
  * incluyendo las validaciones de fecha y valor numérico.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 
 import { IsDateString, IsNotEmpty, IsNumber, Max, Min } from 'class-validator';
@@ -18,13 +18,13 @@ import { ApiProperty } from '@nestjs/swagger';
  * Establece la estructura y las validaciones de los datos
  * necesarios para crear un registro UFV.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 export class CreateUfvDto {
   /**
    * Fecha correspondiente al valor UFV.
    * Debe tener el formato AAAA-MM-DD.
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   @ApiProperty({
     description: 'Fecha correspondiente al valor de UFV.',
@@ -41,7 +41,7 @@ export class CreateUfvDto {
   /**
    * Valor numérico de la UFV.
    * Debe encontrarse dentro del rango establecido.
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   @ApiProperty({
     description: 'Valor de la UFV. Debe encontrarse entre 6 y 12.',

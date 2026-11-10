@@ -6,7 +6,7 @@
  * procesar los datos obtenidos y sincronizarlos con la base de datos.
  * También administra la ejecución automática mediante tareas programadas.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 
 import { Injectable, Logger } from '@nestjs/common';
@@ -27,14 +27,14 @@ import { CreateUfvApiDto } from './dto/create-ufv-api.dto';
  * Gestiona la integración con la fuente externa de valores UFV
  * y la sincronización automática de sus registros.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 @Injectable()
 export class UfvApiService {
   /**
    * Logger del servicio para trazabilidad de operaciones.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   private readonly logger = new Logger(UfvApiService.name);
 
@@ -48,7 +48,7 @@ export class UfvApiService {
    * Consulta la API externa, valida los datos recibidos,
    * convierte la fecha al formato requerido y registra el valor UFV.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   async sincronizar() {
     // Obtiene la dirección de la API desde las variables de entorno.
@@ -137,7 +137,7 @@ export class UfvApiService {
    * a las 00:00 horas, utilizando la zona horaria de Bolivia.
    * Registra los errores sin interrumpir la ejecución de la aplicación.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   @Cron('0 0 0 * * *', {
     timeZone: 'America/La_Paz',

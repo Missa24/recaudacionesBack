@@ -5,7 +5,7 @@
  * Define las interfaces utilizadas para estructurar las respuestas
  * del módulo UFV, incluyendo responsables y mensajes de operación.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 
 /**
@@ -14,7 +14,7 @@
  * Define la estructura de los datos UFV que se entregan en las consultas,
  * incluyendo los responsables de creación y actualización.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 export interface UfvResponse {
   id: string;
@@ -31,7 +31,7 @@ export interface UfvResponse {
  * Descripción:
  * Define una respuesta general de operación con indicador de éxito y mensaje.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 export interface UfvMessageResponse {
   message: string;

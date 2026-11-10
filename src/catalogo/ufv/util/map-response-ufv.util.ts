@@ -5,7 +5,7 @@
  * Proporciona una función auxiliar para mapear
  * datos de los intereses.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 
 import { Ufv } from '../entities/ufv.entity';
@@ -17,7 +17,7 @@ import { UfvResponse } from '../interface/ufv-response.interface';
  * Incluye los datos de los responsables de creación
  * y actualización cuando sus relaciones están disponibles.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 export function mapearRespuesta(ufv: Ufv): UfvResponse {
   return {
