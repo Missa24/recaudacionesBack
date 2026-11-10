@@ -62,10 +62,10 @@ export class InteresService {
    */
   async crear(
     dto: CreateInteresDto,
-    id_usuario: string,
+    idUsuario: string,
   ): Promise<InteresMessageResponse> {
     this.logger.log(
-      `Iniciando creación de Interés. Fecha publicación: ${dto.fecha_publicacion}, Valor: ${dto.valor}, Usuario: ${id_usuario}`,
+      `Iniciando creación de Interés. Fecha publicación: ${dto.fecha_publicacion}, Valor: ${dto.valor}, Usuario: ${idUsuario}`,
     );
 
     // Comprueba si ya existe un registro para la fecha proporcionada.
@@ -83,14 +83,14 @@ export class InteresService {
     // Prepara la entidad asociando los datos del usuario creador.
     const interes = this.interesRepository.create({
       ...dto,
-      usuario_creador: { id_usuario },
+      usuario_creador: { idUsuario },
     });
 
     try {
       const guardado = await this.interesRepository.save(interes);
 
       this.logger.log(
-        `Interés registrado exitosamente. ID: ${guardado.id}, Fecha: ${guardado.fecha_publicacion}, Valor: ${guardado.valor}, Usuario: ${id_usuario}`,
+        `Interés registrado exitosamente. ID: ${guardado.id}, Fecha: ${guardado.fecha_publicacion}, Valor: ${guardado.valor}, Usuario: ${idUsuario}`,
       );
 
       return {
@@ -105,7 +105,7 @@ export class InteresService {
       }
 
       this.logger.error(
-        `Error al crear un nuevo interés. Fecha: ${dto.fecha_publicacion}, Usuario: ${id_usuario}`,
+        `Error al crear un nuevo interés. Fecha: ${dto.fecha_publicacion}, Usuario: ${idUsuario}`,
         error instanceof Error ? error.stack : String(error),
       );
       throw new InternalServerErrorException(
@@ -157,17 +157,18 @@ export class InteresService {
         'usuario_actualizador',
       );
 
-    // Excluir registros dados de baja.
-    queryBuilder.andWhere('interes._deleted_at is NULL');
-
-    // Aplicar el estado solicitado o mostrar activos por defecto.
-    if (status) {
+    if (status && status !== 'TODOS') {
       this.logger.debug(`Aplicando filtro estado: ${status}`);
-      queryBuilder.andWhere('interes.estado = :estado', { estado: status });
-    } else {
+      queryBuilder.andWhere('interes.estado = :estado', {
+        estado: status,
+      });
+    } else if (!status) {
+      this.logger.debug('Aplicando filtro estado por defecto: ACTIVO');
       queryBuilder.andWhere('interes.estado = :estado', {
         estado: 'ACTIVO',
       });
+    } else {
+      this.logger.debug('Consultando los Interes de todos los estados');
     }
 
     // Aplicar filtro por fecha inicial.
@@ -340,10 +341,10 @@ export class InteresService {
   async actualizar(
     id: string,
     dto: UpdateInteresDto,
-    id_usuario: string,
+    idUsuario: string,
   ): Promise<InteresMessageResponse> {
     this.logger.log(
-      `Iniciando actualización de Interés. ID: ${id}, Usuario: ${id_usuario}`,
+      `Iniciando actualización de Interés. ID: ${id}, Usuario: ${idUsuario}`,
     );
 
     const interes = await this.interesRepository.findOne({
@@ -392,14 +393,14 @@ export class InteresService {
     Object.assign(interes, dto);
 
     // Actualiza la información de auditoría.
-    interes._user_update = id_usuario;
+    interes._user_update = idUsuario;
     interes._updated_at = new Date();
 
     try {
       await this.interesRepository.save(interes);
 
       this.logger.log(
-        `Interés actualizado correctamente. ID: ${id}, Usuario: ${id_usuario}`,
+        `Interés actualizado correctamente. ID: ${id}, Usuario: ${idUsuario}`,
       );
 
       return {
@@ -435,10 +436,10 @@ export class InteresService {
    */
   async cambiarEstado(
     id: string,
-    id_usuario: string,
+    idUsuario: string,
   ): Promise<InteresMessageResponse> {
     this.logger.log(
-      `Iniciando cambio de estado de Interés. ID: ${id}, Usuario: ${id_usuario}`,
+      `Iniciando cambio de estado de Interés. ID: ${id}, Usuario: ${idUsuario}`,
     );
 
     const interes = await this.interesRepository.findOne({
@@ -460,13 +461,13 @@ export class InteresService {
 
     if (nuevoEstado === 'INACTIVO') {
       // Registra quién y cuándo realizó la desactivación.
-      interes._user_delete = id_usuario;
+      interes._user_delete = idUsuario;
       interes._deleted_at = new Date();
       interes._user_update = null;
       interes._updated_at = null;
     } else {
       // Al reactivar, limpia los datos de eliminación lógica.
-      interes._user_update = id_usuario;
+      interes._user_update = idUsuario;
       interes._updated_at = new Date();
       interes._user_delete = null;
       interes._deleted_at = null;
@@ -476,11 +477,11 @@ export class InteresService {
       await this.interesRepository.save(interes);
 
       this.logger.log(
-        `Estado de Interés cambiado correctamente. ID: ${id}, Estado anterior: ${estadoAnterior}, Estado nuevo: ${nuevoEstado}, Usuario: ${id_usuario}`,
+        `Estado de Interés cambiado correctamente. ID: ${id}, Estado anterior: ${estadoAnterior}, Estado nuevo: ${nuevoEstado}, Usuario: ${idUsuario}`,
       );
 
       return {
-        message: 'Estado del Interés cambiado correctamente',
+        message: `Registro del interes ${interes.estado === 'ACTIVO' ? 'activado' : 'inactivado'} correctamente.`,
       };
     } catch (error: unknown) {
       this.logger.error(

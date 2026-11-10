@@ -25,11 +25,7 @@ export function mapearRespuesta(interes: Interes): InteresResponse {
     fecha_publicacion: interes.fecha_publicacion,
     valor: String(interes.valor),
     estado: interes.estado,
-    responsable_creacion: interes.usuario_creador
-      ? { username: interes.usuario_creador.username }
-      : null,
-    responsable_actualizacion: interes.usuario_actualizador
-      ? { username: interes.usuario_actualizador.username }
-      : null,
+    responsable_creacion: interes.usuario_creador?.username ?? null,
+    responsable_actualizacion: interes.usuario_actualizador?.username ?? null,
   };
 }

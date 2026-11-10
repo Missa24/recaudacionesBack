@@ -16,17 +16,21 @@ import {
   Patch,
   Param,
   Query,
+  UseGuards,
 } from '@nestjs/common';
-import { InteresService } from './interes.service';
-import { CreateInteresDto } from './dto/create-interes.dto';
-import { UpdateInteresDto } from './dto/update-interes.dto';
+import { AuthGuard } from '@nestjs/passport';
 import {
+  ApiBearerAuth,
   ApiOkResponse,
   ApiOperation,
   ApiParam,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
+
+import { InteresService } from './interes.service';
+import { CreateInteresDto } from './dto/create-interes.dto';
+import { UpdateInteresDto } from './dto/update-interes.dto';
 import { QueryInteresDto } from './dto/query-interes.dto';
 
 // Identificador temporal del usuario responsable de las operaciones.
@@ -40,11 +44,13 @@ const userId = '8b461287-8416-412e-84e7-b5c77615ea2a';
  *
  * Desarrollado por: Missael Apaza
  */
-@ApiTags('Catálogos - Interés')
-@Controller('interes')
 @ApiTags('Catálogos / Intereses')
+@ApiBearerAuth('JWT')
+@UseGuards(AuthGuard('jwt'))
+@Controller('interes')
 export class InteresController {
   constructor(private readonly interesService: InteresService) {}
+
   /**
    * Registra un nuevo valor de Interés mediante los datos proporcionados.
    *
@@ -60,6 +66,7 @@ export class InteresController {
     description: 'Interés registrado correctamente.',
   })
   @ApiResponse({ status: 400, description: 'Datos de entrada inválidos.' })
+  @ApiResponse({ status: 403, description: 'Acceso denegado' })
   @ApiResponse({
     status: 409,
     description: 'Ya existe un interés para esa fecha.',
@@ -78,8 +85,9 @@ export class InteresController {
     description: 'Permite buscar, filtrar, ordenar y paginar los registros.',
   })
   @ApiOkResponse({
-    description: 'Listado de registros UFV obtenido correctamente.',
+    description: 'Listado de registros de Interés obtenido correctamente.',
   })
+  @ApiResponse({ status: 403, description: 'Acceso denegado' })
   @Get()
   listar(@Query() query: QueryInteresDto) {
     return this.interesService.listar(query);
@@ -93,7 +101,7 @@ export class InteresController {
   @Get(':id')
   @ApiOperation({
     summary: 'Obtener Interés por Id',
-    description: 'Busca un registro de interpes mediante el identificador.',
+    description: 'Busca un registro de interés mediante el identificador.',
   })
   @ApiParam({
     name: 'id',
@@ -101,7 +109,8 @@ export class InteresController {
     example: '8b461287-8416-412e-84e7-b5c77615ea2a',
   })
   @ApiResponse({ status: 200, description: 'Registro encontrado.' })
-  @ApiResponse({ status: 200, description: 'Registro no encontrado.' })
+  @ApiResponse({ status: 403, description: 'Acceso denegado' })
+  @ApiResponse({ status: 404, description: 'Registro no encontrado.' })
   ObtenerPorId(@Param('id') id: string) {
     return this.interesService.buscarPorId(id);
   }
@@ -113,9 +122,9 @@ export class InteresController {
    */
   @Get('fecha/:fecha')
   @ApiOperation({
-    summary: 'Obtener un Interes por fecha',
+    summary: 'Obtener un Interés por fecha',
     description:
-      'Busca un registro de Interés correspondiente a una fecha especifica.',
+      'Busca un registro de Interés correspondiente a una fecha específica.',
   })
   @ApiParam({
     name: 'fecha',
@@ -123,6 +132,7 @@ export class InteresController {
     example: '2026-11-09',
   })
   @ApiResponse({ status: 200, description: 'Registro encontrado.' })
+  @ApiResponse({ status: 403, description: 'Acceso denegado' })
   @ApiResponse({
     status: 404,
     description: 'No existe un Interés para esa fecha.',
@@ -154,6 +164,7 @@ export class InteresController {
     status: 400,
     description: 'Datos de actualización inválidos.',
   })
+  @ApiResponse({ status: 403, description: 'Acceso denegado' })
   @ApiResponse({ status: 404, description: 'Registro no encontrado.' })
   actualizar(@Param('id') id: string, @Body() dto: UpdateInteresDto) {
     return this.interesService.actualizar(id, dto, userId);
@@ -178,6 +189,7 @@ export class InteresController {
     status: 200,
     description: 'Estado actualizado correctamente.',
   })
+  @ApiResponse({ status: 403, description: 'Acceso denegado' })
   @ApiResponse({ status: 404, description: 'Registro no encontrado.' })
   cambiarEstado(@Param('id') id: string) {
     return this.interesService.cambiarEstado(id, userId);
