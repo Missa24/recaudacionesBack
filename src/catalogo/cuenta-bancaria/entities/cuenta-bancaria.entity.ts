@@ -96,9 +96,7 @@ export class CuentaBancaria {
    * Estado actual del registro: ACTIVO o INACTIVO.
    */
   @Column({
-    type: 'enum',
-    enum: ['ACTIVO', 'INACTIVO'],
-    enumName: 'estado_registro',
+    type: 'text',
     default: 'ACTIVO',
   })
   estado!: string;

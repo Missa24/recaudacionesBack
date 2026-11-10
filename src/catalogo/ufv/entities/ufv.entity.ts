@@ -45,9 +45,7 @@ export class Ufv {
 
   // Estado actual del registro.
   @Column({
-    type: 'enum',
-    enum: ['ACTIVO', 'INACTIVO'],
-    enumName: 'estado_registro',
+    type: 'text',
     default: 'ACTIVO',
   })
   estado!: string;

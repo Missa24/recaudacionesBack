@@ -115,9 +115,7 @@ export class PersonaNatural {
    * Estado civil de la persona natural.
    */
   @Column({
-    type: 'enum',
-    enum: ['NO DECLARADO'],
-    enumName: 'estado_civil',
+    type: 'text',
     default: 'NO DECLARADO',
   })
   estado_civil!: string;
@@ -126,9 +124,7 @@ export class PersonaNatural {
    * Estado actual del registro: ACTIVO o INACTIVO.
    */
   @Column({
-    type: 'enum',
-    enum: ['ACTIVO', 'INACTIVO'],
-    enumName: 'estado_registro',
+    type: 'text',
     default: 'ACTIVO',
   })
   estado!: string;
