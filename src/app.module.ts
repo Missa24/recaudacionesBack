@@ -1,4 +1,6 @@
 import { Module } from '@nestjs/common';
+import { APP_INTERCEPTOR } from '@nestjs/core';
+import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { UfvModule } from './catalogo/ufv/ufv.module';
@@ -18,6 +20,8 @@ import { ApiTokensModule } from './api-tokens/api-tokens.module';
 import { BitacoraModule } from './bitacora/bitacora.module';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { HttpModule } from '@nestjs/axios';
+import { BancoModule } from './catalogo/banco/banco.module';
 
 @Module({
   imports: [
@@ -32,25 +36,33 @@ import { TypeOrmModule } from '@nestjs/typeorm';
       password: process.env.DB_PASSWORD,
       database: process.env.DB_NAME,
       autoLoadEntities: true,
-      synchronize:true,
+      synchronize: true,
     }),
-    UfvModule, 
-    RequisitoModule, 
-    PersonaNaturalModule, 
-    PersonaJuridicaModule, 
-    InteresModule, 
-    CalendarioModule, 
-    CuentaBancariaModule, 
-    DependenciaModule, 
-    UsuarioModule, 
-    RolModule, 
-    UsuarioRolModule, 
-    SesionModule, 
-    AuthModule, 
-    ApiTokensModule, 
-    BitacoraModule
+    UfvModule,
+    RequisitoModule,
+    PersonaNaturalModule,
+    PersonaJuridicaModule,
+    InteresModule,
+    CalendarioModule,
+    CuentaBancariaModule,
+    DependenciaModule,
+    UsuarioModule,
+    RolModule,
+    UsuarioRolModule,
+    SesionModule,
+    AuthModule,
+    ApiTokensModule,
+    BitacoraModule,
+    HttpModule,
+    BancoModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: ResponseInterceptor,
+    },
+  ],
 })
 export class AppModule {}

@@ -1,36 +1,298 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
+/**
+ * Módulo: Catálogos - Cuentas Bancarias
+ * Archivo: cuenta-bancaria.controller.ts
+ * Descripción:
+ * Expone los endpoints para el registro, consulta, listado,
+ * actualización y cambio de estado de las cuentas bancarias.
+ *
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
+ */
+
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiParam,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
+
 import { CuentaBancariaService } from './cuenta-bancaria.service';
 import { CreateCuentaBancariaDto } from './dto/create-cuenta-bancaria.dto';
 import { UpdateCuentaBancariaDto } from './dto/update-cuenta-bancaria.dto';
+import { QueryCuentaBancariaDto } from './dto/query-cuenta-bancaria.dto';
+import {
+  CuentaBancariaCreateResponse,
+  CuentaBancariaMessageResponse,
+  CuentaBancariaResponse,
+} from './interfaces/cuenta-bancaria-response.interface';
+import { PaginatedResponse } from 'src/shared/interface/paginated-response.interface';
 
-@Controller('cuenta-bancaria')
+// Identificador temporal del usuario responsable de las operaciones.
+const idUsuario = '8b461287-8416-412e-84e7-b5c77615ea2a';
+
+/**
+ * Controlador encargado de gestionar las solicitudes HTTP
+ * del catálogo de cuentas bancarias.
+ *
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
+ */
 @ApiTags('Catálogos / Cuentas bancarias')
+@ApiBearerAuth('jwt')
+@UseGuards(AuthGuard('jwt'))
+@Controller('cuenta-bancaria')
 export class CuentaBancariaController {
   constructor(private readonly cuentaBancariaService: CuentaBancariaService) {}
 
+  /*
+  Nombre de la ruta: cuenta-bancaria
+  Método HTTP: POST
+  Descripción: Registra una nueva cuenta bancaria validando la existencia del banco y la dependencia, así como la unicidad del número de cuenta por banco.
+  Cuerpo de la solicitud (Body):
+    - CreateCuentaBancariaDto: Datos de la cuenta bancaria a registrar.
+  Respuestas posibles:
+    - 201: Cuenta bancaria registrada correctamente.
+    - 400: Datos de entrada inválidos.
+    - 403: Acceso denegado.
+    - 409: El número de cuenta ya se encuentra registrado para este banco.
+    - 500: Error interno del servidor.
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+  Notas adicionales: El identificador de usuario se toma de un valor temporal (idUsuario) hasta integrar el usuario autenticado desde el JWT.
+  */
   @Post()
-  create(@Body() createCuentaBancariaDto: CreateCuentaBancariaDto) {
-    return this.cuentaBancariaService.create(createCuentaBancariaDto);
+  @ApiOperation({
+    summary: 'Registrar una cuenta bancaria',
+    description:
+      'Registra una nueva cuenta bancaria validando banco, dependencia y unicidad.',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Cuenta bancaria registrada correctamente.',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Datos de entrada inválidos.',
+  })
+  @ApiResponse({ status: 403, description: 'Acceso denegado' })
+  @ApiResponse({
+    status: 409,
+    description:
+      'El número de cuenta ya se encuentra registrado para este banco.',
+  })
+  @ApiResponse({
+    status: 500,
+    description: 'Error interno del servidor.',
+  })
+  crear(
+    @Body() dto: CreateCuentaBancariaDto,
+  ): Promise<CuentaBancariaCreateResponse> {
+    return this.cuentaBancariaService.crear(dto, idUsuario);
   }
 
+  /*
+  Nombre de la ruta: cuenta-bancaria
+  Método HTTP: GET
+  Descripción: Lista las cuentas bancarias aplicando filtros y paginación.
+  Parámetros de consulta (Query):
+    - QueryCuentaBancariaDto: Filtros de búsqueda y paginación.
+  Respuestas posibles:
+    - 200: Listado de cuentas bancarias obtenido correctamente.
+    - 400: Parámetros de consulta inválidos.
+    - 403: Acceso denegado.
+    - 500: Error interno del servidor.
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+  Notas adicionales: Respuesta envuelta en PaginatedResponse con metadatos de paginación.
+  */
   @Get()
-  findAll() {
-    return this.cuentaBancariaService.findAll();
+  @ApiOperation({
+    summary: 'Listar cuentas bancarias con filtros y paginación',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Listado de cuentas bancarias obtenido correctamente.',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Parámetros de consulta inválidos.',
+  })
+  @ApiResponse({ status: 403, description: 'Acceso denegado' })
+  @ApiResponse({
+    status: 500,
+    description: 'Error interno del servidor.',
+  })
+  listar(
+    @Query() query: QueryCuentaBancariaDto,
+  ): Promise<PaginatedResponse<CuentaBancariaResponse>> {
+    return this.cuentaBancariaService.listar(query);
   }
 
+  /*
+  Nombre de la ruta: cuenta-bancaria/:id
+  Método HTTP: GET
+  Descripción: Consulta una cuenta bancaria mediante su identificador UUID.
+  Parámetros de ruta (Param):
+    - id: Identificador UUID de la cuenta bancaria.
+  Respuestas posibles:
+    - 200: Cuenta bancaria encontrada correctamente.
+    - 400: El identificador proporcionado no es un UUID válido.
+    - 403: Acceso denegado.
+    - 404: No se encontró la cuenta bancaria solicitada.
+    - 500: Error interno del servidor.
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+  Notas adicionales: La validación del UUID se realiza con ParseUUIDPipe.
+  */
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.cuentaBancariaService.findOne(+id);
+  @ApiOperation({
+    summary: 'Consultar una cuenta bancaria por ID',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'Identificador UUID de la cuenta bancaria.',
+    example: '8b461287-8416-412e-84e7-b5c77615ea2a',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Cuenta bancaria encontrada correctamente.',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'El identificador proporcionado no es un UUID válido.',
+  })
+  @ApiResponse({ status: 403, description: 'Acceso denegado' })
+  @ApiResponse({
+    status: 404,
+    description: 'No se encontró la cuenta bancaria solicitada.',
+  })
+  @ApiResponse({
+    status: 500,
+    description: 'Error interno del servidor.',
+  })
+  buscarPorId(
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<CuentaBancariaResponse> {
+    return this.cuentaBancariaService.buscarPorId(id);
   }
 
+  /*
+  Nombre de la ruta: cuenta-bancaria/:id
+  Método HTTP: PATCH
+  Descripción: Actualiza parcialmente una cuenta bancaria existente validando referencias y unicidad del número de cuenta por banco.
+  Parámetros de ruta (Param):
+    - id: Identificador UUID de la cuenta bancaria.
+  Cuerpo de la solicitud (Body):
+    - UpdateCuentaBancariaDto: Campos a actualizar.
+  Respuestas posibles:
+    - 200: Cuenta bancaria actualizada correctamente.
+    - 400: Datos inválidos o intento de actualizar una cuenta bancaria inactiva.
+    - 403: Acceso denegado.
+    - 404: No se encontró la cuenta bancaria solicitada.
+    - 409: El número de cuenta ya se encuentra registrado para este banco.
+    - 500: Error interno del servidor.
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+  Notas adicionales: No se permite actualizar cuentas bancarias inactivas.
+  */
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateCuentaBancariaDto: UpdateCuentaBancariaDto) {
-    return this.cuentaBancariaService.update(+id, updateCuentaBancariaDto);
+  @ApiOperation({
+    summary: 'Actualizar una cuenta bancaria',
+    description:
+      'Modifica los datos de una cuenta bancaria existente validando referencias y unicidad.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'Identificador UUID de la cuenta bancaria.',
+    example: '8b461287-8416-412e-84e7-b5c77615ea2a',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Cuenta bancaria actualizada correctamente.',
+  })
+  @ApiResponse({
+    status: 400,
+    description:
+      'Datos inválidos o intento de actualizar una cuenta bancaria inactiva.',
+  })
+  @ApiResponse({ status: 403, description: 'Acceso denegado' })
+  @ApiResponse({
+    status: 404,
+    description: 'No se encontró la cuenta bancaria solicitada.',
+  })
+  @ApiResponse({
+    status: 409,
+    description:
+      'El número de cuenta ya se encuentra registrado para este banco.',
+  })
+  @ApiResponse({
+    status: 500,
+    description: 'Error interno del servidor.',
+  })
+  actualizar(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateCuentaBancariaDto,
+  ): Promise<CuentaBancariaMessageResponse> {
+    return this.cuentaBancariaService.actualizar(id, dto, idUsuario);
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.cuentaBancariaService.remove(+id);
+  /*
+  Nombre de la ruta: cuenta-bancaria/:id/estado
+  Método HTTP: PATCH
+  Descripción: Activa o inactiva una cuenta bancaria alternando su estado entre ACTIVO e INACTIVO.
+  Parámetros de ruta (Param):
+    - id: Identificador UUID de la cuenta bancaria.
+  Respuestas posibles:
+    - 200: Estado de la cuenta bancaria actualizado correctamente.
+    - 400: El identificador proporcionado no es un UUID válido.
+    - 403: Acceso denegado.
+    - 404: No se encontró la cuenta bancaria solicitada.
+    - 500: Error interno del servidor.
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+  Notas adicionales: No recibe body; el nuevo estado se deriva del estado actual.
+  */
+  @Patch(':id/estado')
+  @ApiOperation({
+    summary: 'Activar o inactivar una cuenta bancaria',
+    description: 'Alterna el estado del registro entre ACTIVO e INACTIVO.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'Identificador UUID de la cuenta bancaria.',
+    example: '8b461287-8416-412e-84e7-b5c77615ea2a',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Estado de la cuenta bancaria actualizado correctamente.',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'El identificador proporcionado no es un UUID válido.',
+  })
+  @ApiResponse({ status: 403, description: 'Acceso denegado' })
+  @ApiResponse({
+    status: 404,
+    description: 'No se encontró la cuenta bancaria solicitada.',
+  })
+  @ApiResponse({
+    status: 500,
+    description: 'Error interno del servidor.',
+  })
+  cambiarEstado(
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<CuentaBancariaMessageResponse> {
+    return this.cuentaBancariaService.cambiarEstado(id, idUsuario);
   }
 }
