@@ -4,8 +4,13 @@ import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
+  // Configurar zona horaria de Bolivia
+  process.env.TZ = 'America/La_Paz';
+
   const app = await NestFactory.create(AppModule);
+
   app.setGlobalPrefix('api');
+
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -15,7 +20,7 @@ async function bootstrap() {
   );
 
   const config = new DocumentBuilder()
-    .setTitle('DOCUMENTACION RECAUDACION API ')
+    .setTitle('DOCUMENTACION RECAUDACION API')
     .setDescription('Documentación de sistema de recaudaciones')
     .setVersion('1.0')
     .addBearerAuth(
@@ -27,7 +32,9 @@ async function bootstrap() {
       'JWT',
     )
     .build();
+
   const documentFactory = () => SwaggerModule.createDocument(app, config);
+
   SwaggerModule.setup('api', app, documentFactory, {
     swaggerOptions: {
       tagsSorter: 'alpha',
@@ -37,4 +44,5 @@ async function bootstrap() {
 
   await app.listen(process.env.PORT ?? 3000);
 }
+
 bootstrap();
