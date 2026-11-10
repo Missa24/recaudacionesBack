@@ -5,7 +5,7 @@
  * Expone los endpoints para el registro, consulta,
  * actualización y administración de personas jurídicas.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 
 import {
@@ -52,7 +52,7 @@ const idUsuario = '8b461287-8416-412e-84e7-b5c77615ea2a';
  * Controlador encargado de gestionar las solicitudes HTTP
  * del catálogo de personas jurídicas.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 @ApiTags('Catálogos / Personas Jurídicas')
 @ApiBearerAuth('JWT')
@@ -66,7 +66,7 @@ export class PersonaJuridicaController {
   /**
    * Registra una nueva persona jurídica.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   @Post()
   @ApiOperation({
@@ -98,7 +98,7 @@ export class PersonaJuridicaController {
   /**
    * Lista las personas jurídicas con filtros y paginación.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   @Get()
   @ApiOperation({
@@ -126,7 +126,7 @@ export class PersonaJuridicaController {
   /**
    * Busca una persona jurídica mediante su NIT.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   @Get('buscar')
   @ApiOperation({
@@ -154,7 +154,7 @@ export class PersonaJuridicaController {
   /**
    * Consulta una persona jurídica mediante su UUID.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   @Get(':id')
   @ApiOperation({
@@ -190,7 +190,7 @@ export class PersonaJuridicaController {
   /**
    * Actualiza parcialmente una persona jurídica.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   @Patch(':id')
   @ApiOperation({
@@ -232,7 +232,7 @@ export class PersonaJuridicaController {
   /**
    * Activa o inactiva una persona jurídica.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   @Patch(':id/estado')
   @ApiOperation({

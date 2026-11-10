@@ -5,7 +5,7 @@
  * Define los parámetros utilizados para buscar
  * personas jurídicas mediante su NIT.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 
 import { ApiProperty } from '@nestjs/swagger';
@@ -14,7 +14,7 @@ import { IsString, Matches, MaxLength } from 'class-validator';
 /**
  * DTO para la búsqueda de personas jurídicas por NIT.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 export class BuscarPersonaJuridicaDto {
   /**

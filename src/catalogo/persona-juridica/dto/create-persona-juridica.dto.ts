@@ -5,7 +5,7 @@
  * Define los datos y las validaciones necesarias para registrar
  * una persona jurídica en el sistema.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
@@ -22,7 +22,7 @@ import {
  * Establece los campos obligatorios y opcionales del registro,
  * junto con sus respectivas reglas de validación.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 export class CreatePersonaJuridicaDto {
   /**

@@ -5,7 +5,7 @@
  * Contiene la lógica de negocio para el registro, consulta,
  * actualización y administración de personas jurídicas.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 
 import {
@@ -41,14 +41,14 @@ import { mapearRespuesta } from './util/map-response-personajuridica.util';
  * Servicio encargado de gestionar las operaciones
  * del catálogo de personas jurídicas.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 @Injectable()
 export class PersonaJuridicaService {
   /**
    * Logger del servicio para trazabilidad de operaciones.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   private readonly logger = new Logger(PersonaJuridicaService.name);
 
@@ -56,7 +56,7 @@ export class PersonaJuridicaService {
    * Inyecta el repositorio de personas jurídicas
    * para realizar las operaciones sobre la entidad.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   constructor(
     @InjectRepository(PersonaJuridica)
@@ -67,7 +67,7 @@ export class PersonaJuridicaService {
    * Registra una nueva persona jurídica, verificando
    * que el NIT no se encuentre registrado previamente.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   async crear(
     dto: CreatePersonaJuridicaDto,
@@ -132,7 +132,7 @@ export class PersonaJuridicaService {
    * Obtiene el listado paginado de personas jurídicas
    * aplicando búsqueda, filtros, fechas y ordenamiento.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   async listar(
     query: QueryPersonaJuridicaDto,
@@ -252,7 +252,7 @@ export class PersonaJuridicaService {
    * Busca una persona jurídica mediante su NIT único.
    * Devuelve el registro encontrado o null si no existe.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   async buscarPorNit(
     dto: BuscarPersonaJuridicaDto,
@@ -286,7 +286,7 @@ export class PersonaJuridicaService {
    * Busca una persona jurídica mediante su identificador UUID.
    * Si no existe, genera una excepción de recurso no encontrado.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   async buscarPorId(id: string): Promise<PersonaJuridicaResponse> {
     this.logger.log(`Buscando persona jurídica por ID: ${id}`);
@@ -313,7 +313,7 @@ export class PersonaJuridicaService {
    * Actualiza la información de una persona jurídica existente.
    * Verifica su estado y la unicidad del NIT cuando este cambia.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   async actualizar(
     id: string,
@@ -412,7 +412,7 @@ export class PersonaJuridicaService {
    * Actualiza los datos de auditoría y registra o limpia la información
    * correspondiente a la inactivación del registro.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   async cambiarEstado(
     id: string,

@@ -5,7 +5,7 @@
  * Define la estructura y las relaciones de la entidad PersonaJuridica,
  * correspondiente a la tabla persona_juridica del esquema catalogo.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 
 import { Usuario } from 'src/seguridad/usuario/entities/usuario.entity';
@@ -23,7 +23,7 @@ import {
  * Representa la información tributaria, comercial y de auditoría
  * de las personas jurídicas registradas en el sistema.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 @Entity({ schema: 'catalogo', name: 'persona_juridica' })
 @Unique('uq_persona_juridica_nit', ['nit'])
