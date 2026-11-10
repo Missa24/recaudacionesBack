@@ -6,7 +6,7 @@
  * Gestiona registros manuales, sincronización externa, consultas,
  * actualizaciones y cambios de estado, incluyendo el control de auditoría.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 
 import {
@@ -38,7 +38,7 @@ import { PaginatedResponse } from 'src/shared/interface/paginated-response.inter
  * Implementa las operaciones de negocio para administrar los registros de Banco,
  * utilizando TypeORM para interactuar con la base de datos.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 @Injectable()
 export class BancoService {
@@ -54,7 +54,7 @@ export class BancoService {
    * Verifica que no exista otro registro para el mismo código
    * y asocia al usuario responsable de la creación.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
 
   async crear(
@@ -106,7 +106,7 @@ export class BancoService {
    * Obtiene los registros de Dependencia aplicando filtros, búsqueda,
    * ordenamiento y paginación.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
 
   async listar(
@@ -213,7 +213,7 @@ export class BancoService {
    * Busca un registro de Banco mediante su identificador único.
    * Incluye los nombres de usuario asociados a su creación y actualización.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   async buscarPorId(id: string): Promise<BancoResponse> {
     this.logger.log(`Buscando Banco por ID: ${id}`);
@@ -244,7 +244,7 @@ export class BancoService {
    * Busca un registro de Banco por un código específico.
    * Solo considera registros activos y que no hayan sido eliminados.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   async buscarPorNombre(nombre: string): Promise<BancoResponse> {
     this.logger.log(`Buscando Dependencia por nombre: ${nombre}`);
@@ -279,7 +279,7 @@ export class BancoService {
    * Verifica su existencia, estado y posibles duplicados de código.
    * También actualiza los campos de auditoría correspondientes.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   async actualizar(
     id: string,
@@ -339,7 +339,7 @@ export class BancoService {
    * Al desactivar, registra los datos de eliminación lógica.
    * Al reactivar, limpia dichos datos y registra la actualización.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
 
   async cambiarEstado(

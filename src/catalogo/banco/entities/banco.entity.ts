@@ -5,7 +5,7 @@
  * Define la estructura y las relaciones de la entidad Banco,
  * correspondiente a la tabla banco del esquema catalogo.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 import { Usuario } from 'src/seguridad/usuario/entities/usuario.entity';
 import {
@@ -20,7 +20,7 @@ import {
  * Entidad Banco.
  * Identifica las entidades bancarias utilizadas por las cuentas de recaudación.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 @Entity({ schema: 'catalogo', name: 'banco' })
 @Unique('UQ_banco_nombre', ['nombre'])

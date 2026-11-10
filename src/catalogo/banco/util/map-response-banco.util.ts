@@ -5,7 +5,7 @@
  * Proporciona una función auxiliar para mapear
  * datos de los intereses.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 
 import { Banco } from '../entities/banco.entity';
@@ -17,7 +17,7 @@ import { BancoResponse } from '../interface/banco-response.interface';
  * Incluye los datos de los responsables de creación
  * y actualización cuando sus relaciones están disponibles.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 export function mapearRespuesta(banco: Banco): BancoResponse {
   return {

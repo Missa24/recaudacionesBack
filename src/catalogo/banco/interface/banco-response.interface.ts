@@ -3,7 +3,7 @@
  * Descripción:
  * Define los datos que se mostrarán al consultar el Banco.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 export interface BancoResponse {
   id: string;
@@ -19,7 +19,7 @@ export interface BancoResponse {
  * Descripción:
  * Define la respuesta de una operación mediante un mensaje.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 export interface BancoMessageResponse {
   message: string;
