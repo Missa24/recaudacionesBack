@@ -26,11 +26,7 @@ export function mapearRespuesta(
     apellido_casada: persona.apellido_casada,
     estado_civil: persona.estado_civil,
     estado: persona.estado,
-    responsable_creacion: persona.usuario_creador
-      ? { username: persona.usuario_creador.username }
-      : null,
-    responsable_actualizacion: persona.usuario_actualizador
-      ? { username: persona.usuario_actualizador.username }
-      : null,
+    responsable_creacion: persona.usuario_creador?.username ?? null,
+    responsable_actualizacion: persona.usuario_actualizador?.username ?? null,
   };
 }

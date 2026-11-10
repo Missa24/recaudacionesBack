@@ -1,15 +1,4 @@
 /**
- * Interfaz: PersonaNaturalResponsable
- * Descripción:
- * Define los datos del usuario responsable de una operación.
- *
- * Desarrollado por: Missael Apaza
- */
-export interface PersonaNaturalResponsable {
-  username: string;
-}
-
-/**
  * Interfaz: PersonaNaturalResponse
  * Descripción:
  * Define los datos que se mostrarán al consultar una persona natural.
@@ -32,8 +21,8 @@ export interface PersonaNaturalResponse {
   apellido_casada: string | null;
   estado_civil: string;
   estado: string;
-  responsable_creacion: PersonaNaturalResponsable | null;
-  responsable_actualizacion: PersonaNaturalResponsable | null;
+  responsable_creacion: string | null;
+  responsable_actualizacion: string | null;
 }
 
 /**

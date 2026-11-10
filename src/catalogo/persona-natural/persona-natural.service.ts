@@ -71,10 +71,10 @@ export class PersonaNaturalService {
    */
   async crear(
     dto: CreatePersonaNaturalDto,
-    id_usuario: string,
+    idUsuario: string,
   ): Promise<PersonaNaturalCreateResponse> {
     this.logger.log(
-      `Iniciando creación de persona natural. Tipo: ${dto.tipo_documento}, Número: ${dto.numero_documento}, Usuario: ${id_usuario}`,
+      `Iniciando creación de persona natural. Tipo: ${dto.tipo_documento}, Número: ${dto.numero_documento}, Usuario: ${idUsuario}`,
     );
 
     const complemento = dto.complemento ?? '';
@@ -117,15 +117,15 @@ export class PersonaNaturalService {
       estado: 'ACTIVO',
       _created_at: new Date(),
       _updated_at: new Date(),
-      _user_created: id_usuario,
-      usuario_creador: { id_usuario } as Usuario,
+      _user_created: idUsuario,
+      usuario_creador: { idUsuario } as Usuario,
     });
 
     try {
       const guardada = await this.personaNaturalRepository.save(persona);
 
       this.logger.log(
-        `Persona natural creada exitosamente. ID: ${guardada.id}, Usuario: ${id_usuario}`,
+        `Persona natural creada exitosamente. ID: ${guardada.id}, Usuario: ${idUsuario}`,
       );
 
       return {
@@ -225,10 +225,20 @@ export class PersonaNaturalService {
       });
     }
 
-    queryBuilder.andWhere('persona.estado = :estado', {
-      estado: status ?? 'ACTIVO',
-    });
-
+    // Aplicar filtro de estado, mostrando activos por defecto.
+    if (status && status !== 'TODOS') {
+      this.logger.debug(`Aplicando filtro estado: ${status}`);
+      queryBuilder.andWhere('persona.estado = :estado', {
+        estado: status,
+      });
+    } else if (!status) {
+      this.logger.debug('Aplicando filtro estado por defecto: ACTIVO');
+      queryBuilder.andWhere('persona.estado = :estado', {
+        estado: 'ACTIVO',
+      });
+    } else {
+      this.logger.debug('Consultando personas naturales de todos los estados');
+    }
     if (estado_civil) {
       this.logger.debug(`Aplicando filtro estado_civil: ${estado_civil}`);
       queryBuilder.andWhere('persona.estado_civil = :estado_civil', {
@@ -378,10 +388,10 @@ export class PersonaNaturalService {
   async actualizar(
     id: string,
     dto: UpdatePersonaNaturalDto,
-    id_usuario: string,
+    idUsuario: string,
   ): Promise<PersonaNaturalMessageResponse> {
     this.logger.log(
-      `Iniciando actualización de persona natural. ID: ${id}, Usuario: ${id_usuario}`,
+      `Iniciando actualización de persona natural. ID: ${id}, Usuario: ${idUsuario}`,
     );
 
     const persona = await this.personaNaturalRepository.findOne({
@@ -467,14 +477,14 @@ export class PersonaNaturalService {
 
     Object.assign(persona, dto);
     persona._updated_at = new Date();
-    persona._user_update = id_usuario;
-    persona.usuario_actualizador = { id_usuario } as Usuario;
+    persona._user_update = idUsuario;
+    persona.usuario_actualizador = { idUsuario } as Usuario;
 
     try {
       await this.personaNaturalRepository.save(persona);
 
       this.logger.log(
-        `Persona natural actualizada correctamente. ID: ${id}, Usuario: ${id_usuario}`,
+        `Persona natural actualizada correctamente. ID: ${id}, Usuario: ${idUsuario}`,
       );
 
       return {
@@ -507,10 +517,10 @@ export class PersonaNaturalService {
    */
   async cambiarEstado(
     id: string,
-    id_usuario: string,
+    idUsuario: string,
   ): Promise<PersonaNaturalMessageResponse> {
     this.logger.log(
-      `Iniciando cambio de estado de persona natural. ID: ${id}, Usuario: ${id_usuario}`,
+      `Iniciando cambio de estado de persona natural. ID: ${id}, Usuario: ${idUsuario}`,
     );
 
     const persona = await this.personaNaturalRepository.findOne({
@@ -529,13 +539,13 @@ export class PersonaNaturalService {
     const estadoAnterior = persona.estado;
     persona.estado = persona.estado === 'ACTIVO' ? 'INACTIVO' : 'ACTIVO';
     persona._updated_at = new Date();
-    persona._user_update = id_usuario;
-    persona.usuario_actualizador = { id_usuario } as Usuario;
+    persona._user_update = idUsuario;
+    persona.usuario_actualizador = { idUsuario } as Usuario;
 
     if (persona.estado === 'INACTIVO') {
       persona._deleted_at = new Date();
-      persona._user_delete = id_usuario;
-      persona.usuario_eliminador = { id_usuario } as Usuario;
+      persona._user_delete = idUsuario;
+      persona.usuario_eliminador = { idUsuario } as Usuario;
     } else {
       persona._deleted_at = null;
       persona._user_delete = null;
@@ -546,11 +556,11 @@ export class PersonaNaturalService {
       await this.personaNaturalRepository.save(persona);
 
       this.logger.log(
-        `Estado de persona natural cambiado correctamente. ID: ${id}, Estado anterior: ${estadoAnterior}, Estado nuevo: ${persona.estado}, Usuario: ${id_usuario}`,
+        `Estado de persona natural cambiado correctamente. ID: ${id}, Estado anterior: ${estadoAnterior}, Estado nuevo: ${persona.estado}, Usuario: ${idUsuario}`,
       );
 
       return {
-        message: `Persona natural ${persona.estado === 'ACTIVO' ? 'activada' : 'inactivada'} correctamente.`,
+        message: `Registro de la persona natural ${persona.estado === 'ACTIVO' ? 'activado' : 'inactivado'} correctamente.`,
       };
     } catch (error) {
       this.logger.error(

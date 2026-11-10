@@ -49,19 +49,4 @@ export class QueryPersonaNaturalDto extends QueryPaginatedDto {
       'El estado civil debe ser uno de los siguientes valores: NO DECLARADO',
   })
   estado_civil?: string;
-
-  /*
-   * Estado del registro utilizado para filtrar los resultados.
-   * Desarrollado por: Missael Apaza */
-  @ApiPropertyOptional({
-    example: 'ACTIVO',
-    enum: ['ACTIVO', 'INACTIVO'],
-    description: 'Filtra por el estado actual del registro.',
-  })
-  @IsOptional()
-  @IsIn(['ACTIVO', 'INACTIVO'], {
-    message:
-      'El estado debe ser uno de los siguientes valores: ACTIVO o INACTIVO',
-  })
-  declare status?: string;
 }

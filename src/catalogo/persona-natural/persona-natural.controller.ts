@@ -17,9 +17,17 @@ import {
   Patch,
   Post,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 
-import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { AuthGuard } from '@nestjs/passport';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiParam,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 
 import { PersonaNaturalService } from './persona-natural.service';
 
@@ -42,7 +50,7 @@ import { PaginatedResponse } from 'src/shared/interface/paginated-response.inter
  * Será reemplazado por el usuario autenticado cuando se integre
  * el módulo de seguridad.
  */
-const id_usuario = '8b461287-8416-412e-84e7-b5c77615ea2a';
+const idUsuario = '8b461287-8416-412e-84e7-b5c77615ea2a';
 
 /**
  * Controlador encargado de gestionar las solicitudes HTTP
@@ -50,7 +58,9 @@ const id_usuario = '8b461287-8416-412e-84e7-b5c77615ea2a';
  *
  * Desarrollado por: Missael Apaza
  */
-@ApiTags('Catálogos - Personas Naturales')
+@ApiTags('Catálogos / Personas Naturales')
+@ApiBearerAuth('JWT')
+@UseGuards(AuthGuard('jwt'))
 @Controller('catalogos/personas-naturales')
 export class PersonaNaturalController {
   /**
@@ -78,6 +88,7 @@ export class PersonaNaturalController {
     description:
       'Datos de entrada inválidos o fecha de nacimiento posterior a la actual.',
   })
+  @ApiResponse({ status: 403, description: 'Acceso denegado' })
   @ApiResponse({
     status: 409,
     description:
@@ -90,7 +101,7 @@ export class PersonaNaturalController {
   async crear(
     @Body() dto: CreatePersonaNaturalDto,
   ): Promise<PersonaNaturalCreateResponse> {
-    return this.personaNaturalService.crear(dto, id_usuario);
+    return this.personaNaturalService.crear(dto, idUsuario);
   }
 
   /**
@@ -110,6 +121,7 @@ export class PersonaNaturalController {
     status: 400,
     description: 'Parámetros de consulta inválidos.',
   })
+  @ApiResponse({ status: 403, description: 'Acceso denegado' })
   @ApiResponse({
     status: 500,
     description: 'Error interno del servidor.',
@@ -137,6 +149,7 @@ export class PersonaNaturalController {
     status: 400,
     description: 'Parámetros de búsqueda inválidos.',
   })
+  @ApiResponse({ status: 403, description: 'Acceso denegado' })
   @ApiResponse({
     status: 500,
     description: 'Error interno del servidor.',
@@ -168,6 +181,7 @@ export class PersonaNaturalController {
     status: 400,
     description: 'El identificador proporcionado no es un UUID válido.',
   })
+  @ApiResponse({ status: 403, description: 'Acceso denegado' })
   @ApiResponse({
     status: 404,
     description: 'No se encontró la persona natural solicitada.',
@@ -204,6 +218,7 @@ export class PersonaNaturalController {
     description:
       'Datos inválidos, fecha de nacimiento posterior a la actual o persona inactiva.',
   })
+  @ApiResponse({ status: 403, description: 'Acceso denegado' })
   @ApiResponse({
     status: 404,
     description: 'No se encontró la persona natural solicitada.',
@@ -221,7 +236,7 @@ export class PersonaNaturalController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdatePersonaNaturalDto,
   ): Promise<PersonaNaturalMessageResponse> {
-    return this.personaNaturalService.actualizar(id, dto, id_usuario);
+    return this.personaNaturalService.actualizar(id, dto, idUsuario);
   }
 
   /**
@@ -245,6 +260,7 @@ export class PersonaNaturalController {
     status: 400,
     description: 'El identificador proporcionado no es un UUID válido.',
   })
+  @ApiResponse({ status: 403, description: 'Acceso denegado' })
   @ApiResponse({
     status: 404,
     description: 'No se encontró la persona natural solicitada.',
@@ -256,6 +272,6 @@ export class PersonaNaturalController {
   async cambiarEstado(
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<PersonaNaturalMessageResponse> {
-    return this.personaNaturalService.cambiarEstado(id, id_usuario);
+    return this.personaNaturalService.cambiarEstado(id, idUsuario);
   }
 }
