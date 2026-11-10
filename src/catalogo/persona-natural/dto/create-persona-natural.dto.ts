@@ -5,7 +5,7 @@
  * Define los datos y las validaciones necesarias para registrar
  * una persona natural en el sistema.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
@@ -25,12 +25,12 @@ import {
  * Establece los campos obligatorios y opcionales del registro,
  * junto con sus respectivas reglas de validación.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 export class CreatePersonaNaturalDto {
   /*
    * Tipo de documento de identidad.
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   @ApiProperty({ example: 'CI', maxLength: 20 })
   @IsString({ message: 'El tipo de documento debe ser un texto' })
@@ -42,7 +42,7 @@ export class CreatePersonaNaturalDto {
 
   /*
    * Número del documento de identidad.
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   @ApiProperty({ example: '1234567', maxLength: 30 })
   @IsString({ message: 'El número de documento debe ser un texto' })
@@ -54,7 +54,7 @@ export class CreatePersonaNaturalDto {
 
   /*
    * Complemento del documento de identidad.
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   @ApiPropertyOptional({ example: '', default: '' })
   @ValidateIf((_, value) => value !== undefined)
@@ -66,7 +66,7 @@ export class CreatePersonaNaturalDto {
 
   /*
    * Lugar de expedición del documento de identidad.
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   @ApiPropertyOptional({ example: 'LP', default: '' })
   @ValidateIf((_, value) => value !== undefined)
@@ -78,7 +78,7 @@ export class CreatePersonaNaturalDto {
 
   /*
    * Nombres de la persona natural.
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   @ApiProperty({ example: 'Juan Carlos', maxLength: 150 })
   @IsString({ message: 'Los nombres deben ser un texto' })
@@ -90,7 +90,7 @@ export class CreatePersonaNaturalDto {
 
   /*
    * Apellido paterno de la persona natural.
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   @ApiPropertyOptional({ example: 'Pérez', maxLength: 150, nullable: true })
   @IsOptional()
@@ -102,7 +102,7 @@ export class CreatePersonaNaturalDto {
 
   /*
    * Apellido materno de la persona natural.
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   @ApiPropertyOptional({ example: 'Gómez', maxLength: 150, nullable: true })
   @IsOptional()
@@ -114,7 +114,7 @@ export class CreatePersonaNaturalDto {
 
   /*
    * Domicilio de la persona natural.
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   @ApiPropertyOptional({
     example: 'Av. Principal Nro. 123',
@@ -130,7 +130,7 @@ export class CreatePersonaNaturalDto {
 
   /*
    * Número de teléfono de contacto.
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   @ApiPropertyOptional({ example: '"70000000"', maxLength: 20, nullable: true })
   @IsOptional()
@@ -142,7 +142,7 @@ export class CreatePersonaNaturalDto {
 
   /*
    * Correo electrónico de contacto.
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   @ApiPropertyOptional({ example: 'juan@example.com', nullable: true })
   @IsOptional()
@@ -151,7 +151,7 @@ export class CreatePersonaNaturalDto {
 
   /*
    * Fecha de nacimiento de la persona natural.
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   @ApiPropertyOptional({ example: '1995-05-12', nullable: true })
   @IsOptional()
@@ -166,7 +166,7 @@ export class CreatePersonaNaturalDto {
 
   /*
    * Apellido de casada, cuando corresponda.
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   @ApiPropertyOptional({ example: 'López', maxLength: 150, nullable: true })
   @IsOptional()
@@ -178,7 +178,7 @@ export class CreatePersonaNaturalDto {
 
   /*
    * Estado civil declarado por la persona natural.
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   @ApiPropertyOptional({
     example: 'NO DECLARADO',

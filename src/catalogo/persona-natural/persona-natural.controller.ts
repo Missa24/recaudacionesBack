@@ -5,7 +5,7 @@
  * Gestiona los endpoints para registrar, consultar, listar,
  * actualizar y cambiar el estado de las personas naturales.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 
 import {
@@ -56,7 +56,7 @@ const idUsuario = '8b461287-8416-412e-84e7-b5c77615ea2a';
  * Controlador encargado de gestionar las solicitudes HTTP
  * del catálogo de personas naturales.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 @ApiTags('Catálogos / Personas Naturales')
 @ApiBearerAuth('JWT')
@@ -66,14 +66,14 @@ export class PersonaNaturalController {
   /**
    * Inicializa el servicio de personas naturales.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   constructor(private readonly personaNaturalService: PersonaNaturalService) {}
 
   /**
    * Registra una nueva persona natural.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   @Post()
   @ApiOperation({
@@ -107,7 +107,7 @@ export class PersonaNaturalController {
   /**
    * Lista las personas naturales aplicando filtros y paginación.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   @Get()
   @ApiOperation({
@@ -135,7 +135,7 @@ export class PersonaNaturalController {
   /**
    * Busca una persona natural mediante sus datos de identidad documental.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   @Get('buscar')
   @ApiOperation({
@@ -163,7 +163,7 @@ export class PersonaNaturalController {
   /**
    * Consulta una persona natural mediante su identificador UUID.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   @Get(':id')
   @ApiOperation({
@@ -199,7 +199,7 @@ export class PersonaNaturalController {
   /**
    * Actualiza los datos de una persona natural existente.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   @Patch(':id')
   @ApiOperation({
@@ -242,7 +242,7 @@ export class PersonaNaturalController {
   /**
    * Activa o inactiva una persona natural.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   @Patch(':id/estado')
   @ApiOperation({

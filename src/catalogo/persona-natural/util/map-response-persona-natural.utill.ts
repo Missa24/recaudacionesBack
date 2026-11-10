@@ -5,7 +5,7 @@ import { PersonaNaturalResponse } from '../interface/persona-natural-response.in
  * Convierte una entidad PersonaNatural a la estructura
  * pública definida para las respuestas del servicio.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 export function mapearRespuesta(
   persona: PersonaNatural,

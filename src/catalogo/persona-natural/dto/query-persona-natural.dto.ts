@@ -5,7 +5,7 @@
  * Define los parámetros específicos de consulta y filtrado
  * para el listado paginado de personas naturales.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 
 import { ApiPropertyOptional } from '@nestjs/swagger';
@@ -19,12 +19,12 @@ import { QueryPaginatedDto } from 'src/shared/dto/query-paginated.dto';
  * Hereda los parámetros generales de búsqueda, filtrado,
  * ordenamiento y paginación del DTO compartido.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 export class QueryPersonaNaturalDto extends QueryPaginatedDto {
   /*
    * Tipo de documento utilizado para filtrar los resultados.
-   * Desarrollado por: Missael Apaza */
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026 */
   @ApiPropertyOptional({
     example: 'CI',
     description: 'Filtra las personas naturales por tipo de documento.',
@@ -38,7 +38,7 @@ export class QueryPersonaNaturalDto extends QueryPaginatedDto {
 
   /*
    * Estado civil utilizado para filtrar los resultados.
-   * Desarrollado por: Missael Apaza */
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026 */
   @ApiPropertyOptional({
     example: 'NO DECLARADO',
     enum: ['NO DECLARADO'],

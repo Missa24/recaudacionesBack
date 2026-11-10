@@ -3,7 +3,7 @@
  * Descripción:
  * Define los datos que se mostrarán al consultar una persona natural.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 export interface PersonaNaturalResponse {
   id: string;
@@ -30,7 +30,7 @@ export interface PersonaNaturalResponse {
  * Descripción:
  * Define la respuesta de una operación mediante un mensaje.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 export interface PersonaNaturalMessageResponse {
   message: string;
@@ -41,7 +41,7 @@ export interface PersonaNaturalMessageResponse {
  * Descripción:
  * Define los datos devueltos después de registrar una persona natural.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 export interface PersonaNaturalCreateResponse extends PersonaNaturalMessageResponse {
   id: string;
@@ -53,7 +53,7 @@ export interface PersonaNaturalCreateResponse extends PersonaNaturalMessageRespo
  * Define el resultado de la búsqueda de personas naturales
  * mediante sus datos documentales.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 export interface BuscarPersonaNaturalResponse {
   encontrada: boolean;

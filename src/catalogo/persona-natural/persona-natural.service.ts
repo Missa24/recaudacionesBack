@@ -5,7 +5,7 @@
  * Contiene la lógica de negocio para el registro, consulta,
  * actualización y administración de personas naturales.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 
 import {
@@ -40,14 +40,14 @@ import { mapearRespuesta } from './util/map-response-persona-natural.utill';
  * Servicio encargado de gestionar las operaciones
  * del catálogo de personas naturales.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 @Injectable()
 export class PersonaNaturalService {
   /**
    * Logger del servicio para trazabilidad de operaciones.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   private readonly logger = new Logger(PersonaNaturalService.name);
 
@@ -55,7 +55,7 @@ export class PersonaNaturalService {
    * Inyecta el repositorio de personas naturales
    * para realizar las operaciones sobre la entidad.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   constructor(
     @InjectRepository(PersonaNatural)
@@ -67,7 +67,7 @@ export class PersonaNaturalService {
    * la existencia de sus datos documentales y la validez
    * de su fecha de nacimiento.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   async crear(
     dto: CreatePersonaNaturalDto,
@@ -155,7 +155,7 @@ export class PersonaNaturalService {
    * aplicando filtros de búsqueda, estado y fechas,
    * además de los criterios de ordenamiento.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   async listar(
     query: QueryPersonaNaturalDto,
@@ -298,7 +298,7 @@ export class PersonaNaturalService {
    * El tipo y número de documento son obligatorios, mientras que
    * el complemento y lugar de expedición funcionan como filtros opcionales.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   async buscarPorDocumento(
     dto: BuscarPersonaNaturalDto,
@@ -355,7 +355,7 @@ export class PersonaNaturalService {
    * Si no existe un registro con el identificador proporcionado,
    * genera una excepción de recurso no encontrado.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   async buscarPorId(id: string): Promise<PersonaNaturalResponse> {
     this.logger.log(`Buscando persona natural por ID: ${id}`);
@@ -383,7 +383,7 @@ export class PersonaNaturalService {
    * Verifica su estado, la fecha de nacimiento y la unicidad
    * de los datos documentales cuando estos son modificados.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   async actualizar(
     id: string,
@@ -513,7 +513,7 @@ export class PersonaNaturalService {
    * Actualiza los datos de auditoría y registra o limpia la información
    * correspondiente a la inactivación del registro.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   async cambiarEstado(
     id: string,

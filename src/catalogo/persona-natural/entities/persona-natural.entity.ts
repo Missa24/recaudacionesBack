@@ -5,7 +5,7 @@
  * Define la estructura y las relaciones de la entidad PersonaNatural,
  * correspondiente a la tabla persona_natural del esquema catalogo.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 
 import { Usuario } from 'src/seguridad/usuario/entities/usuario.entity';
@@ -23,7 +23,7 @@ import {
  * Representa la información personal, documental y de auditoría
  * de las personas naturales registradas en el sistema.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 @Entity({ schema: 'catalogo', name: 'persona_natural' })
 @Unique('uq_persona_natural_documento', [
