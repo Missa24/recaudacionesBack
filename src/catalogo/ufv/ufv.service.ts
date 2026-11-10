@@ -64,10 +64,10 @@ export class UfvService {
    */
   async crear(
     dto: CreateUfvDto,
-    id_usuario: string,
+    idUsuario: string,
   ): Promise<UfvMessageResponse> {
     this.logger.log(
-      `Iniciando creación de UFV. Fecha: ${dto.fecha}, Valor: ${dto.valor}, Usuario: ${id_usuario}`,
+      `Iniciando creación de UFV. Fecha: ${dto.fecha}, Valor: ${dto.valor}, Usuario: ${idUsuario}`,
     );
 
     // Comprueba si ya existe un registro para la fecha proporcionada.
@@ -85,14 +85,14 @@ export class UfvService {
     // Prepara la entidad asociando los datos del usuario creador.
     const ufv = this.ufvRepository.create({
       ...dto,
-      usuario_creador: { id_usuario },
+      usuario_creador: { idUsuario },
     });
 
     try {
       const guardada = await this.ufvRepository.save(ufv);
 
       this.logger.log(
-        `UFV registrada correctamente. ID: ${guardada.id}, Fecha: ${guardada.fecha}, Valor: ${guardada.valor}, Usuario: ${id_usuario}`,
+        `UFV registrada correctamente. ID: ${guardada.id}, Fecha: ${guardada.fecha}, Valor: ${guardada.valor}, Usuario: ${idUsuario}`,
       );
 
       return {
@@ -108,7 +108,7 @@ export class UfvService {
       }
 
       this.logger.error(
-        `Error al crear una UFV. Fecha: ${dto.fecha}, Usuario: ${id_usuario}`,
+        `Error al crear una UFV. Fecha: ${dto.fecha}, Usuario: ${idUsuario}`,
         error instanceof Error ? error.stack : String(error),
       );
 
@@ -149,7 +149,7 @@ export class UfvService {
     const ufv = this.ufvRepository.create({
       fecha,
       valor,
-      usuario_creador: { id_usuario: userId },
+      usuario_creador: { idUsuario: userId },
     });
 
     try {
@@ -224,19 +224,18 @@ export class UfvService {
       .leftJoinAndSelect('ufv.usuario_creador', 'usuario_creador')
       .leftJoinAndSelect('ufv.usuario_actualizador', 'usuario_actualizador');
 
-    // Excluir registros dados de baja.
-    queryBuilder.andWhere('ufv._deleted_at IS NULL');
-
-    // Aplicar el estado solicitado o mostrar activos por defecto.
-    if (status) {
+    if (status && status !== 'TODOS') {
       this.logger.debug(`Aplicando filtro estado: ${status}`);
       queryBuilder.andWhere('ufv.estado = :estado', {
         estado: status,
       });
-    } else {
+    } else if (!status) {
+      this.logger.debug('Aplicando filtro estado por defecto: ACTIVO');
       queryBuilder.andWhere('ufv.estado = :estado', {
         estado: 'ACTIVO',
       });
+    } else {
+      this.logger.debug('Consultando UFVs de todos los estados');
     }
 
     // Aplicar filtro por fecha inicial.
@@ -407,10 +406,10 @@ export class UfvService {
   async actualizar(
     id: string,
     dto: UpdateUfvDto,
-    id_usuario: string,
+    idUsuario: string,
   ): Promise<UfvMessageResponse> {
     this.logger.log(
-      `Iniciando actualización de UFV. ID: ${id}, Usuario: ${id_usuario}`,
+      `Iniciando actualización de UFV. ID: ${id}, Usuario: ${idUsuario}`,
     );
 
     const ufv = await this.ufvRepository.findOne({
@@ -454,14 +453,14 @@ export class UfvService {
     Object.assign(ufv, dto);
 
     // Actualiza la información de auditoría.
-    ufv._user_update = id_usuario;
+    ufv._user_update = idUsuario;
     ufv._updated_at = new Date();
 
     try {
       await this.ufvRepository.save(ufv);
 
       this.logger.log(
-        `UFV actualizada correctamente. ID: ${id}, Fecha: ${ufv.fecha}, Usuario: ${id_usuario}`,
+        `UFV actualizada correctamente. ID: ${id}, Fecha: ${ufv.fecha}, Usuario: ${idUsuario}`,
       );
 
       return {
@@ -497,10 +496,10 @@ export class UfvService {
    */
   async cambiarEstado(
     id: string,
-    id_usuario: string,
+    idUsuario: string,
   ): Promise<UfvMessageResponse> {
     this.logger.log(
-      `Iniciando cambio de estado de UFV. ID: ${id}, Usuario: ${id_usuario}`,
+      `Iniciando cambio de estado de UFV. ID: ${id}, Usuario: ${idUsuario}`,
     );
 
     const ufv = await this.ufvRepository.findOne({
@@ -520,13 +519,13 @@ export class UfvService {
 
     if (nuevoEstado === 'INACTIVO') {
       // Registra quién y cuándo realizó la desactivación.
-      ufv._user_delete = id_usuario;
+      ufv._user_delete = idUsuario;
       ufv._deleted_at = new Date();
       ufv._user_update = null;
       ufv._updated_at = null;
     } else {
       // Al reactivar, limpia los datos de eliminación lógica.
-      ufv._user_update = id_usuario;
+      ufv._user_update = idUsuario;
       ufv._updated_at = new Date();
       ufv._user_delete = null;
       ufv._deleted_at = null;
@@ -536,11 +535,11 @@ export class UfvService {
       await this.ufvRepository.save(ufv);
 
       this.logger.log(
-        `Estado de UFV cambiado correctamente. ID: ${id}, Estado anterior: ${estadoAnterior}, Estado nuevo: ${nuevoEstado}, Usuario: ${id_usuario}`,
+        `Estado de UFV cambiado correctamente. ID: ${id}, Estado anterior: ${estadoAnterior}, Estado nuevo: ${nuevoEstado}, Usuario: ${idUsuario}`,
       );
 
       return {
-        message: 'Estado de la UFV cambiado correctamente',
+        message: `Registro del UFV ${ufv.estado === 'ACTIVO' ? 'activado' : 'inactivado'} correctamente.`,
       };
     } catch (error: unknown) {
       this.logger.error(

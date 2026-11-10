@@ -25,11 +25,7 @@ export function mapearRespuesta(ufv: Ufv): UfvResponse {
     fecha: ufv.fecha,
     valor: String(ufv.valor),
     estado: ufv.estado,
-    responsable_creacion: ufv.usuario_creador
-      ? { username: ufv.usuario_creador.username }
-      : null,
-    responsable_actualizacion: ufv.usuario_actualizador
-      ? { username: ufv.usuario_actualizador.username }
-      : null,
+    responsable_creacion: ufv.usuario_creador?.username ?? null,
+    responsable_actualizacion: ufv.usuario_actualizador?.username ?? null,
   };
 }

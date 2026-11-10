@@ -9,17 +9,6 @@
  */
 
 /**
- * Interfaz: UfvResponsable
- * Descripción:
- * Representa los datos del usuario responsable de una operación sobre UFV.
- *
- * Desarrollado por: Missael Apaza
- */
-export interface UfvResponsable {
-  username: string;
-}
-
-/**
  * Interfaz: UfvResponse
  * Descripción:
  * Define la estructura de los datos UFV que se entregan en las consultas,
@@ -33,8 +22,8 @@ export interface UfvResponse {
   valor: string;
   estado: string;
 
-  responsable_creacion: UfvResponsable | null;
-  responsable_actualizacion: UfvResponsable | null;
+  responsable_creacion: string | null;
+  responsable_actualizacion: string | null;
 }
 
 /**

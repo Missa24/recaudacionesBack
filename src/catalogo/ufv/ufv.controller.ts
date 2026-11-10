@@ -16,10 +16,13 @@ import {
   Patch,
   Param,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 
+import { AuthGuard } from '@nestjs/passport';
 import {
   ApiTags,
+  ApiBearerAuth,
   ApiOperation,
   ApiResponse,
   ApiParam,
@@ -43,13 +46,14 @@ const userId = '8b461287-8416-412e-84e7-b5c77615ea2a';
  *
  * Desarrollado por: Missael Apaza
  */
-@ApiTags('Catálogos - UFV')
-@Controller('ufv')
 @ApiTags('Catálogos / UFV')
+@ApiBearerAuth('JWT')
+@UseGuards(AuthGuard('jwt'))
+@Controller('ufv')
 export class UfvController {
   constructor(
     private readonly ufvService: UfvService,
-    private readonly usfApiService: UfvApiService,
+    private readonly ufvApiService: UfvApiService,
   ) {}
 
   /**
@@ -64,6 +68,7 @@ export class UfvController {
   })
   @ApiResponse({ status: 201, description: 'UFV registrada correctamente.' })
   @ApiResponse({ status: 400, description: 'Datos de entrada inválidos.' })
+  @ApiResponse({ status: 403, description: 'Acceso denegado' })
   @ApiResponse({
     status: 409,
     description: 'Ya existe una UFV para esa fecha.',
@@ -86,9 +91,10 @@ export class UfvController {
     status: 201,
     description: 'Sincronización ejecutada correctamente.',
   })
+  @ApiResponse({ status: 403, description: 'Acceso denegado' })
   @ApiResponse({ status: 500, description: 'Error durante la sincronización.' })
   sincronizar() {
-    return this.usfApiService.sincronizar();
+    return this.ufvApiService.sincronizar();
   }
 
   /**
@@ -104,10 +110,12 @@ export class UfvController {
   @ApiOkResponse({
     description: 'Listado de registros UFV obtenido correctamente.',
   })
+  @ApiResponse({ status: 403, description: 'Acceso denegado' })
   @Get()
   listar(@Query() query: QueryUfvDto) {
     return this.ufvService.listar(query);
   }
+
   /**
    * Obtiene un registro UFV mediante su identificador único.
    *
@@ -124,6 +132,7 @@ export class UfvController {
     example: '8b461287-8416-412e-84e7-b5c77615ea2a',
   })
   @ApiResponse({ status: 200, description: 'Registro encontrado.' })
+  @ApiResponse({ status: 403, description: 'Acceso denegado' })
   @ApiResponse({ status: 404, description: 'Registro no encontrado.' })
   obtenerPorId(@Param('id') id: string) {
     return this.ufvService.buscarPorId(id);
@@ -146,6 +155,7 @@ export class UfvController {
     example: '2026-11-07',
   })
   @ApiResponse({ status: 200, description: 'Registro encontrado.' })
+  @ApiResponse({ status: 403, description: 'Acceso denegado' })
   @ApiResponse({ status: 404, description: 'No existe UFV para esa fecha.' })
   obtenerPorFecha(@Param('fecha') fecha: string) {
     return this.ufvService.buscarPorFecha(fecha);
@@ -171,6 +181,7 @@ export class UfvController {
     status: 400,
     description: 'Datos de actualización inválidos.',
   })
+  @ApiResponse({ status: 403, description: 'Acceso denegado' })
   @ApiResponse({ status: 404, description: 'Registro no encontrado.' })
   actualizar(@Param('id') id: string, @Body() dto: UpdateUfvDto) {
     return this.ufvService.actualizar(id, dto, userId);
@@ -195,6 +206,7 @@ export class UfvController {
     status: 200,
     description: 'Estado actualizado correctamente.',
   })
+  @ApiResponse({ status: 403, description: 'Acceso denegado' })
   @ApiResponse({ status: 404, description: 'Registro no encontrado.' })
   cambiarEstado(@Param('id') id: string) {
     return this.ufvService.cambiarEstado(id, userId);
