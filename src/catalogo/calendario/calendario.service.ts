@@ -5,7 +5,7 @@
  * Contiene la lógica de negocio para el registro, consulta,
  * actualización y administración de fechas del calendario.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 
 import {
@@ -22,7 +22,7 @@ import { Calendario } from './entities/calendario.entity';
 import { Usuario } from 'src/seguridad/usuario/entities/usuario.entity';
 
 import { CreateCalendarioDto } from './dto/create-calendario.dto';
-import { CreateCalendarioLoteDto } from './dto/create-calendario-lote.dto';
+import { CreateCalendarioRangoDto } from './dto/create-calendario-lote.dto';
 import { UpdateCalendarioDto } from './dto/update-calendario.dto';
 import { QueryCalendarioDto } from './dto/query-calendario.dto';
 
@@ -40,19 +40,20 @@ import { esErrorDuplicado } from 'src/shared/util/errores-duplicados.util';
 import { validarFecha } from './util/calendario-validar-fecha.util';
 import { calcularDiaHabil } from './util/calendario-dia-habil.util';
 import { mapearCalendario } from './util/calendario.mapper';
+import { generarFechasDelRango } from './util/calendario-generar-fechas.util';
 
 /**
  * Servicio encargado de gestionar las operaciones
  * del catálogo de calendario.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 @Injectable()
 export class CalendarioService {
   /**
    * Logger del servicio para trazabilidad de operaciones.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   private readonly logger = new Logger(CalendarioService.name);
 
@@ -60,7 +61,7 @@ export class CalendarioService {
    * Inyecta el repositorio de calendario y el origen de datos
    * para realizar las operaciones sobre la entidad.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   constructor(
     @InjectRepository(Calendario)
@@ -72,14 +73,14 @@ export class CalendarioService {
    * Registra una nueva fecha en el calendario,
    * verificando que no se encuentre registrada previamente.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   async crear(
     dto: CreateCalendarioDto,
-    id_usuario: string,
+    idUsuario: string,
   ): Promise<CalendarioCreateResponse> {
     this.logger.log(
-      `Iniciando creación de fecha en calendario. Fecha: ${dto.fecha}, Usuario: ${id_usuario}`,
+      `Iniciando creación de fecha en calendario. Fecha: ${dto.fecha}, Usuario: ${idUsuario}`,
     );
 
     validarFecha(dto.fecha);
@@ -104,15 +105,15 @@ export class CalendarioService {
       estado: 'ACTIVO',
       _created_at: new Date(),
       _updated_at: new Date(),
-      _user_created: id_usuario,
-      usuario_creador: { id_usuario } as Usuario,
+      _user_created: idUsuario,
+      usuario_creador: { idUsuario } as Usuario,
     });
 
     try {
       const guardado = await this.calendarioRepository.save(calendario);
 
       this.logger.log(
-        `Fecha registrada correctamente en calendario. ID: ${guardado.id}, Fecha: ${guardado.fecha}, Habil: ${guardado.habil}, Usuario: ${id_usuario}`,
+        `Fecha registrada correctamente en calendario. ID: ${guardado.id}, Fecha: ${guardado.fecha}, Habil: ${guardado.habil}, Usuario: ${idUsuario}`,
       );
 
       return {
@@ -130,7 +131,7 @@ export class CalendarioService {
       }
 
       this.logger.error(
-        `Error al crear fecha de calendario. Fecha: ${dto.fecha}, Usuario: ${id_usuario}`,
+        `Error al crear fecha de calendario. Fecha: ${dto.fecha}, Usuario: ${idUsuario}`,
         error instanceof Error ? error.stack : String(error),
       );
       throw error;
@@ -138,102 +139,114 @@ export class CalendarioService {
   }
 
   /**
-   * Registra múltiples fechas en el calendario mediante
-   * una transacción, evitando registros duplicados.
+   * Registra un rango continuo de fechas en el calendario.
+   * Genera todas las fechas entre fecha_inicio y fecha_fin (inclusive),
+   * calcula "habil" automáticamente si no se envía y evita duplicados.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
-  async crearLote(
-    dto: CreateCalendarioLoteDto,
-    id_usuario: string,
+  async crearPorRango(
+    dto: CreateCalendarioRangoDto,
+    idUsuario: string,
   ): Promise<CalendarioLoteResponse> {
     this.logger.log(
-      `Iniciando creación de lote de fechas en calendario. Total fechas: ${dto.fechas.length}, Usuario: ${id_usuario}`,
+      `Iniciando creación de rango. Desde: ${dto.fecha_inicio}, Hasta: ${dto.fecha_fin}, Usuario: ${idUsuario}`,
     );
 
-    dto.fechas.forEach((item) => validarFecha(item.fecha));
+    // 1. Validaciones
+    validarFecha(dto.fecha_inicio);
+    validarFecha(dto.fecha_fin);
 
-    const fechasUnicas = new Set(dto.fechas.map((item) => item.fecha));
-
-    if (fechasUnicas.size !== dto.fechas.length) {
-      this.logger.warn(
-        `Lote rechazado: contiene fechas duplicadas internamente. Total: ${dto.fechas.length}, Únicas: ${fechasUnicas.size}`,
+    if (dto.fecha_inicio > dto.fecha_fin) {
+      throw new BadRequestException(
+        'La fecha inicial no puede ser posterior a la fecha final.',
       );
-      throw new ConflictException('El lote contiene fechas duplicadas.');
+    }
+
+    const fechas = generarFechasDelRango(dto.fecha_inicio, dto.fecha_fin);
+
+    if (fechas.length > 366) {
+      throw new BadRequestException('El rango no puede exceder 366 días.');
     }
 
     try {
-      const resultado = await this.dataSource.transaction(async (manager) => {
-        const repository = manager.getRepository(Calendario);
+      const resultado = await this.dataSource.transaction(
+        async (manager): Promise<CalendarioLoteResponse> => {
+          const repository = manager.getRepository(Calendario);
 
-        const existentes = await repository
-          .createQueryBuilder('calendario')
-          .where('calendario.fecha IN (:...fechas)', {
-            fechas: dto.fechas.map((item) => item.fecha),
-          })
-          .getMany();
+          // 2. Consultar fechas existentes
+          const existentes = await repository
+            .createQueryBuilder('calendario')
+            .select('calendario.fecha', 'fecha')
+            .where('calendario.fecha IN (:...fechas)', { fechas })
+            .getRawMany<{ fecha: string }>();
 
-        if (existentes.length > 0) {
-          this.logger.warn(
-            `Lote rechazado: ${existentes.length} fechas ya existen en el calendario. Fechas: ${existentes
-              .map((item) => item.fecha)
-              .join(', ')}`,
+          const setExistentes = new Set(existentes.map(({ fecha }) => fecha));
+
+          // 3. Separar fechas nuevas y omitidas
+          const fechasNuevas = fechas.filter(
+            (fecha) => !setExistentes.has(fecha),
           );
-          throw new ConflictException(
-            `Las siguientes fechas ya están registradas: ${existentes
-              .map((item) => item.fecha)
-              .join(', ')}.`,
+
+          const fechasOmitidas = fechas.filter((fecha) =>
+            setExistentes.has(fecha),
           );
-        }
 
-        const fechaActual = new Date();
+          this.logger.debug(
+            `Rango procesado: ${fechas.length} totales, ${fechasNuevas.length} nuevas, ${fechasOmitidas.length} omitidas.`,
+          );
 
-        const registros = dto.fechas.map((item) =>
-          repository.create({
-            fecha: item.fecha,
-            habil: item.habil ?? calcularDiaHabil(item.fecha),
-            descripcion: item.descripcion ?? null,
-            estado: 'ACTIVO',
-            _created_at: fechaActual,
-            _updated_at: fechaActual,
-            _user_created: id_usuario,
-            usuario_creador: { id_usuario } as Usuario,
-          }),
-        );
+          // 4. Insertar únicamente fechas nuevas
+          if (fechasNuevas.length > 0) {
+            const fechaActual = new Date();
 
-        const guardados = await repository.save(registros);
+            const registros = fechasNuevas.map((fecha) =>
+              repository.create({
+                fecha,
+                habil: dto.habil ?? calcularDiaHabil(fecha),
+                descripcion: dto.descripcion ?? null,
+                estado: 'ACTIVO',
+                _created_at: fechaActual,
+                _updated_at: fechaActual,
+                _user_created: idUsuario,
+                usuario_creador: { idUsuario } as Usuario,
+              }),
+            );
 
-        return {
-          message: 'Las fechas fueron registradas correctamente.',
-          total: guardados.length,
-          ids: guardados.map((item) => item.id),
-        };
-      });
+            await repository
+              .createQueryBuilder()
+              .insert()
+              .into(Calendario)
+              .values(registros)
+              .orIgnore()
+              .execute();
+          }
+
+          // 5. Construir respuesta
+          const totalInsertados = fechasNuevas.length;
+
+          return {
+            message:
+              fechasOmitidas.length > 0
+                ? `Se registraron ${totalInsertados} fechas. Se omitieron ${fechasOmitidas.length} por ya existir.`
+                : `Se registraron correctamente ${totalInsertados} fechas.`,
+            total: totalInsertados,
+            fechas_omitidas: fechasOmitidas,
+          };
+        },
+      );
 
       this.logger.log(
-        `Lote de fechas registrado correctamente. Total insertados: ${resultado.total}, Usuario: ${id_usuario}`,
+        `Rango finalizado. Insertados: ${resultado.total}, Omitidos: ${resultado.fechas_omitidas?.length}, Usuario: ${idUsuario}`,
       );
 
       return resultado;
     } catch (error) {
-      if (esErrorDuplicado(error)) {
-        this.logger.warn(
-          `Error de duplicado al crear lote de fechas en calendario. Total fechas: ${dto.fechas.length}`,
-        );
-        throw new ConflictException(
-          'Una o más fechas ya se encuentran registradas en el calendario.',
-        );
-      }
-
-      // Si es un ConflictException lanzado dentro de la transacción, solo propagar.
-      if (error instanceof ConflictException) {
-        throw error;
-      }
-
       this.logger.error(
-        `Error al crear lote de fechas en calendario. Total fechas: ${dto.fechas.length}, Usuario: ${id_usuario}`,
+        `Error al crear rango. Desde: ${dto.fecha_inicio}, Hasta: ${dto.fecha_fin}, Usuario: ${idUsuario}`,
         error instanceof Error ? error.stack : String(error),
       );
+
       throw error;
     }
   }
@@ -242,7 +255,7 @@ export class CalendarioService {
    * Obtiene el listado paginado de fechas del calendario
    * aplicando búsqueda, filtros y ordenamiento.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   async listar(
     query: QueryCalendarioDto,
@@ -295,9 +308,20 @@ export class CalendarioService {
       );
     }
 
-    queryBuilder.andWhere('calendario.estado = :estado', {
-      estado: status ?? 'ACTIVO',
-    });
+    // Aplicar filtro de estado, mostrando activos por defecto.
+    if (status && status !== 'TODOS') {
+      this.logger.debug(`Aplicando filtro estado: ${status}`);
+      queryBuilder.andWhere('calendario.estado = :estado', {
+        estado: status,
+      });
+    } else if (!status) {
+      this.logger.debug('Aplicando filtro estado por defecto: ACTIVO');
+      queryBuilder.andWhere('calendario.estado = :estado', {
+        estado: 'ACTIVO',
+      });
+    } else {
+      this.logger.debug('Consultando el Calendario de todos los estados');
+    }
 
     if (habil !== undefined) {
       this.logger.debug(`Aplicando filtro habil: ${habil}`);
@@ -370,7 +394,7 @@ export class CalendarioService {
    * Busca una fecha específica y determina su condición
    * de día hábil según la configuración o el día de la semana.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   async buscarPorFecha(fecha: string): Promise<CalendarioFechaResponse> {
     this.logger.log(`Buscando fecha en calendario: ${fecha}`);
@@ -419,7 +443,7 @@ export class CalendarioService {
    * Busca un registro del calendario mediante su identificador UUID.
    * Si no existe, genera una excepción de recurso no encontrado.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   async buscarPorId(id: string): Promise<CalendarioResponse> {
     this.logger.log(`Buscando registro de calendario por ID: ${id}`);
@@ -451,15 +475,15 @@ export class CalendarioService {
    * Actualiza la información de un registro del calendario.
    * Verifica su estado y la unicidad de la fecha cuando esta cambia.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   async actualizar(
     id: string,
     dto: UpdateCalendarioDto,
-    id_usuario: string,
+    idUsuario: string,
   ): Promise<CalendarioMessageResponse> {
     this.logger.log(
-      `Iniciando actualización de registro de calendario. ID: ${id}, Usuario: ${id_usuario}`,
+      `Iniciando actualización de registro de calendario. ID: ${id}, Usuario: ${idUsuario}`,
     );
 
     const calendario = await this.calendarioRepository.findOne({
@@ -517,14 +541,14 @@ export class CalendarioService {
     }
 
     calendario._updated_at = new Date();
-    calendario._user_update = id_usuario;
-    calendario.usuario_actualizador = { id_usuario } as Usuario;
+    calendario._user_update = idUsuario;
+    calendario.usuario_actualizador = { idUsuario } as Usuario;
 
     try {
       await this.calendarioRepository.save(calendario);
 
       this.logger.log(
-        `Registro de calendario actualizado correctamente. ID: ${id}, Fecha: ${calendario.fecha}, Usuario: ${id_usuario}`,
+        `Registro de calendario actualizado correctamente. ID: ${id}, Fecha: ${calendario.fecha}, Usuario: ${idUsuario}`,
       );
 
       return {
@@ -553,14 +577,14 @@ export class CalendarioService {
    * Actualiza los datos de auditoría y registra o limpia la información
    * correspondiente a la inactivación del registro.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   async cambiarEstado(
     id: string,
-    id_usuario: string,
+    idUsuario: string,
   ): Promise<CalendarioMessageResponse> {
     this.logger.log(
-      `Iniciando cambio de estado de registro de calendario. ID: ${id}, Usuario: ${id_usuario}`,
+      `Iniciando cambio de estado de registro de calendario. ID: ${id}, Usuario: ${idUsuario}`,
     );
 
     const calendario = await this.calendarioRepository.findOne({
@@ -580,13 +604,13 @@ export class CalendarioService {
     calendario.estado = calendario.estado === 'ACTIVO' ? 'INACTIVO' : 'ACTIVO';
 
     calendario._updated_at = new Date();
-    calendario._user_update = id_usuario;
-    calendario.usuario_actualizador = { id_usuario } as Usuario;
+    calendario._user_update = idUsuario;
+    calendario.usuario_actualizador = { idUsuario } as Usuario;
 
     if (calendario.estado === 'INACTIVO') {
       calendario._deleted_at = new Date();
-      calendario._user_delete = id_usuario;
-      calendario.usuario_eliminador = { id_usuario } as Usuario;
+      calendario._user_delete = idUsuario;
+      calendario.usuario_eliminador = { idUsuario } as Usuario;
     } else {
       calendario._deleted_at = null;
       calendario._user_delete = null;
@@ -597,7 +621,7 @@ export class CalendarioService {
       await this.calendarioRepository.save(calendario);
 
       this.logger.log(
-        `Estado de registro de calendario cambiado correctamente. ID: ${id}, Estado anterior: ${estadoAnterior}, Estado nuevo: ${calendario.estado}, Usuario: ${id_usuario}`,
+        `Estado de registro de calendario cambiado correctamente. ID: ${id}, Estado anterior: ${estadoAnterior}, Estado nuevo: ${calendario.estado}, Usuario: ${idUsuario}`,
       );
 
       return {

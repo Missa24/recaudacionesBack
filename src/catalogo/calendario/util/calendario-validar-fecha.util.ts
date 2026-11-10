@@ -5,7 +5,7 @@
  * Contiene la función auxiliar para la validación
  * del formato y validez de fechas del calendario.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 
 import { BadRequestException } from '@nestjs/common';
@@ -14,7 +14,7 @@ import { BadRequestException } from '@nestjs/common';
  * Valida que una fecha tenga el formato YYYY-MM-DD
  * y corresponda a una fecha válida.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 export function validarFecha(fecha: string): void {
   const formatoFecha = /^\d{4}-\d{2}-\d{2}$/;

@@ -5,7 +5,7 @@
  * Define la estructura y las relaciones de la entidad Calendario,
  * correspondiente a la tabla calendario del esquema catalogo.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 
 import { Usuario } from 'src/seguridad/usuario/entities/usuario.entity';
@@ -23,7 +23,7 @@ import {
  * Representa la configuración de días hábiles y no hábiles
  * del calendario institucional.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 @Entity({ schema: 'catalogo', name: 'calendario' })
 @Unique('calendario_fecha_key', ['fecha'])
@@ -108,7 +108,7 @@ export class Calendario {
   @ManyToOne(() => Usuario, { nullable: false, onDelete: 'RESTRICT' })
   @JoinColumn({
     name: '_user_created',
-    referencedColumnName: 'id_usuario',
+    referencedColumnName: 'idUsuario',
   })
   usuario_creador!: Usuario;
 
@@ -128,7 +128,7 @@ export class Calendario {
   @ManyToOne(() => Usuario, { nullable: true, onDelete: 'RESTRICT' })
   @JoinColumn({
     name: '_user_update',
-    referencedColumnName: 'id_usuario',
+    referencedColumnName: 'idUsuario',
   })
   usuario_actualizador!: Usuario | null;
 
@@ -148,7 +148,7 @@ export class Calendario {
   @ManyToOne(() => Usuario, { nullable: true, onDelete: 'RESTRICT' })
   @JoinColumn({
     name: '_user_delete',
-    referencedColumnName: 'id_usuario',
+    referencedColumnName: 'idUsuario',
   })
   usuario_eliminador!: Usuario | null;
 }

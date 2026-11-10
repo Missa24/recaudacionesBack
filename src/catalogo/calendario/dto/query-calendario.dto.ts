@@ -5,7 +5,7 @@
  * Define los parámetros de consulta, búsqueda, filtrado
  * y ordenamiento para los registros del calendario.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 
 import { ApiPropertyOptional } from '@nestjs/swagger';
@@ -20,7 +20,7 @@ import { QueryPaginatedDto } from 'src/shared/dto/query-paginated.dto';
  * Extiende los parámetros generales de paginación
  * y agrega filtros específicos del calendario.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 export class QueryCalendarioDto extends QueryPaginatedDto {
   /**

@@ -1,49 +1,58 @@
 /**
  * Módulo: Catálogos - Calendario
- * Archivo: create-calendario-lote.dto.ts
+ * Archivo: create-calendario-rango.dto.ts
  * Descripción:
- * Define los datos necesarios para registrar múltiples
- * fechas en el calendario institucional.
+ * Define los datos necesarios para registrar un rango
+ * de fechas en el calendario institucional.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 
-import { ApiProperty } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
-import { ArrayMinSize, IsArray, ValidateNested } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import {
+  IsBoolean,
+  IsDateString,
+  IsOptional,
+  IsString,
+  MaxLength,
+} from 'class-validator';
 
-import { CreateCalendarioDto } from './create-calendario.dto';
-
-/**
- * DTO: CreateCalendarioLoteDto
- * Descripción:
- * Permite registrar varias fechas del calendario
- * mediante una sola solicitud.
- *
- * Desarrollado por: Missael Apaza
- */
-export class CreateCalendarioLoteDto {
-  /**
-   * Lista de fechas que se registrarán en el calendario.
-   */
+export class CreateCalendarioRangoDto {
   @ApiProperty({
-    type: [CreateCalendarioDto],
-    example: [
-      {
-        fecha: '2026-01-01',
-        habil: false,
-        descripcion: 'Año Nuevo',
-      },
-      {
-        fecha: '2026-07-16',
-        habil: false,
-        descripcion: 'Aniversario de La Paz',
-      },
-    ],
+    example: '2026-01-01',
+    description: 'Fecha inicial del rango (YYYY-MM-DD).',
   })
-  @IsArray()
-  @ArrayMinSize(1)
-  @ValidateNested({ each: true })
-  @Type(() => CreateCalendarioDto)
-  fechas!: CreateCalendarioDto[];
+  @IsDateString(
+    {},
+    { message: 'La fecha inicial debe tener formato AAAA-MM-DD.' },
+  )
+  fecha_inicio!: string;
+
+  @ApiProperty({
+    example: '2026-01-31',
+    description: 'Fecha final del rango (YYYY-MM-DD).',
+  })
+  @IsDateString(
+    {},
+    { message: 'La fecha final debe tener formato AAAA-MM-DD.' },
+  )
+  fecha_fin!: string;
+
+  @ApiPropertyOptional({
+    example: false,
+    description:
+      'Si se envía, se aplica a TODAS las fechas. Si se omite, se calcula automáticamente (lun-vie = hábil).',
+  })
+  @IsOptional()
+  @IsBoolean()
+  habil?: boolean;
+
+  @ApiPropertyOptional({
+    example: 'Feriado nacional',
+    description: 'Descripción opcional aplicada a todas las fechas del rango.',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  descripcion?: string;
 }

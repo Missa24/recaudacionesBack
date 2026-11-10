@@ -5,7 +5,7 @@
  * Expone los endpoints para el registro, consulta,
  * actualización y administración del calendario.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 
 import {
@@ -13,18 +13,24 @@ import {
   Controller,
   Get,
   Param,
-  ParseUUIDPipe,
   Patch,
   Post,
   Query,
+  UseGuards,
 } from '@nestjs/common';
-
-import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { AuthGuard } from '@nestjs/passport';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiParam,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 
 import { CalendarioService } from './calendario.service';
 
 import { CreateCalendarioDto } from './dto/create-calendario.dto';
-import { CreateCalendarioLoteDto } from './dto/create-calendario-lote.dto';
+import { CreateCalendarioRangoDto } from './dto/create-calendario-lote.dto';
 import { UpdateCalendarioDto } from './dto/update-calendario.dto';
 import { QueryCalendarioDto } from './dto/query-calendario.dto';
 
@@ -39,28 +45,23 @@ import {
 import { PaginatedResponse } from 'src/shared/interface/paginated-response.interface';
 
 /* ID TEMPORAL */
-const id_usuario = '8b461287-8416-412e-84e7-b5c77615ea2a';
+const idUsuario = '8b461287-8416-412e-84e7-b5c77615ea2a';
 
 /**
  * Controlador encargado de gestionar las solicitudes HTTP
  * del catálogo de calendario.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 @ApiTags('Catálogos - Calendario')
+@ApiBearerAuth('JWT')
+@UseGuards(AuthGuard('jwt'))
 @Controller('catalogos/calendario')
 export class CalendarioController {
-  /**
-   * Inicializa el servicio de calendario.
-   *
-   * Desarrollado por: Missael Apaza
-   */
   constructor(private readonly calendarioService: CalendarioService) {}
 
   /**
-   * Registra una fecha en el calendario.
-   *
-   * Desarrollado por: Missael Apaza
+   * Registra una fecha individual en el calendario.
    */
   @Post()
   @ApiOperation({
@@ -74,6 +75,7 @@ export class CalendarioController {
     status: 400,
     description: 'Los datos proporcionados no son válidos.',
   })
+  @ApiResponse({ status: 403, description: 'Acceso denegado' })
   @ApiResponse({
     status: 409,
     description: 'La fecha ya se encuentra registrada.',
@@ -83,45 +85,40 @@ export class CalendarioController {
     description: 'Error interno del servidor.',
   })
   crear(@Body() dto: CreateCalendarioDto): Promise<CalendarioCreateResponse> {
-    return this.calendarioService.crear(dto, id_usuario);
+    return this.calendarioService.crear(dto, idUsuario);
   }
 
   /**
-   * Registra múltiples fechas en el calendario.
-   *
-   * Desarrollado por: Missael Apaza
+   * Registra un rango de fechas, omitiendo las que ya existen.
    */
-  @Post('lote')
+  @Post('rango')
   @ApiOperation({
-    summary: 'Registrar múltiples fechas en el calendario',
+    summary: 'Registrar un rango de fechas en el calendario',
+    description:
+      'Registra un rango de fechas. Las fechas que ya existan serán omitidas sin sobreescribir sus datos.',
   })
   @ApiResponse({
     status: 201,
-    description: 'Fechas registradas correctamente.',
+    description:
+      'Rango procesado. Revisa el campo "omitidas" para ver las que ya existían.',
   })
   @ApiResponse({
     status: 400,
-    description: 'Los datos proporcionados no son válidos.',
+    description: 'Rango inválido o fechas con formato incorrecto.',
   })
-  @ApiResponse({
-    status: 409,
-    description:
-      'Una o más fechas ya se encuentran registradas o hay duplicados en el lote.',
-  })
+  @ApiResponse({ status: 403, description: 'Acceso denegado' })
   @ApiResponse({
     status: 500,
     description: 'Error interno del servidor.',
   })
-  crearLote(
-    @Body() dto: CreateCalendarioLoteDto,
+  crearPorRango(
+    @Body() dto: CreateCalendarioRangoDto,
   ): Promise<CalendarioLoteResponse> {
-    return this.calendarioService.crearLote(dto, id_usuario);
+    return this.calendarioService.crearPorRango(dto, idUsuario);
   }
 
   /**
    * Obtiene el listado paginado del calendario.
-   *
-   * Desarrollado por: Missael Apaza
    */
   @Get()
   @ApiOperation({
@@ -135,6 +132,7 @@ export class CalendarioController {
     status: 400,
     description: 'Parámetros de consulta inválidos.',
   })
+  @ApiResponse({ status: 403, description: 'Acceso denegado' })
   @ApiResponse({
     status: 500,
     description: 'Error interno del servidor.',
@@ -147,8 +145,6 @@ export class CalendarioController {
 
   /**
    * Consulta una fecha y determina su condición de día hábil.
-   *
-   * Desarrollado por: Missael Apaza
    */
   @Get('fecha/:fecha')
   @ApiOperation({
@@ -167,6 +163,7 @@ export class CalendarioController {
     status: 400,
     description: 'La fecha proporcionada no es válida.',
   })
+  @ApiResponse({ status: 403, description: 'Acceso denegado' })
   @ApiResponse({
     status: 500,
     description: 'Error interno del servidor.',
@@ -179,8 +176,6 @@ export class CalendarioController {
 
   /**
    * Obtiene un registro mediante su identificador.
-   *
-   * Desarrollado por: Missael Apaza
    */
   @Get(':id')
   @ApiOperation({
@@ -198,6 +193,7 @@ export class CalendarioController {
     status: 400,
     description: 'El identificador proporcionado no es un UUID válido.',
   })
+  @ApiResponse({ status: 403, description: 'Acceso denegado' })
   @ApiResponse({
     status: 404,
     description: 'No se encontró el registro.',
@@ -206,16 +202,12 @@ export class CalendarioController {
     status: 500,
     description: 'Error interno del servidor.',
   })
-  buscarPorId(
-    @Param('id', ParseUUIDPipe) id: string,
-  ): Promise<CalendarioResponse> {
+  buscarPorId(@Param('id') id: string): Promise<CalendarioResponse> {
     return this.calendarioService.buscarPorId(id);
   }
 
   /**
    * Actualiza la información de un registro del calendario.
-   *
-   * Desarrollado por: Missael Apaza
    */
   @Patch(':id')
   @ApiOperation({
@@ -234,6 +226,7 @@ export class CalendarioController {
     description:
       'Datos inválidos o intento de actualizar un registro inactivo.',
   })
+  @ApiResponse({ status: 403, description: 'Acceso denegado' })
   @ApiResponse({
     status: 404,
     description: 'No se encontró el registro.',
@@ -247,16 +240,14 @@ export class CalendarioController {
     description: 'Error interno del servidor.',
   })
   actualizar(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id') id: string,
     @Body() dto: UpdateCalendarioDto,
   ): Promise<CalendarioMessageResponse> {
-    return this.calendarioService.actualizar(id, dto, id_usuario);
+    return this.calendarioService.actualizar(id, dto, idUsuario);
   }
 
   /**
    * Cambia el estado de un registro del calendario.
-   *
-   * Desarrollado por: Missael Apaza
    */
   @Patch(':id/estado')
   @ApiOperation({
@@ -274,6 +265,7 @@ export class CalendarioController {
     status: 400,
     description: 'El identificador proporcionado no es un UUID válido.',
   })
+  @ApiResponse({ status: 403, description: 'Acceso denegado' })
   @ApiResponse({
     status: 404,
     description: 'No se encontró el registro.',
@@ -282,9 +274,7 @@ export class CalendarioController {
     status: 500,
     description: 'Error interno del servidor.',
   })
-  cambiarEstado(
-    @Param('id', ParseUUIDPipe) id: string,
-  ): Promise<CalendarioMessageResponse> {
-    return this.calendarioService.cambiarEstado(id, id_usuario);
+  cambiarEstado(@Param('id') id: string): Promise<CalendarioMessageResponse> {
+    return this.calendarioService.cambiarEstado(id, idUsuario);
   }
 }

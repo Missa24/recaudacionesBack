@@ -5,7 +5,7 @@
  * Define las propiedades necesarias para registrar una fecha
  * en el calendario institucional.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
@@ -22,7 +22,7 @@ import {
  * Descripción:
  * Define los datos para registrar una fecha en el calendario.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 export class CreateCalendarioDto {
   /**
