@@ -1,1 +1,194 @@
-export class CuentaBancaria {}
+/**
+ * Módulo: Catálogos - Cuentas Bancarias
+ * Archivo: cuenta-bancaria.entity.ts
+ * Descripción:
+ * Define la estructura y las relaciones de la entidad CuentaBancaria,
+ * correspondiente a la tabla cuenta_bancaria del esquema catalogo.
+ *
+ * Desarrollado por: Missael Apaza
+ */
+
+import { Usuario } from 'src/seguridad/usuario/entities/usuario.entity';
+import { Banco } from 'src/catalogo/banco/entities/banco.entity';
+import { Dependencia } from 'src/catalogo/dependencia/entities/dependencia.entity';
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+  Unique,
+} from 'typeorm';
+
+/**
+ * Entidad CuentaBancaria.
+ * Representa la información bancaria, su dependencia asociada
+ * y los datos de auditoría de las cuentas registradas.
+ *
+ * Desarrollado por: Missael Apaza
+ */
+@Entity({ schema: 'catalogo', name: 'cuenta_bancaria' })
+@Unique('uq_cuenta_bancaria_banco_nro_cuenta', ['id_banco', 'nro_cuenta'])
+export class CuentaBancaria {
+  /*
+   * Identificador único de la cuenta bancaria.
+   */
+  @PrimaryGeneratedColumn('uuid', { name: 'id_cuenta' })
+  id_cuenta!: string;
+
+  /*
+   * Identificador del banco al que pertenece la cuenta.
+   */
+  @Column({ type: 'uuid', name: 'id_banco' })
+  id_banco!: string;
+
+  /*
+   * Relación con el banco propietario de la cuenta.
+   */
+  @ManyToOne(() => Banco, { nullable: false, onDelete: 'RESTRICT' })
+  @JoinColumn({
+    name: 'id_banco',
+    referencedColumnName: 'id',
+  })
+  banco!: Banco;
+
+  /*
+   * Número de cuenta bancaria.
+   */
+  @Column({ type: 'varchar', length: 50 })
+  nro_cuenta!: string;
+
+  /*
+   * Nombre o denominación de la cuenta bancaria.
+   */
+  @Column({ type: 'varchar', length: 150 })
+  nombre_cuenta!: string;
+
+  /*
+   * Identificador de la dependencia asociada a la cuenta.
+   */
+  @Column({
+    type: 'uuid',
+    name: 'id_dependencia',
+    nullable: true,
+  })
+  id_dependencia!: string | null;
+
+  /*
+   * Relación con la dependencia asociada a la cuenta.
+   */
+  @ManyToOne(() => Dependencia, {
+    nullable: true,
+    onDelete: 'RESTRICT',
+  })
+  @JoinColumn({
+    name: 'id_dependencia',
+    referencedColumnName: 'id',
+  })
+  dependencia!: Dependencia | null;
+  /*
+   * Tipo de cuenta bancaria.
+   */
+  @Column({ type: 'varchar', length: 30 })
+  tipo!: string;
+
+  /*
+   * Estado actual del registro: ACTIVO o INACTIVO.
+   */
+  @Column({
+    type: 'enum',
+    enum: ['ACTIVO', 'INACTIVO'],
+    enumName: 'estado_registro',
+    default: 'ACTIVO',
+  })
+  estado!: string;
+
+  /*
+   * Fecha y hora de creación del registro.
+   */
+  @Column({
+    type: 'timestamptz',
+    name: '_created_at',
+    default: () => 'CURRENT_TIMESTAMP',
+  })
+  _created_at!: Date;
+
+  /*
+   * Fecha y hora de la última actualización del registro.
+   */
+  @Column({
+    type: 'timestamptz',
+    name: '_updated_at',
+    default: () => 'CURRENT_TIMESTAMP',
+  })
+  _updated_at!: Date;
+
+  /*
+   * Fecha y hora de eliminación lógica del registro.
+   */
+  @Column({
+    type: 'timestamptz',
+    name: '_deleted_at',
+    nullable: true,
+  })
+  _deleted_at!: Date | null;
+
+  /*
+   * Identificador del usuario que creó el registro.
+   */
+  @Column({
+    type: 'uuid',
+    name: '_user_created',
+  })
+  _user_created!: string;
+
+  /*
+   * Relación con el usuario responsable de la creación.
+   */
+  @ManyToOne(() => Usuario, { nullable: false, onDelete: 'RESTRICT' })
+  @JoinColumn({
+    name: '_user_created',
+    referencedColumnName: 'idUsuario',
+  })
+  usuario_creador!: Usuario;
+
+  /*
+   * Identificador del usuario que actualizó el registro.
+   */
+  @Column({
+    type: 'uuid',
+    name: '_user_update',
+    nullable: true,
+  })
+  _user_update!: string | null;
+
+  /*
+   * Relación con el usuario responsable de la actualización.
+   */
+  @ManyToOne(() => Usuario, { nullable: true, onDelete: 'RESTRICT' })
+  @JoinColumn({
+    name: '_user_update',
+    referencedColumnName: 'idUsuario',
+  })
+  usuario_actualizador!: Usuario | null;
+
+  /*
+   * Identificador del usuario que inactivó el registro.
+   */
+  @Column({
+    type: 'uuid',
+    name: '_user_delete',
+    nullable: true,
+  })
+  _user_delete!: string | null;
+
+  /*
+   * Relación con el usuario responsable de la inactivación.
+   */
+  @ManyToOne(() => Usuario, { nullable: true, onDelete: 'RESTRICT' })
+  @JoinColumn({
+    name: '_user_delete',
+    referencedColumnName: 'idUsuario',
+  })
+  usuario_eliminador!: Usuario | null;
+}
