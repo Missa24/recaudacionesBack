@@ -55,11 +55,22 @@ const userId = '8b461287-8416-412e-84e7-b5c77615ea2a';
 export class BancoController {
   constructor(private readonly bancoService: BancoService) {}
 
-  /**
-   * Registra un nuevo valor de Banco mediante los datos proporcionados.
-   *
-   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
-   */
+  /*
+  Nombre de la ruta: banco
+  Método HTTP: POST
+  Descripción: Registra un nuevo valor de Banco mediante los datos proporcionados.
+  Cuerpo de la solicitud (Body):
+    - CreateBancoDto: Datos del banco a registrar (nombre, etc.).
+  Respuestas posibles:
+    - 201: Banco registrado correctamente.
+    - 400: Datos de entrada inválidos.
+    - 403: Acceso denegado.
+    - 409: Ya existe un Banco con ese mismo nombre.
+    - 500: Error interno del servidor.
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+  Notas adicionales: El identificador de usuario se toma de un valor temporal (userId) hasta integrar el usuario autenticado desde el JWT.
+  */
   @Post()
   @ApiOperation({
     summary: 'Registrar Banco',
@@ -83,11 +94,21 @@ export class BancoController {
     return this.bancoService.crear(dto, userId);
   }
 
-  /**
-   * Lista los bancos aplicando filtros y paginación.
-   *
-   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
-   */
+  /*
+  Nombre de la ruta: banco
+  Método HTTP: GET
+  Descripción: Lista los bancos aplicando filtros y paginación.
+  Parámetros de consulta (Query):
+    - QueryBancoDto: Filtros de búsqueda y paginación.
+  Respuestas posibles:
+    - 200: Listado de bancos obtenido correctamente.
+    - 400: Parámetros de consulta inválidos.
+    - 403: Acceso denegado.
+    - 500: Error interno del servidor.
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+  Notas adicionales: Respuesta envuelta en PaginatedResponse con metadatos de paginación.
+  */
   @Get()
   @ApiOperation({
     summary: 'Listar bancos con filtros y paginación',
@@ -111,13 +132,20 @@ export class BancoController {
     return this.bancoService.listar(query);
   }
 
-  /**
-   * Obtiene un registro de Banco correspondiente a un nombre específico.
-   * Se declara antes de `:id` para que la ruta literal no sea capturada
-   * por el parámetro genérico.
-   *
-   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
-   */
+  /*
+  Nombre de la ruta: banco/nombre/:nombre
+  Método HTTP: GET
+  Descripción: Obtiene un registro de Banco correspondiente a un nombre específico.
+  Parámetros de ruta (Param):
+    - nombre: Nombre del banco a buscar.
+  Respuestas posibles:
+    - 200: Registro encontrado.
+    - 403: Acceso denegado.
+    - 404: No existe un Banco activo para ese nombre.
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+  Notas adicionales: Se declara antes de `:id` para que la ruta literal no sea capturada por el parámetro genérico.
+  */
   @Get('nombre/:nombre')
   @ApiOperation({
     summary: 'Obtener Banco por nombre',
@@ -139,11 +167,20 @@ export class BancoController {
     return this.bancoService.buscarPorNombre(nombre);
   }
 
-  /**
-   * Obtiene un registro de Banco mediante su identificador único.
-   *
-   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
-   */
+  /*
+  Nombre de la ruta: banco/:id
+  Método HTTP: GET
+  Descripción: Obtiene un registro de Banco mediante su identificador único (UUID).
+  Parámetros de ruta (Param):
+    - id: Identificador UUID del registro.
+  Respuestas posibles:
+    - 200: Registro encontrado.
+    - 403: Acceso denegado.
+    - 404: Registro no encontrado.
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+  Notas adicionales: Ruta declarada después de las rutas literales para evitar conflictos de matching.
+  */
   @Get(':id')
   @ApiOperation({
     summary: 'Obtener Banco por ID',
@@ -161,11 +198,25 @@ export class BancoController {
     return this.bancoService.buscarPorId(id);
   }
 
-  /**
-   * Actualiza parcialmente un registro de Banco existente.
-   *
-   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
-   */
+  /*
+  Nombre de la ruta: banco/:id
+  Método HTTP: PATCH
+  Descripción: Actualiza parcialmente un registro de Banco existente.
+  Parámetros de ruta (Param):
+    - id: Identificador UUID del registro.
+  Cuerpo de la solicitud (Body):
+    - UpdateBancoDto: Campos a actualizar.
+  Respuestas posibles:
+    - 200: Banco actualizado correctamente.
+    - 400: Datos inválidos o intento de actualizar un banco inactivo.
+    - 403: Acceso denegado.
+    - 404: Registro no encontrado.
+    - 409: Ya existe un Banco registrado con ese nombre.
+    - 500: Error interno del servidor.
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+  Notas adicionales: No se permite actualizar registros inactivos.
+  */
   @Patch(':id')
   @ApiOperation({
     summary: 'Actualizar Banco',
@@ -201,11 +252,21 @@ export class BancoController {
     return this.bancoService.actualizar(id, dto, userId);
   }
 
-  /**
-   * Cambia el estado de un registro de Banco entre ACTIVO e INACTIVO.
-   *
-   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
-   */
+  /*
+  Nombre de la ruta: banco/:id/estado
+  Método HTTP: PATCH
+  Descripción: Cambia el estado de un registro de Banco entre ACTIVO e INACTIVO.
+  Parámetros de ruta (Param):
+    - id: Identificador UUID del registro.
+  Respuestas posibles:
+    - 200: Estado actualizado correctamente.
+    - 403: Acceso denegado.
+    - 404: Registro no encontrado.
+    - 500: Error interno del servidor.
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+  Notas adicionales: No recibe body; el nuevo estado se deriva del estado actual (alterna entre ACTIVO e INACTIVO).
+  */
   @Patch(':id/estado')
   @ApiOperation({
     summary: 'Cambiar estado de Banco',

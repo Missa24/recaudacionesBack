@@ -55,11 +55,22 @@ const idUsuario = '8b461287-8416-412e-84e7-b5c77615ea2a';
 export class CuentaBancariaController {
   constructor(private readonly cuentaBancariaService: CuentaBancariaService) {}
 
-  /**
-   * Registra una nueva cuenta bancaria.
-   *
-   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
-   */
+  /*
+  Nombre de la ruta: cuenta-bancaria
+  Método HTTP: POST
+  Descripción: Registra una nueva cuenta bancaria validando la existencia del banco y la dependencia, así como la unicidad del número de cuenta por banco.
+  Cuerpo de la solicitud (Body):
+    - CreateCuentaBancariaDto: Datos de la cuenta bancaria a registrar.
+  Respuestas posibles:
+    - 201: Cuenta bancaria registrada correctamente.
+    - 400: Datos de entrada inválidos.
+    - 403: Acceso denegado.
+    - 409: El número de cuenta ya se encuentra registrado para este banco.
+    - 500: Error interno del servidor.
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+  Notas adicionales: El identificador de usuario se toma de un valor temporal (idUsuario) hasta integrar el usuario autenticado desde el JWT.
+  */
   @Post()
   @ApiOperation({
     summary: 'Registrar una cuenta bancaria',
@@ -90,11 +101,21 @@ export class CuentaBancariaController {
     return this.cuentaBancariaService.crear(dto, idUsuario);
   }
 
-  /**
-   * Lista las cuentas bancarias aplicando filtros y paginación.
-   *
-   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
-   */
+  /*
+  Nombre de la ruta: cuenta-bancaria
+  Método HTTP: GET
+  Descripción: Lista las cuentas bancarias aplicando filtros y paginación.
+  Parámetros de consulta (Query):
+    - QueryCuentaBancariaDto: Filtros de búsqueda y paginación.
+  Respuestas posibles:
+    - 200: Listado de cuentas bancarias obtenido correctamente.
+    - 400: Parámetros de consulta inválidos.
+    - 403: Acceso denegado.
+    - 500: Error interno del servidor.
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+  Notas adicionales: Respuesta envuelta en PaginatedResponse con metadatos de paginación.
+  */
   @Get()
   @ApiOperation({
     summary: 'Listar cuentas bancarias con filtros y paginación',
@@ -118,11 +139,22 @@ export class CuentaBancariaController {
     return this.cuentaBancariaService.listar(query);
   }
 
-  /**
-   * Consulta una cuenta bancaria mediante su identificador UUID.
-   *
-   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
-   */
+  /*
+  Nombre de la ruta: cuenta-bancaria/:id
+  Método HTTP: GET
+  Descripción: Consulta una cuenta bancaria mediante su identificador UUID.
+  Parámetros de ruta (Param):
+    - id: Identificador UUID de la cuenta bancaria.
+  Respuestas posibles:
+    - 200: Cuenta bancaria encontrada correctamente.
+    - 400: El identificador proporcionado no es un UUID válido.
+    - 403: Acceso denegado.
+    - 404: No se encontró la cuenta bancaria solicitada.
+    - 500: Error interno del servidor.
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+  Notas adicionales: La validación del UUID se realiza con ParseUUIDPipe.
+  */
   @Get(':id')
   @ApiOperation({
     summary: 'Consultar una cuenta bancaria por ID',
@@ -155,11 +187,25 @@ export class CuentaBancariaController {
     return this.cuentaBancariaService.buscarPorId(id);
   }
 
-  /**
-   * Actualiza parcialmente una cuenta bancaria existente.
-   *
-   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
-   */
+  /*
+  Nombre de la ruta: cuenta-bancaria/:id
+  Método HTTP: PATCH
+  Descripción: Actualiza parcialmente una cuenta bancaria existente validando referencias y unicidad del número de cuenta por banco.
+  Parámetros de ruta (Param):
+    - id: Identificador UUID de la cuenta bancaria.
+  Cuerpo de la solicitud (Body):
+    - UpdateCuentaBancariaDto: Campos a actualizar.
+  Respuestas posibles:
+    - 200: Cuenta bancaria actualizada correctamente.
+    - 400: Datos inválidos o intento de actualizar una cuenta bancaria inactiva.
+    - 403: Acceso denegado.
+    - 404: No se encontró la cuenta bancaria solicitada.
+    - 409: El número de cuenta ya se encuentra registrado para este banco.
+    - 500: Error interno del servidor.
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+  Notas adicionales: No se permite actualizar cuentas bancarias inactivas.
+  */
   @Patch(':id')
   @ApiOperation({
     summary: 'Actualizar una cuenta bancaria',
@@ -201,11 +247,22 @@ export class CuentaBancariaController {
     return this.cuentaBancariaService.actualizar(id, dto, idUsuario);
   }
 
-  /**
-   * Activa o inactiva una cuenta bancaria.
-   *
-   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
-   */
+  /*
+  Nombre de la ruta: cuenta-bancaria/:id/estado
+  Método HTTP: PATCH
+  Descripción: Activa o inactiva una cuenta bancaria alternando su estado entre ACTIVO e INACTIVO.
+  Parámetros de ruta (Param):
+    - id: Identificador UUID de la cuenta bancaria.
+  Respuestas posibles:
+    - 200: Estado de la cuenta bancaria actualizado correctamente.
+    - 400: El identificador proporcionado no es un UUID válido.
+    - 403: Acceso denegado.
+    - 404: No se encontró la cuenta bancaria solicitada.
+    - 500: Error interno del servidor.
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+  Notas adicionales: No recibe body; el nuevo estado se deriva del estado actual.
+  */
   @Patch(':id/estado')
   @ApiOperation({
     summary: 'Activar o inactivar una cuenta bancaria',

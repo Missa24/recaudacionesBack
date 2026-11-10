@@ -63,11 +63,22 @@ export class PersonaJuridicaController {
     private readonly personaJuridicaService: PersonaJuridicaService,
   ) {}
 
-  /**
-   * Registra una nueva persona jurídica.
-   *
-   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
-   */
+  /*
+  Nombre de la ruta: catalogos/personas-juridicas
+  Método HTTP: POST
+  Descripción: Registra una nueva persona jurídica validando la unicidad del NIT.
+  Cuerpo de la solicitud (Body):
+    - CreatePersonaJuridicaDto: Datos de la persona jurídica a registrar.
+  Respuestas posibles:
+    - 201: Persona jurídica registrada correctamente.
+    - 400: Datos de entrada inválidos.
+    - 403: Acceso denegado.
+    - 409: Ya existe una persona jurídica registrada con ese NIT.
+    - 500: Error interno del servidor.
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+  Notas adicionales: El identificador de usuario se toma de un valor temporal (idUsuario) hasta integrar el usuario autenticado desde el JWT. El método se declara como async.
+  */
   @Post()
   @ApiOperation({
     summary: 'Registrar una persona jurídica',
@@ -95,11 +106,21 @@ export class PersonaJuridicaController {
     return this.personaJuridicaService.crear(dto, idUsuario);
   }
 
-  /**
-   * Lista las personas jurídicas con filtros y paginación.
-   *
-   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
-   */
+  /*
+  Nombre de la ruta: catalogos/personas-juridicas
+  Método HTTP: GET
+  Descripción: Lista las personas jurídicas con filtros y paginación.
+  Parámetros de consulta (Query):
+    - QueryPersonaJuridicaDto: Filtros de búsqueda y paginación.
+  Respuestas posibles:
+    - 200: Listado de personas jurídicas obtenido correctamente.
+    - 400: Parámetros de consulta inválidos.
+    - 403: Acceso denegado.
+    - 500: Error interno del servidor.
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+  Notas adicionales: Respuesta envuelta en PaginatedResponse con metadatos de paginación. El método se declara como async.
+  */
   @Get()
   @ApiOperation({
     summary: 'Listar personas jurídicas con filtros y paginación',
@@ -123,11 +144,21 @@ export class PersonaJuridicaController {
     return this.personaJuridicaService.listar(query);
   }
 
-  /**
-   * Busca una persona jurídica mediante su NIT.
-   *
-   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
-   */
+  /*
+  Nombre de la ruta: catalogos/personas-juridicas/buscar
+  Método HTTP: GET
+  Descripción: Busca una persona jurídica mediante su NIT.
+  Parámetros de consulta (Query):
+    - BuscarPersonaJuridicaDto: Criterio de búsqueda (NIT).
+  Respuestas posibles:
+    - 200: Búsqueda realizada correctamente.
+    - 400: Parámetros de búsqueda inválidos.
+    - 403: Acceso denegado.
+    - 500: Error interno del servidor.
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+  Notas adicionales: Se declara antes de `:id` para que la ruta literal `buscar` no sea capturada por el parámetro genérico. El método se declara como async.
+  */
   @Get('buscar')
   @ApiOperation({
     summary: 'Buscar una persona jurídica por NIT',
@@ -151,11 +182,22 @@ export class PersonaJuridicaController {
     return this.personaJuridicaService.buscarPorNit(dto);
   }
 
-  /**
-   * Consulta una persona jurídica mediante su UUID.
-   *
-   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
-   */
+  /*
+  Nombre de la ruta: catalogos/personas-juridicas/:id
+  Método HTTP: GET
+  Descripción: Consulta una persona jurídica mediante su identificador UUID.
+  Parámetros de ruta (Param):
+    - id: Identificador UUID de la persona jurídica.
+  Respuestas posibles:
+    - 200: Persona jurídica encontrada correctamente.
+    - 400: El identificador proporcionado no es un UUID válido.
+    - 403: Acceso denegado.
+    - 404: No se encontró la persona jurídica solicitada.
+    - 500: Error interno del servidor.
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+  Notas adicionales: La validación del UUID se realiza con ParseUUIDPipe. El método se declara como async.
+  */
   @Get(':id')
   @ApiOperation({
     summary: 'Consultar una persona jurídica por ID',
@@ -187,11 +229,25 @@ export class PersonaJuridicaController {
     return this.personaJuridicaService.buscarPorId(id);
   }
 
-  /**
-   * Actualiza parcialmente una persona jurídica.
-   *
-   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
-   */
+  /*
+  Nombre de la ruta: catalogos/personas-juridicas/:id
+  Método HTTP: PATCH
+  Descripción: Actualiza parcialmente una persona jurídica existente.
+  Parámetros de ruta (Param):
+    - id: Identificador UUID de la persona jurídica.
+  Cuerpo de la solicitud (Body):
+    - UpdatePersonaJuridicaDto: Campos a actualizar.
+  Respuestas posibles:
+    - 200: Persona jurídica actualizada correctamente.
+    - 400: Datos inválidos o intento de actualizar una persona jurídica inactiva.
+    - 403: Acceso denegado.
+    - 404: No se encontró la persona jurídica solicitada.
+    - 409: Ya existe otra persona jurídica registrada con ese NIT.
+    - 500: Error interno del servidor.
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+  Notas adicionales: No se permite actualizar registros inactivos. La validación del UUID se realiza con ParseUUIDPipe. El método se declara como async.
+  */
   @Patch(':id')
   @ApiOperation({
     summary: 'Actualizar una persona jurídica',
@@ -229,11 +285,22 @@ export class PersonaJuridicaController {
     return this.personaJuridicaService.actualizar(id, dto, idUsuario);
   }
 
-  /**
-   * Activa o inactiva una persona jurídica.
-   *
-   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
-   */
+  /*
+  Nombre de la ruta: catalogos/personas-juridicas/:id/estado
+  Método HTTP: PATCH
+  Descripción: Activa o inactiva una persona jurídica alternando su estado entre ACTIVO e INACTIVO.
+  Parámetros de ruta (Param):
+    - id: Identificador UUID de la persona jurídica.
+  Respuestas posibles:
+    - 200: Estado de la persona jurídica actualizado correctamente.
+    - 400: El identificador proporcionado no es un UUID válido.
+    - 403: Acceso denegado.
+    - 404: No se encontró la persona jurídica solicitada.
+    - 500: Error interno del servidor.
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+  Notas adicionales: No recibe body; el nuevo estado se deriva del estado actual. La validación del UUID se realiza con ParseUUIDPipe. El método se declara como async.
+  */
   @Patch(':id/estado')
   @ApiOperation({
     summary: 'Activar o inactivar una persona jurídica',

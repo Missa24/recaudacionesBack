@@ -51,11 +51,21 @@ const userId = '8b461287-8416-412e-84e7-b5c77615ea2a';
 export class InteresController {
   constructor(private readonly interesService: InteresService) {}
 
-  /**
-   * Registra un nuevo valor de Interés mediante los datos proporcionados.
-   *
-   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
-   */
+  /*
+  Nombre de la ruta: interes
+  Método HTTP: POST
+  Descripción: Registra un nuevo valor de Interés para una fecha determinada.
+  Cuerpo de la solicitud (Body):
+    - CreateInteresDto: Datos del interés a registrar (fecha, valor, etc.).
+  Respuestas posibles:
+    - 201: Interés registrado correctamente.
+    - 400: Datos de entrada inválidos.
+    - 403: Acceso denegado.
+    - 409: Ya existe un interés para esa fecha.
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+  Notas adicionales: El identificador de usuario se toma de un valor temporal (userId) hasta integrar el usuario autenticado desde el JWT.
+  */
   @Post()
   @ApiOperation({
     summary: 'Registrar Interés',
@@ -75,11 +85,19 @@ export class InteresController {
     return this.interesService.crear(dto, userId);
   }
 
-  /**
-   * Obtiene los registros de Interés aplicando filtros y paginación.
-   *
-   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
-   */
+  /*
+  Nombre de la ruta: interes
+  Método HTTP: GET
+  Descripción: Obtiene los registros de Interés aplicando filtros, ordenamiento y paginación.
+  Parámetros de consulta (Query):
+    - QueryInteresDto: Filtros de búsqueda, orden y paginación.
+  Respuestas posibles:
+    - 200: Listado de registros de Interés obtenido correctamente.
+    - 403: Acceso denegado.
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+  Notas adicionales: Usa ApiOkResponse para documentar la respuesta exitosa. No declara tipo de retorno explícito en la firma.
+  */
   @ApiOperation({
     summary: 'Lista registro de Interés',
     description: 'Permite buscar, filtrar, ordenar y paginar los registros.',
@@ -93,11 +111,20 @@ export class InteresController {
     return this.interesService.listar(query);
   }
 
-  /**
-   * Obtiene un registro de una Entidad mediante su identificador único.
-   *
-   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
-   */
+  /*
+  Nombre de la ruta: interes/:id
+  Método HTTP: GET
+  Descripción: Obtiene un registro de Interés mediante su identificador único (UUID).
+  Parámetros de ruta (Param):
+    - id: Identificador UUID del registro.
+  Respuestas posibles:
+    - 200: Registro encontrado.
+    - 403: Acceso denegado.
+    - 404: Registro no encontrado.
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+  Notas adicionales: Ruta declarada después de las rutas literales para evitar conflictos de matching.
+  */
   @Get(':id')
   @ApiOperation({
     summary: 'Obtener Interés por Id',
@@ -115,11 +142,20 @@ export class InteresController {
     return this.interesService.buscarPorId(id);
   }
 
-  /**
-   * Obtiene un registro Interés correspondiente a una fecha específica.
-   *
-   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
-   */
+  /*
+  Nombre de la ruta: interes/fecha/:fecha
+  Método HTTP: GET
+  Descripción: Obtiene un registro de Interés correspondiente a una fecha específica.
+  Parámetros de ruta (Param):
+    - fecha: Fecha de consulta en formato AAAA-MM-DD.
+  Respuestas posibles:
+    - 200: Registro encontrado.
+    - 403: Acceso denegado.
+    - 404: No existe un Interés para esa fecha.
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+  Notas adicionales: La ruta es literal (`fecha/:fecha`) y se resuelve sin conflictos con `:id` por su prefijo fijo.
+  */
   @Get('fecha/:fecha')
   @ApiOperation({
     summary: 'Obtener un Interés por fecha',
@@ -141,11 +177,23 @@ export class InteresController {
     return this.interesService.buscarPorFecha(fecha);
   }
 
-  /**
-   * Actualiza parcialmente los datos de un registro de Interés existente.
-   *
-   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
-   */
+  /*
+  Nombre de la ruta: interes/:id
+  Método HTTP: PATCH
+  Descripción: Actualiza parcialmente los datos de un registro de Interés existente.
+  Parámetros de ruta (Param):
+    - id: Identificador UUID del registro.
+  Cuerpo de la solicitud (Body):
+    - UpdateInteresDto: Campos a actualizar.
+  Respuestas posibles:
+    - 200: Interés actualizado correctamente.
+    - 400: Datos de actualización inválidos.
+    - 403: Acceso denegado.
+    - 404: Registro no encontrado.
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+  Notas adicionales: Actualización parcial; solo se modifican los campos enviados en el body.
+  */
   @Patch(':id')
   @ApiOperation({
     summary: 'Actualizar interés',
@@ -170,11 +218,20 @@ export class InteresController {
     return this.interesService.actualizar(id, dto, userId);
   }
 
-  /**
-   * Cambia el estado de un registro de Interés entre ACTIVO e INACTIVO.
-   *
-   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
-   */
+  /*
+  Nombre de la ruta: interes/:id/estado
+  Método HTTP: PATCH
+  Descripción: Cambia el estado de un registro de Interés entre ACTIVO e INACTIVO.
+  Parámetros de ruta (Param):
+    - id: Identificador UUID del registro.
+  Respuestas posibles:
+    - 200: Estado actualizado correctamente.
+    - 403: Acceso denegado.
+    - 404: Registro no encontrado.
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+  Notas adicionales: No recibe body; el nuevo estado se deriva del estado actual (alterna entre ACTIVO e INACTIVO).
+  */
   @Patch(':id/estado')
   @ApiOperation({
     summary: 'Cambiar estado de Interés',

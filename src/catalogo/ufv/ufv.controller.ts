@@ -56,11 +56,21 @@ export class UfvController {
     private readonly ufvApiService: UfvApiService,
   ) {}
 
-  /**
-   * Registra un nuevo valor UFV mediante los datos proporcionados.
-   *
-   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
-   */
+  /*
+  Nombre de la ruta: ufv
+  Método HTTP: POST
+  Descripción: Registra un nuevo valor UFV para una fecha determinada.
+  Cuerpo de la solicitud (Body):
+    - CreateUfvDto: Datos del valor UFV a registrar (fecha, valor, etc.).
+  Respuestas posibles:
+    - 201: UFV registrada correctamente.
+    - 400: Datos de entrada inválidos.
+    - 403: Acceso denegado.
+    - 409: Ya existe una UFV para esa fecha.
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+  Notas adicionales: El identificador de usuario se toma de un valor temporal (userId) hasta integrar el usuario autenticado desde el JWT.
+  */
   @Post()
   @ApiOperation({
     summary: 'Registrar UFV',
@@ -77,11 +87,19 @@ export class UfvController {
     return this.ufvService.crear(dto, userId);
   }
 
-  /**
-   * Ejecuta la sincronización de valores UFV desde una fuente externa.
-   *
-   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
-   */
+  /*
+  Nombre de la ruta: ufv/sincronizar
+  Método HTTP: POST
+  Descripción: Ejecuta la sincronización de valores UFV desde una fuente externa (API).
+  Cuerpo de la solicitud (Body): No requiere body.
+  Respuestas posibles:
+    - 201: Sincronización ejecutada correctamente.
+    - 403: Acceso denegado.
+    - 500: Error durante la sincronización.
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+  Notas adicionales: Delega la lógica a `UfvApiService.sincronizar()`. Se declara antes de `:id` para evitar conflicto con el parámetro genérico.
+  */
   @Post('sincronizar')
   @ApiOperation({
     summary: 'Sincronizar UFV',
@@ -97,11 +115,19 @@ export class UfvController {
     return this.ufvApiService.sincronizar();
   }
 
-  /**
-   * Obtiene los registros UFV aplicando filtros y paginación.
-   *
-   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
-   */
+  /*
+  Nombre de la ruta: ufv
+  Método HTTP: GET
+  Descripción: Obtiene los registros UFV aplicando filtros, ordenamiento y paginación.
+  Parámetros de consulta (Query):
+    - QueryUfvDto: Filtros de búsqueda, orden y paginación.
+  Respuestas posibles:
+    - 200: Listado de registros UFV obtenido correctamente.
+    - 403: Acceso denegado.
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+  Notas adicionales: Usa ApiOkResponse para documentar la respuesta exitosa. El decorador `@ApiOperation` está colocado encima de `@ApiOkResponse` y `@Get()`, orden que funciona igual.
+  */
   @ApiOperation({
     summary: 'Listar registros UFV',
     description:
@@ -116,11 +142,20 @@ export class UfvController {
     return this.ufvService.listar(query);
   }
 
-  /**
-   * Obtiene un registro UFV mediante su identificador único.
-   *
-   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
-   */
+  /*
+  Nombre de la ruta: ufv/:id
+  Método HTTP: GET
+  Descripción: Obtiene un registro UFV mediante su identificador único (UUID).
+  Parámetros de ruta (Param):
+    - id: Identificador UUID del registro.
+  Respuestas posibles:
+    - 200: Registro encontrado.
+    - 403: Acceso denegado.
+    - 404: Registro no encontrado.
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+  Notas adicionales: Ruta declarada antes que `fecha/:fecha` en el código original; ver observaciones.
+  */
   @Get(':id')
   @ApiOperation({
     summary: 'Obtener UFV por ID',
@@ -138,11 +173,20 @@ export class UfvController {
     return this.ufvService.buscarPorId(id);
   }
 
-  /**
-   * Obtiene un registro UFV correspondiente a una fecha específica.
-   *
-   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
-   */
+  /*
+  Nombre de la ruta: ufv/fecha/:fecha
+  Método HTTP: GET
+  Descripción: Obtiene un registro UFV correspondiente a una fecha específica.
+  Parámetros de ruta (Param):
+    - fecha: Fecha de consulta en formato AAAA-MM-DD.
+  Respuestas posibles:
+    - 200: Registro encontrado.
+    - 403: Acceso denegado.
+    - 404: No existe UFV para esa fecha.
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+  Notas adicionales: La ruta es literal (`fecha/:fecha`); ver observaciones sobre el orden respecto a `:id`.
+  */
   @Get('fecha/:fecha')
   @ApiOperation({
     summary: 'Obtener UFV por fecha',
@@ -161,11 +205,23 @@ export class UfvController {
     return this.ufvService.buscarPorFecha(fecha);
   }
 
-  /**
-   * Actualiza parcialmente los datos de un registro UFV existente.
-   *
-   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
-   */
+  /*
+  Nombre de la ruta: ufv/:id
+  Método HTTP: PATCH
+  Descripción: Actualiza parcialmente los datos de un registro UFV existente.
+  Parámetros de ruta (Param):
+    - id: Identificador UUID del registro.
+  Cuerpo de la solicitud (Body):
+    - UpdateUfvDto: Campos a actualizar.
+  Respuestas posibles:
+    - 200: UFV actualizada correctamente.
+    - 400: Datos de actualización inválidos.
+    - 403: Acceso denegado.
+    - 404: Registro no encontrado.
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+  Notas adicionales: Actualización parcial; solo se modifican los campos enviados en el body.
+  */
   @Patch(':id')
   @ApiOperation({
     summary: 'Actualizar UFV',
@@ -187,11 +243,20 @@ export class UfvController {
     return this.ufvService.actualizar(id, dto, userId);
   }
 
-  /**
-   * Cambia el estado de un registro UFV entre ACTIVO e INACTIVO.
-   *
-   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
-   */
+  /*
+  Nombre de la ruta: ufv/:id/estado
+  Método HTTP: PATCH
+  Descripción: Cambia el estado de un registro UFV entre ACTIVO e INACTIVO.
+  Parámetros de ruta (Param):
+    - id: Identificador UUID del registro.
+  Respuestas posibles:
+    - 200: Estado actualizado correctamente.
+    - 403: Acceso denegado.
+    - 404: Registro no encontrado.
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+  Notas adicionales: No recibe body; el nuevo estado se deriva del estado actual (alterna entre ACTIVO e INACTIVO).
+  */
   @Patch(':id/estado')
   @ApiOperation({
     summary: 'Cambiar estado de UFV',

@@ -70,11 +70,22 @@ export class PersonaNaturalController {
    */
   constructor(private readonly personaNaturalService: PersonaNaturalService) {}
 
-  /**
-   * Registra una nueva persona natural.
-   *
-   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
-   */
+  /*
+  Nombre de la ruta: catalogos/personas-naturales
+  Método HTTP: POST
+  Descripción: Registra una nueva persona natural validando datos de entrada y que la fecha de nacimiento no sea posterior a la actual.
+  Cuerpo de la solicitud (Body):
+    - CreatePersonaNaturalDto: Datos de la persona natural a registrar.
+  Respuestas posibles:
+    - 201: Persona natural registrada correctamente.
+    - 400: Datos de entrada inválidos o fecha de nacimiento posterior a la actual.
+    - 403: Acceso denegado.
+    - 409: Ya existe una persona registrada con esos datos documentales.
+    - 500: Error interno del servidor.
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+  Notas adicionales: El identificador de usuario se toma de un valor temporal (idUsuario) hasta integrar el usuario autenticado desde el JWT. El método se declara como async.
+  */
   @Post()
   @ApiOperation({
     summary: 'Registrar una persona natural',
@@ -104,11 +115,21 @@ export class PersonaNaturalController {
     return this.personaNaturalService.crear(dto, idUsuario);
   }
 
-  /**
-   * Lista las personas naturales aplicando filtros y paginación.
-   *
-   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
-   */
+  /*
+  Nombre de la ruta: catalogos/personas-naturales
+  Método HTTP: GET
+  Descripción: Lista las personas naturales aplicando filtros y paginación.
+  Parámetros de consulta (Query):
+    - QueryPersonaNaturalDto: Filtros de búsqueda y paginación.
+  Respuestas posibles:
+    - 200: Listado de personas naturales obtenido correctamente.
+    - 400: Parámetros de consulta inválidos.
+    - 403: Acceso denegado.
+    - 500: Error interno del servidor.
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+  Notas adicionales: Respuesta envuelta en PaginatedResponse con metadatos de paginación. El método se declara como async.
+  */
   @Get()
   @ApiOperation({
     summary: 'Listar personas naturales con filtros y paginación',
@@ -132,11 +153,21 @@ export class PersonaNaturalController {
     return this.personaNaturalService.listar(query);
   }
 
-  /**
-   * Busca una persona natural mediante sus datos de identidad documental.
-   *
-   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
-   */
+  /*
+  Nombre de la ruta: catalogos/personas-naturales/buscar
+  Método HTTP: GET
+  Descripción: Busca una persona natural mediante sus datos de identidad documental.
+  Parámetros de consulta (Query):
+    - BuscarPersonaNaturalDto: Criterio de búsqueda (datos documentales).
+  Respuestas posibles:
+    - 200: Búsqueda realizada correctamente.
+    - 400: Parámetros de búsqueda inválidos.
+    - 403: Acceso denegado.
+    - 500: Error interno del servidor.
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+  Notas adicionales: Se declara antes de `:id` para que la ruta literal `buscar` no sea capturada por el parámetro genérico. El método se declara como async.
+  */
   @Get('buscar')
   @ApiOperation({
     summary: 'Buscar una persona natural por identidad documental',
@@ -160,11 +191,22 @@ export class PersonaNaturalController {
     return this.personaNaturalService.buscarPorDocumento(dto);
   }
 
-  /**
-   * Consulta una persona natural mediante su identificador UUID.
-   *
-   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
-   */
+  /*
+  Nombre de la ruta: catalogos/personas-naturales/:id
+  Método HTTP: GET
+  Descripción: Consulta una persona natural mediante su identificador UUID.
+  Parámetros de ruta (Param):
+    - id: Identificador UUID de la persona natural.
+  Respuestas posibles:
+    - 200: Persona natural encontrada correctamente.
+    - 400: El identificador proporcionado no es un UUID válido.
+    - 403: Acceso denegado.
+    - 404: No se encontró la persona natural solicitada.
+    - 500: Error interno del servidor.
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+  Notas adicionales: La validación del UUID se realiza con ParseUUIDPipe. El método se declara como async.
+  */
   @Get(':id')
   @ApiOperation({
     summary: 'Consultar una persona natural por ID',
@@ -196,11 +238,25 @@ export class PersonaNaturalController {
     return this.personaNaturalService.buscarPorId(id);
   }
 
-  /**
-   * Actualiza los datos de una persona natural existente.
-   *
-   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
-   */
+  /*
+  Nombre de la ruta: catalogos/personas-naturales/:id
+  Método HTTP: PATCH
+  Descripción: Actualiza los datos de una persona natural existente.
+  Parámetros de ruta (Param):
+    - id: Identificador UUID de la persona natural.
+  Cuerpo de la solicitud (Body):
+    - UpdatePersonaNaturalDto: Campos a actualizar.
+  Respuestas posibles:
+    - 200: Persona natural actualizada correctamente.
+    - 400: Datos inválidos, fecha de nacimiento posterior a la actual o persona inactiva.
+    - 403: Acceso denegado.
+    - 404: No se encontró la persona natural solicitada.
+    - 409: Ya existe otra persona registrada con esos datos documentales.
+    - 500: Error interno del servidor.
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+  Notas adicionales: No se permite actualizar personas inactivas. La validación del UUID se realiza con ParseUUIDPipe. El método se declara como async.
+  */
   @Patch(':id')
   @ApiOperation({
     summary: 'Actualizar una persona natural',
@@ -239,11 +295,22 @@ export class PersonaNaturalController {
     return this.personaNaturalService.actualizar(id, dto, idUsuario);
   }
 
-  /**
-   * Activa o inactiva una persona natural.
-   *
-   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
-   */
+  /*
+  Nombre de la ruta: catalogos/personas-naturales/:id/estado
+  Método HTTP: PATCH
+  Descripción: Activa o inactiva una persona natural alternando su estado entre ACTIVO e INACTIVO.
+  Parámetros de ruta (Param):
+    - id: Identificador UUID de la persona natural.
+  Respuestas posibles:
+    - 200: Estado de la persona natural actualizado correctamente.
+    - 400: El identificador proporcionado no es un UUID válido.
+    - 403: Acceso denegado.
+    - 404: No se encontró la persona natural solicitada.
+    - 500: Error interno del servidor.
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+  Notas adicionales: No recibe body; el nuevo estado se deriva del estado actual. La validación del UUID se realiza con ParseUUIDPipe. El método se declara como async.
+  */
   @Patch(':id/estado')
   @ApiOperation({
     summary: 'Activar o inactivar una persona natural',
