@@ -105,7 +105,7 @@ export class Dependencia {
   @ManyToOne(() => Usuario, { nullable: false, onDelete: 'RESTRICT' })
   @JoinColumn({
     name: '_user_created',
-    referencedColumnName: 'id_usuario',
+    referencedColumnName: 'idUsuario',
   })
   usuario_creador!: Usuario;
 
@@ -123,7 +123,7 @@ export class Dependencia {
   @ManyToOne(() => Usuario, { nullable: true, onDelete: 'RESTRICT' })
   @JoinColumn({
     name: '_user_update',
-    referencedColumnName: 'id_usuario',
+    referencedColumnName: 'idUsuario',
   })
   usuario_actualizador!: Usuario | null;
 
@@ -141,7 +141,7 @@ export class Dependencia {
   @ManyToOne(() => Usuario, { nullable: true, onDelete: 'RESTRICT' })
   @JoinColumn({
     name: '_user_delete',
-    referencedColumnName: 'id_usuario',
+    referencedColumnName: 'idUsuario',
   })
   usuario_eliminador!: Usuario | null;
 }

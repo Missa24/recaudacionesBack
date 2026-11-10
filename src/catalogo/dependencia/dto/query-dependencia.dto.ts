@@ -6,7 +6,7 @@ import { QueryPaginatedDto } from 'src/shared/dto/query-paginated.dto';
 export class QueryDependenciaDto extends QueryPaginatedDto {
   @ApiPropertyOptional({
     example: 'DEMO-UNI',
-    description: 'Filtra las depnedencias por el código',
+    description: 'Filtra las dependencias por el código',
   })
   @IsOptional()
   @IsString({ message: 'El codigo de debe tener caracteres' })

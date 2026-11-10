@@ -1,7 +1,10 @@
-export interface DependenciaResponsable {
-  username: string;
-}
-
+/**
+ * Interfaz: DependenciaResponse
+ * Descripción:
+ * Define los datos que se mostrarán al consultar la Dependencia.
+ *
+ * Desarrollado por: Missael Apaza
+ */
 export interface DependenciaResponse {
   id: string;
   codigo: string;
@@ -9,10 +12,17 @@ export interface DependenciaResponse {
   abreviacion: string;
   es_unidad_desconcentrada: boolean;
   estado: string;
-  responsable_creacion: DependenciaResponsable | null;
-  responsable_actualizacion: DependenciaResponsable | null;
+  responsable_creacion: string | null;
+  responsable_actualizacion: string | null;
 }
 
+/**
+ * Interfaz: DependenciaMessageResponse
+ * Descripción:
+ * Define la respuesta de una operación mediante un mensaje.
+ *
+ * Desarrollado por: Missael Apaza
+ */
 export interface DependenciaMessageResponse {
   message: string;
 }

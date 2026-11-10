@@ -62,10 +62,10 @@ export class DependenciaService {
    */
   async crear(
     dto: CreateDependenciaDto,
-    id_usuario: string,
+    idUsuario: string,
   ): Promise<DependenciaMessageResponse> {
     this.logger.log(
-      `Iniciando creación de Dependencia. Código: ${dto.codigo}, Usuario: ${id_usuario}`,
+      `Iniciando creación de Dependencia. Código: ${dto.codigo}, Usuario: ${idUsuario}`,
     );
 
     // Comprueba si ya existe un registro con el código proporcionado.
@@ -85,14 +85,14 @@ export class DependenciaService {
     // Prepara la entidad asociando los datos del usuario creador.
     const dependencia = this.dependenciaRepository.create({
       ...dto,
-      usuario_creador: { id_usuario },
+      usuario_creador: { idUsuario },
     });
 
     try {
       const guardada = await this.dependenciaRepository.save(dependencia);
 
       this.logger.log(
-        `Dependencia creada correctamente. ID: ${guardada.id}, Código: ${guardada.codigo}, Usuario: ${id_usuario}`,
+        `Dependencia creada correctamente. ID: ${guardada.id}, Código: ${guardada.codigo}, Usuario: ${idUsuario}`,
       );
 
       return {
@@ -110,7 +110,7 @@ export class DependenciaService {
       }
 
       this.logger.error(
-        `Error al crear una dependencia. Código: ${dto.codigo}, Usuario: ${id_usuario}`,
+        `Error al crear una dependencia. Código: ${dto.codigo}, Usuario: ${idUsuario}`,
         error instanceof Error ? error.stack : String(error),
       );
       throw new InternalServerErrorException('No se pudo guardar el registro');
@@ -178,10 +178,20 @@ export class DependenciaService {
         codigo,
       });
     }
-
-    queryBuilder.andWhere('dependencia.estado = :estado', {
-      estado: status ?? 'ACTIVO',
-    });
+    // Aplicar filtro de estado, mostrando activos por defecto.
+    if (status && status !== 'TODOS') {
+      this.logger.debug(`Aplicando filtro estado: ${status}`);
+      queryBuilder.andWhere('dependencia.estado = :estado', {
+        estado: status,
+      });
+    } else if (!status) {
+      this.logger.debug('Aplicando filtro estado por defecto: ACTIVO');
+      queryBuilder.andWhere('dependencia.estado = :estado', {
+        estado: 'ACTIVO',
+      });
+    } else {
+      this.logger.debug('Consultando la Dependencia de todos los estados');
+    }
 
     if (abreviacion) {
       this.logger.debug(`Aplicando filtro abreviación: ${abreviacion}`);
@@ -267,6 +277,7 @@ export class DependenciaService {
         'dependencia.codigo',
         'dependencia.nombre',
         'dependencia.abreviacion',
+        'dependencia.estado',
         'dependencia.es_unidad_desconcentrada',
         'creador.username',
         'actualizador.username',
@@ -333,10 +344,10 @@ export class DependenciaService {
   async actualizar(
     id: string,
     dto: UpdateDependenciaDto,
-    id_usuario: string,
+    idUsuario: string,
   ): Promise<DependenciaMessageResponse> {
     this.logger.log(
-      `Iniciando actualización de Dependencia. ID: ${id}, Usuario: ${id_usuario}`,
+      `Iniciando actualización de Dependencia. ID: ${id}, Usuario: ${idUsuario}`,
     );
 
     const dependencia = await this.dependenciaRepository.findOne({
@@ -359,14 +370,14 @@ export class DependenciaService {
 
     Object.assign(dependencia, dto);
     dependencia._updated_at = new Date();
-    dependencia._user_update = id_usuario;
-    dependencia.usuario_actualizador = { id_usuario } as Usuario;
+    dependencia._user_update = idUsuario;
+    dependencia.usuario_actualizador = { idUsuario } as Usuario;
 
     try {
       await this.dependenciaRepository.save(dependencia);
 
       this.logger.log(
-        `Dependencia actualizada correctamente. ID: ${id}, Usuario: ${id_usuario}`,
+        `Dependencia actualizada correctamente. ID: ${id}, Usuario: ${idUsuario}`,
       );
 
       return {
@@ -398,10 +409,10 @@ export class DependenciaService {
    */
   async cambiarEstado(
     id: string,
-    id_usuario: string,
+    idUsuario: string,
   ): Promise<DependenciaMessageResponse> {
     this.logger.log(
-      `Iniciando cambio de estado de Dependencia. ID: ${id}, Usuario: ${id_usuario}`,
+      `Iniciando cambio de estado de Dependencia. ID: ${id}, Usuario: ${idUsuario}`,
     );
 
     const dependencia = await this.dependenciaRepository.findOne({
@@ -424,12 +435,12 @@ export class DependenciaService {
     dependencia.estado = nuevoEstado;
 
     if (nuevoEstado === 'INACTIVO') {
-      dependencia._user_delete = id_usuario;
+      dependencia._user_delete = idUsuario;
       dependencia._deleted_at = new Date();
       dependencia._user_update = null;
       dependencia._updated_at = null;
     } else {
-      dependencia._user_update = id_usuario;
+      dependencia._user_update = idUsuario;
       dependencia._updated_at = new Date();
       dependencia._user_delete = null;
       dependencia._deleted_at = null;
@@ -439,11 +450,11 @@ export class DependenciaService {
       await this.dependenciaRepository.save(dependencia);
 
       this.logger.log(
-        `Estado de Dependencia cambiado correctamente. ID: ${id}, Estado anterior: ${estadoAnterior}, Estado nuevo: ${nuevoEstado}, Usuario: ${id_usuario}`,
+        `Estado de Dependencia cambiado correctamente. ID: ${id}, Estado anterior: ${estadoAnterior}, Estado nuevo: ${nuevoEstado}, Usuario: ${idUsuario}`,
       );
 
       return {
-        message: 'Estado de la Dependencia cambiado correctamente',
+        message: `Registro de la dependencia ${dependencia.estado === 'ACTIVO' ? 'activado' : 'inactivado'} correctamente.`,
       };
     } catch (error: unknown) {
       this.logger.error(
@@ -452,6 +463,22 @@ export class DependenciaService {
       );
       throw new InternalServerErrorException(
         'No se pudo cambiar el estado del registro',
+      );
+    }
+  }
+
+  async validarDependencia(id_dependencia: string): Promise<void> {
+    const dependencia = await this.dependenciaRepository.findOne({
+      where: { id: id_dependencia },
+    });
+
+    if (!dependencia) {
+      throw new NotFoundException('No se encontró la dependencia solicitada.');
+    }
+
+    if (dependencia.estado !== 'ACTIVO') {
+      throw new BadRequestException(
+        'La dependencia seleccionada se encuentra inactiva.',
       );
     }
   }

@@ -9,5 +9,6 @@ import { Usuario } from 'src/seguridad/usuario/entities/usuario.entity';
   imports: [TypeOrmModule.forFeature([Dependencia, Usuario])],
   controllers: [DependenciaController],
   providers: [DependenciaService],
+  exports: [DependenciaService],
 })
 export class DependenciaModule {}

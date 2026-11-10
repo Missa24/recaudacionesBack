@@ -27,11 +27,8 @@ export function mapearRespuesta(dependencia: Dependencia): DependenciaResponse {
     abreviacion: dependencia.abreviacion,
     es_unidad_desconcentrada: dependencia.es_unidad_desconcentrada,
     estado: dependencia.estado,
-    responsable_creacion: dependencia.usuario_creador
-      ? { username: dependencia.usuario_creador.username }
-      : null,
-    responsable_actualizacion: dependencia.usuario_actualizador
-      ? { username: dependencia.usuario_actualizador.username }
-      : null,
+    responsable_creacion: dependencia.usuario_creador?.username ?? null,
+    responsable_actualizacion:
+      dependencia.usuario_actualizador?.username ?? null,
   };
 }
