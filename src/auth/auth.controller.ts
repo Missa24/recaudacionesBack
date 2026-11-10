@@ -44,6 +44,23 @@ export class AuthController {
   constructor(private authService: AuthService) {}
 
   // ✅ Login SIN UseGuards - autenticación manual
+
+
+  /* 
+  Nombre de la ruta: login
+  Método HTTP: POST
+  Descripción: Esta ruta permite a los usuarios autenticarse proporcionando un nombre de usuario y una contraseña. Si las credenciales son válidas, se genera un token JWT que puede ser utilizado para acceder a rutas protegidas en la aplicación.
+  Cuerpo de la solicitud (Body):
+    - username: Nombre de usuario del usuario que intenta autenticarse.
+    - password: Contraseña del usuario que intenta autenticarse.  
+  Respuestas posibles:
+    - 201: Usuario autenticado y token generado exitosamente.
+    - 400: Credenciales inválidas.    
+    - 403: Acceso denegado.
+  Fecha de creación: 2024-06-15
+  Autor: Alvaro Choque
+  Notas adicionales: Esta ruta no utiliza guards de NestJS para la autenticación, sino que realiza la validación de las credenciales de manera manual dentro del método. Esto permite un control más detallado sobre el proceso de autenticación y la generación del token JWT.
+  */
   @ApiResponse({ status: 201, description: 'Usuario autenticado y token generado exitosamente' })  
   @ApiResponse({ status: 400, description: 'Credenciales inválidas' })  
   @ApiResponse({ status: 403, description: 'Acceso denegado' })  
@@ -225,12 +242,31 @@ export class AuthController {
       this.logger.error(`❌ Error al obtener grupos: ${message}`);
       throw new UnauthorizedException(`Error al obtener grupos de AD: ${message}`);
     }
-  }
-
-  // ✅ Obtener usuario por username (exacto)  
+  }  
+  /*
+  Nombre de la ruta: getUserByUsername
+  Método HTTP: GET
+  Descripción: Esta ruta permite obtener un usuario de Active Directory (AD) utilizando su nombre de usuario exacto. Si el usuario existe en AD, se devuelve la información del usuario; de lo contrario, se devuelve un mensaje indicando que el usuario no fue encontrado.
+  Parámetros de la ruta:
+    - username: Nombre de usuario exacto del usuario que se desea obtener.
+  Respuestas posibles:
+    - 200: Usuario obtenido correctamente.
+    - 401: No autorizado.
+    - 404: Usuario no encontrado en AD. 
+  Fecha de creación: 2024-06-15
+  Autor: Alvaro Choque
+  Notas adicionales: Esta ruta está protegida por guards que verifican la autenticación mediante JWT o un token de API, así como la autorización basada en roles. Esto asegura que solo usuarios autenticados y autorizados puedan acceder a la información del usuario en AD.
+  */
   @Get('user/:username')
-  @ApiOperation({ summary: 'Obtener usuario  Active Directory por username' })
-  @ApiParam({ name: 'username', description: 'Nombre de usuario de Active Directory' })
+  @ApiOperation({ 
+    summary: 'Obtener usuario  Active Directory por username',
+    description: 'Busca un usuario por su nombre de usuario exacto.',
+  })
+  @ApiParam({ 
+    name: 'username', 
+    description: 'Nombre de usuario de Active Directory',
+    example: 'pedro.perez',
+  })
   @ApiResponse({ status: 200, description: 'Usuario obtenido correctamente' })
   @ApiResponse({ status: 401, description: 'No autorizado' })
   @ApiResponse({ status: 404, description: 'Usuario no encontrado' })
@@ -243,11 +279,11 @@ export class AuthController {
       const user = await this.authService.getAdUserByUsername(username);
       
       if (!user) {
-        /*return {
+        return {
           success: false,
           message: `Usuario ${username} no encontrado en AD`,
           data: null,
-        };*/
+        };
         throw new NotFoundException(
           `Usuario ${username} no encontrado en AD`,
         );
@@ -260,7 +296,7 @@ export class AuthController {
       };
     } catch (error) {
       this.logger.error(`❌ Error al obtener usuario: ${error.message}`);
-      throw new NotFoundException('Error al obtener usuario de AD');
+      throw new NotFoundException('No se pudo obtener el usuario de AD verifique que el usuario ingresado sea correcto');
     }
   }
 
@@ -283,7 +319,7 @@ export class AuthController {
       if (!user) {
         return {
           success: false,
-          message: `No se encontró usuario con teléfono ${phone}`,
+          message: `No se encontró usuario con ci ${phone}`,
           data: null,
         };
       }
@@ -297,6 +333,5 @@ export class AuthController {
       this.logger.error(`❌ Error al obtener usuario: ${error.message}`);
       throw new UnauthorizedException('Error al obtener usuario de AD');
     }
-  }
-  
+  }  
 }
