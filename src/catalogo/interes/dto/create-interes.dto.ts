@@ -5,7 +5,7 @@
  * Define los datos requeridos para registrar un nuevo valor de interés,
  * incluyendo las validaciones de fecha y valor numérico.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 
 import { ApiProperty } from '@nestjs/swagger';
@@ -15,7 +15,7 @@ export class CreateInteresDto {
   /**
    * Fecha correspondiente al valor del interés.
    * Debe tener el formato AAAA-MM-DD.
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
 
   @ApiProperty({
@@ -33,7 +33,7 @@ export class CreateInteresDto {
   /**
    * Valor numérico del interés.
    * Debe de encontrarse entre el rango establecido.
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   @ApiProperty({
     description: 'Valor de interés, Debe encontrarse entre 4 y 8.',

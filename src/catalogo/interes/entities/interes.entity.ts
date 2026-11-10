@@ -6,7 +6,7 @@
  * Establece sus campos, restricciones de unicidad y relaciones
  * con los usuarios responsables de su creación, actualización y eliminación.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 import { Usuario } from 'src/seguridad/usuario/entities/usuario.entity';
 import {
@@ -24,7 +24,7 @@ import {
  * Representa los registros de valores Interes almacenados en la base de datos,
  * con control de estados y campos de auditoría.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 
 @Entity({ schema: 'catalogo', name: 'interes' })

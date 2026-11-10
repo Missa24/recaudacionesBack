@@ -6,7 +6,7 @@
  * Gestiona registros manuales, sincronización externa, consultas,
  * actualizaciones y cambios de estado, incluyendo el control de auditoría.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 
 import {
@@ -37,14 +37,14 @@ import { PaginatedResponse } from 'src/shared/interface/paginated-response.inter
  * Implementa las operaciones de negocio para administrar los registros Interés,
  * utilizando TypeORM para interactuar con la base de datos.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 @Injectable()
 export class InteresService {
   /**
    * Logger del servicio para trazabilidad de operaciones.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   private readonly logger = new Logger(InteresService.name);
 
@@ -58,7 +58,7 @@ export class InteresService {
    * Verifica que no exista otro registro para la misma fecha
    * y asocia al usuario responsable de la creación.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   async crear(
     dto: CreateInteresDto,
@@ -118,7 +118,7 @@ export class InteresService {
    * Obtiene los registros UFV aplicando filtros, búsqueda,
    * ordenamiento y paginación.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   async listar(
     query: QueryInteresDto,
@@ -265,7 +265,7 @@ export class InteresService {
    * Busca un registro de Interés mediante su identificador único.
    * Incluye los nombres de usuario asociados a su creación y actualización.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   async buscarPorId(id: string) {
     this.logger.log(`Buscando Interés por ID: ${id}`);
@@ -300,7 +300,7 @@ export class InteresService {
    * Busca un registro de Interés por una fecha específica.
    * Solo considera registros activos y que no hayan sido eliminados.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   async buscarPorFecha(fecha: string): Promise<InteresResponse> {
     this.logger.log(`Buscando Interés por fecha: ${fecha}`);
@@ -336,7 +336,7 @@ export class InteresService {
    * Verifica su existencia, estado y posibles duplicados de fecha.
    * También actualiza los campos de auditoría correspondientes.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   async actualizar(
     id: string,
@@ -432,7 +432,7 @@ export class InteresService {
    * Al desactivar, registra los datos de eliminación lógica.
    * Al reactivar, limpia dichos datos y registra la actualización.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   async cambiarEstado(
     id: string,

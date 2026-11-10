@@ -5,7 +5,7 @@
  * Controlador encargado de exponer los endpoints para el registro,
  * consulta, actualización, sincronización y cambio de estado de los valores de Interés.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 
 import {
@@ -42,7 +42,7 @@ const userId = '8b461287-8416-412e-84e7-b5c77615ea2a';
  * Gestiona las solicitudes HTTP relacionadas con los valores de Interés
  * y delega su procesamiento a los servicios correspondientes.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 @ApiTags('Catálogos / Intereses')
 @ApiBearerAuth('JWT')
@@ -54,7 +54,7 @@ export class InteresController {
   /**
    * Registra un nuevo valor de Interés mediante los datos proporcionados.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   @Post()
   @ApiOperation({
@@ -78,7 +78,7 @@ export class InteresController {
   /**
    * Obtiene los registros de Interés aplicando filtros y paginación.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   @ApiOperation({
     summary: 'Lista registro de Interés',
@@ -96,7 +96,7 @@ export class InteresController {
   /**
    * Obtiene un registro de una Entidad mediante su identificador único.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   @Get(':id')
   @ApiOperation({
@@ -118,7 +118,7 @@ export class InteresController {
   /**
    * Obtiene un registro Interés correspondiente a una fecha específica.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   @Get('fecha/:fecha')
   @ApiOperation({
@@ -144,7 +144,7 @@ export class InteresController {
   /**
    * Actualiza parcialmente los datos de un registro de Interés existente.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   @Patch(':id')
   @ApiOperation({
@@ -173,7 +173,7 @@ export class InteresController {
   /**
    * Cambia el estado de un registro de Interés entre ACTIVO e INACTIVO.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   @Patch(':id/estado')
   @ApiOperation({

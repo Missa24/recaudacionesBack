@@ -5,7 +5,7 @@
  * Define las interfaces utilizadas para estructurar las respuestas
  * del módulo de Intereses, incluyendo responsables y mensajes de operación.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 
 /**
@@ -14,7 +14,7 @@
  * Define la estructura de los datos de intereses que se entregan
  * en las consultas, incluyendo los responsables de creación y actualización.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 export interface InteresResponse {
   id: string;
@@ -32,7 +32,7 @@ export interface InteresResponse {
  * Define una respuesta general de operación que contiene
  * un mensaje informativo sobre el resultado de la operación.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 export interface InteresMessageResponse {
   message: string;
