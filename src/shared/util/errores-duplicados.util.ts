@@ -5,7 +5,7 @@
  * Proporciona una función auxiliar para identificar errores
  * de duplicidad generados por PostgreSQL mediante TypeORM.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 
 import { QueryFailedError } from 'typeorm';
@@ -17,7 +17,7 @@ import { QueryFailedError } from 'typeorm';
  * Identifica el código SQLSTATE 23505, correspondiente
  * a registros duplicados.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 export function esErrorDuplicado(error: unknown): boolean {
   return (

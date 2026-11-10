@@ -5,7 +5,7 @@
  * Proporciona una función auxiliar para convertir fechas
  * expresadas en español al formato ISO YYYY-MM-DD.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 
 /**
@@ -14,7 +14,7 @@
  * Ejemplo:
  * "15 de enero 2026" -> "2026-01-15"
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 export function convertirFechaEspanol(fecha: string): string {
   // Equivalencias de los meses en español.

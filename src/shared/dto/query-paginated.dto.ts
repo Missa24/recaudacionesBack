@@ -18,12 +18,12 @@ import {
  * Define los parámetros generales de búsqueda, filtrado,
  * ordenamiento y paginación para las consultas del sistema.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 export class QueryPaginatedDto {
   /**
    * Número de página solicitada.
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   @ApiPropertyOptional({ example: 1, default: 1 })
   @IsOptional()
@@ -34,7 +34,7 @@ export class QueryPaginatedDto {
 
   /**
    * Cantidad de registros por página.
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   @ApiPropertyOptional({ example: 10, default: 10 })
   @IsOptional()
@@ -47,7 +47,7 @@ export class QueryPaginatedDto {
   /**
    * Campo por el cual se ordenarán los registros.
    * Los campos permitidos se determinan en cada servicio.
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   @ApiPropertyOptional({ example: 'createdAt', default: 'createdAt' })
   @IsOptional()
@@ -56,7 +56,7 @@ export class QueryPaginatedDto {
 
   /**
    * Dirección del ordenamiento.
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   @ApiPropertyOptional({
     example: 'DESC',
@@ -71,7 +71,7 @@ export class QueryPaginatedDto {
 
   /**
    * Término de búsqueda general.
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   @ApiPropertyOptional({ example: 'juan' })
   @IsOptional()
@@ -83,7 +83,7 @@ export class QueryPaginatedDto {
 
   /**
    * Fecha inicial para filtrar registros.
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   @ApiPropertyOptional({ example: '2026-01-01' })
   @IsOptional()
@@ -95,7 +95,7 @@ export class QueryPaginatedDto {
 
   /**
    * Fecha final para filtrar registros.
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   @ApiPropertyOptional({ example: '2026-12-31' })
   @IsOptional()
@@ -108,7 +108,7 @@ export class QueryPaginatedDto {
   /**
    * Estado por el cual se filtrarán los registros.
    * Los valores admitidos dependen de cada módulo.
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   @ApiPropertyOptional({
     example: 'ACTIVO',

@@ -5,12 +5,12 @@
  * Define la estructura general de respuesta para los listados
  * que utilizan paginación.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 
 /**
  * Información de paginación de una consulta.
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 export interface PaginationMetadata {
   total: number;
@@ -23,7 +23,7 @@ export interface PaginationMetadata {
 
 /**
  * Estructura genérica de respuesta paginada.
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 export interface PaginatedResponse<T> {
   items: T[];

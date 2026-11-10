@@ -5,7 +5,7 @@
  * Interceptor global que estandariza las respuestas de la API,
  * incorporando los campos success, status y data.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 
 import {
@@ -21,7 +21,7 @@ import { map } from 'rxjs/operators';
 /**
  * Define la estructura estándar de respuesta de la API.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 export interface ApiResponse<T> {
   /** Indica si la operación fue exitosa. */
@@ -38,7 +38,7 @@ export interface ApiResponse<T> {
  * Interceptor encargado de transformar las respuestas
  * de los controladores al formato estándar de la API.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 @Injectable()
 export class ResponseInterceptor<T> implements NestInterceptor<
@@ -49,7 +49,7 @@ export class ResponseInterceptor<T> implements NestInterceptor<
    * Intercepta la respuesta del controlador y la envuelve
    * en la estructura estándar de la API.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   intercept(
     context: ExecutionContext,
