@@ -21,6 +21,7 @@ import { BitacoraModule } from './bitacora/bitacora.module';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { HttpModule } from '@nestjs/axios';
+import { BancoModule } from './catalogo/banco/banco.module';
 
 @Module({
   imports: [
@@ -53,6 +54,7 @@ import { HttpModule } from '@nestjs/axios';
     ApiTokensModule,
     BitacoraModule,
     HttpModule,
+    BancoModule,
   ],
   controllers: [AppController],
   providers: [

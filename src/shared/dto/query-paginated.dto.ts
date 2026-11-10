@@ -110,11 +110,14 @@ export class QueryPaginatedDto {
    * Los valores admitidos dependen de cada módulo.
    * Desarrollado por: Missael Apaza
    */
-  @ApiPropertyOptional({ example: 'ACTIVO' })
+  @ApiPropertyOptional({
+    example: 'ACTIVO',
+    enum: ['ACTIVO', 'INACTIVO', 'TODOS'],
+    default: 'ACTIVO',
+  })
   @IsOptional()
-  @IsString({ message: 'El estado debe ser un texto' })
-  @MaxLength(20, {
-    message: 'El estado no debe superar los 20 caracteres',
+  @IsIn(['ACTIVO', 'INACTIVO', 'TODOS'], {
+    message: 'El estado debe ser ACTIVO, INACTIVO o TODOS',
   })
   status?: string;
 }
