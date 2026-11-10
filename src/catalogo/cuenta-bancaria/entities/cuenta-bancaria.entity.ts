@@ -5,7 +5,7 @@
  * Define la estructura y las relaciones de la entidad CuentaBancaria,
  * correspondiente a la tabla cuenta_bancaria del esquema catalogo.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 
 import { Usuario } from 'src/seguridad/usuario/entities/usuario.entity';
@@ -25,7 +25,7 @@ import {
  * Representa la información bancaria, su dependencia asociada
  * y los datos de auditoría de las cuentas registradas.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 @Entity({ schema: 'catalogo', name: 'cuenta_bancaria' })
 @Unique('uq_cuenta_bancaria_banco_nro_cuenta', ['id_banco', 'nro_cuenta'])

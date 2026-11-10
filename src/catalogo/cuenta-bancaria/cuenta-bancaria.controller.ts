@@ -5,7 +5,7 @@
  * Expone los endpoints para el registro, consulta, listado,
  * actualización y cambio de estado de las cuentas bancarias.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 
 import {
@@ -46,7 +46,7 @@ const idUsuario = '8b461287-8416-412e-84e7-b5c77615ea2a';
  * Controlador encargado de gestionar las solicitudes HTTP
  * del catálogo de cuentas bancarias.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 @ApiTags('Catálogos / Cuentas bancarias')
 @ApiBearerAuth('jwt')
@@ -58,7 +58,7 @@ export class CuentaBancariaController {
   /**
    * Registra una nueva cuenta bancaria.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   @Post()
   @ApiOperation({
@@ -93,7 +93,7 @@ export class CuentaBancariaController {
   /**
    * Lista las cuentas bancarias aplicando filtros y paginación.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   @Get()
   @ApiOperation({
@@ -121,7 +121,7 @@ export class CuentaBancariaController {
   /**
    * Consulta una cuenta bancaria mediante su identificador UUID.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   @Get(':id')
   @ApiOperation({
@@ -158,7 +158,7 @@ export class CuentaBancariaController {
   /**
    * Actualiza parcialmente una cuenta bancaria existente.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   @Patch(':id')
   @ApiOperation({
@@ -204,7 +204,7 @@ export class CuentaBancariaController {
   /**
    * Activa o inactiva una cuenta bancaria.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   @Patch(':id/estado')
   @ApiOperation({

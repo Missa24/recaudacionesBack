@@ -5,7 +5,7 @@
  * Define los parámetros específicos de consulta
  * para el listado de cuentas bancarias.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 
 import { ApiPropertyOptional } from '@nestjs/swagger';
@@ -18,7 +18,7 @@ import { QueryPaginatedDto } from 'src/shared/dto/query-paginated.dto';
  * Hereda los parámetros generales de búsqueda,
  * filtrado, ordenamiento y paginación.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 export class QueryCuentaBancariaDto extends QueryPaginatedDto {
   /**

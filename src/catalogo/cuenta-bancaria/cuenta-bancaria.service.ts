@@ -5,7 +5,7 @@
  * Contiene la lógica de negocio para el registro, consulta,
  * actualización y administración de cuentas bancarias.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 
 import {
@@ -41,14 +41,14 @@ import { DependenciaService } from '../dependencia/dependencia.service';
  * Servicio encargado de gestionar las operaciones
  * del catálogo de cuentas bancarias.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 @Injectable()
 export class CuentaBancariaService {
   /**
    * Logger del servicio para trazabilidad de operaciones.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   private readonly logger = new Logger(CuentaBancariaService.name);
 
@@ -67,7 +67,7 @@ export class CuentaBancariaService {
    * Registra una nueva cuenta bancaria,
    * verificando sus referencias y unicidad.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   async crear(
     dto: CreateCuentaBancariaDto,
@@ -155,7 +155,7 @@ export class CuentaBancariaService {
    * Obtiene el listado paginado de cuentas bancarias
    * aplicando búsqueda, filtros y ordenamiento.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   async listar(
     query: QueryCuentaBancariaDto,
@@ -306,7 +306,7 @@ export class CuentaBancariaService {
    * Busca una cuenta bancaria mediante su identificador UUID.
    * Si no existe, genera una excepción de recurso no encontrado.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   async buscarPorId(id: string): Promise<CuentaBancariaResponse> {
     this.logger.log(`Buscando CuentaBancaria por ID: ${id}`);
@@ -333,7 +333,7 @@ export class CuentaBancariaService {
    * Actualiza la información de una cuenta bancaria.
    * Verifica su estado, referencias y unicidad cuando corresponda.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   async actualizar(
     id: string,
@@ -468,7 +468,7 @@ export class CuentaBancariaService {
    * Actualiza los datos de auditoría y registra o limpia la información
    * correspondiente a la inactivación del registro.
    *
-   * Desarrollado por: Missael Apaza
+   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
    */
   async cambiarEstado(
     id: string,

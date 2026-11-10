@@ -5,7 +5,7 @@
  * Define las estructuras de respuesta utilizadas
  * por el módulo de cuentas bancarias.
  *
- * Desarrollado por: Missael Apaza
+ * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 
 /**
