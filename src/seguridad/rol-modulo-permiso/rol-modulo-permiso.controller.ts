@@ -231,7 +231,7 @@ export class RolModuloPermisoController {
   listarRolesConModulosPermisos(
     @Query() query: QueryRolModuloPermisoDto,
   ): Promise<PaginatedResponse<RolModuloPermisoListadoResponse>> {
-    return this.servicio.listarRolesConModulosPermisos(query);
+    return this.servicio.listarRolesModulosPermisos(query);
   }
 
   /*
