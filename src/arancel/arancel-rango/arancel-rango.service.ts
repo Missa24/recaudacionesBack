@@ -65,7 +65,6 @@ export class ArancelRangoService {
       startDate,
       endDate,
       sortOrder,
-      arancel_det_id,
       tarifa_id,
     } = query;
     if (startDate && endDate && startDate > endDate) {
@@ -77,7 +76,6 @@ export class ArancelRangoService {
     const filtros: FindOptionsWhere<ArancelRango> = {};
     if (status && status !== 'TODOS') filtros.estado = status;
     else if (!status) filtros.estado = 'ACTIVO';
-    if (arancel_det_id) filtros.arancel_det_id = arancel_det_id;
     if (tarifa_id) filtros.tarifa_id = tarifa_id;
     if (startDate && endDate) {
       filtros._created_at = And(

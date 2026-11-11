@@ -1,6 +1,6 @@
 export interface ArancelDetalleResponse {
   id: string;
-  arancel_gral_id: string;
+  arancel_general_id: string;
   tipo_tramite_id: string;
   nro_arancel_det: string;
   descripcion: string;

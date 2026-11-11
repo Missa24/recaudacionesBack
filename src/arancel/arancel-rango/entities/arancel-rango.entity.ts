@@ -6,7 +6,6 @@ import {
   ManyToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import { ArancelDetalle } from '../../arancel-detalle/entities/arancel-detalle.entity';
 import { Tarifa } from '../../tarifa/entities/tarifa.entity';
 
 @Entity({ schema: 'arancel', name: 'arancel_rango' })
@@ -14,12 +13,8 @@ export class ArancelRango {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ type: 'uuid', name: 'arancel_det_id' })
-  arancel_det_id!: string;
-
-  @ManyToOne(() => ArancelDetalle, { nullable: false, onDelete: 'RESTRICT' })
-  @JoinColumn({ name: 'arancel_det_id', referencedColumnName: 'id' })
-  arancel_detalle!: ArancelDetalle;
+  @Column({ type: 'uuid', name: 'tarifa_id' })
+  tarifa_id!: string;
 
   @Column({ type: 'numeric', precision: 14, scale: 2 })
   desde!: number;
@@ -35,9 +30,6 @@ export class ArancelRango {
 
   @Column({ type: 'numeric', precision: 14, scale: 2 })
   excedente!: number;
-
-  @Column({ type: 'uuid', name: 'tarifa_id' })
-  tarifa_id!: string;
 
   @ManyToOne(() => Tarifa, { nullable: false, onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'tarifa_id', referencedColumnName: 'id' })

@@ -9,16 +9,16 @@ import {
 import { ArancelGeneral } from '../../arancel-general/entities/arancel-general.entity';
 import { TipoTramiteCatalogo } from '../../tipo-tramite-catalogo/entities/tipo-tramite-catalogo.entity';
 
-@Entity({ schema: 'arancel', name: 'arancel_det' })
+@Entity({ schema: 'arancel', name: 'arancel_detalle' })
 export class ArancelDetalle {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ type: 'uuid', name: 'arancel_gral_id' })
-  arancel_gral_id!: string;
+  @Column({ type: 'uuid', name: 'arancel_general_id' })
+  arancel_general_id!: string;
 
   @ManyToOne(() => ArancelGeneral, { nullable: false, onDelete: 'RESTRICT' })
-  @JoinColumn({ name: 'arancel_gral_id', referencedColumnName: 'id' })
+  @JoinColumn({ name: 'arancel_general_id', referencedColumnName: 'id' })
   arancel_general!: ArancelGeneral;
 
   @Column({ type: 'uuid', name: 'tipo_tramite_id' })
