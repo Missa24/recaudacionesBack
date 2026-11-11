@@ -15,8 +15,8 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
-  Put,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -37,9 +37,10 @@ import {
   RequisitoMessageResponse,
   RequisitoResponse,
 } from './interface/requisito-response.interface';
+import { AuthGuard } from '@nestjs/passport';
 
 // NOTA: reemplaza este id por el usuario autenticado (req.user.idUsuario)
-const idUsuario = '00000000-0000-0000-0000-000000000000';
+const idUsuario = '8b461287-8416-412e-84e7-b5c77615ea2a';
 /**
  * Controlador: RequisitoController
  * Descripción:
@@ -50,6 +51,7 @@ const idUsuario = '00000000-0000-0000-0000-000000000000';
  */
 @ApiTags('Catálogo - Requisito')
 @ApiBearerAuth('jwt')
+@UseGuards(AuthGuard('jwt'))
 @Controller('requisito')
 export class RequisitoController {
   constructor(private readonly requisitoService: RequisitoService) {}
@@ -223,7 +225,7 @@ export class RequisitoController {
     Fecha de creación: 2026-11-10
     Autor: Missael Apaza
   */
-  @Put(':id')
+  @Patch(':id')
   @ApiOperation({
     summary: 'Actualizar requisito',
     description:
