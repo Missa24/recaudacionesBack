@@ -23,7 +23,7 @@ import {
  * Entidad EventoTramite.
  * Representa la bitácora de estados y eventos de un trámite.
  */
-@Entity({ schema: 'tramite', name: 'evento_tramite' })
+@Entity({ schema: 'tramite_vut', name: 'evento_tramite' })
 export class EventoTramite {
   /*
    * Identificador único del evento.

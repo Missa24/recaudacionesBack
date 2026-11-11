@@ -9,8 +9,8 @@
  */
 
 import { Usuario } from 'src/seguridad/usuario/entities/usuario.entity';
+import { LiquidacionDetalle } from 'src/tramite-vut/liquidicacion-detalle/entities/liquidicacion-detalle.entity';
 import { Tramite } from 'src/tramite/tramite/entities/tramite.entity';
-import { LiquidacionDetalle } from 'src/tramite-vut/liquidacion_detalle/entities/liquidacion_detalle.entity';
 
 import {
   Entity,
@@ -25,7 +25,7 @@ import {
  * Entidad Liquidacion.
  * Representa el documento de cobro por los servicios de un trámite.
  */
-@Entity({ schema: 'tramite', name: 'liquidacion' })
+@Entity({ schema: 'tramite-vut', name: 'liquidacion' })
 export class Liquidacion {
   /*
    * Identificador único de la liquidación.

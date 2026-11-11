@@ -17,7 +17,7 @@ import {
  * Define la estructura y relaciones de la entidad Derivacion,
  * correspondiente a la tabla derivacion del esquema tramite.
  */
-@Entity({ schema: 'tramite', name: 'derivacion' })
+@Entity({ schema: 'tramite-vut', name: 'derivacion' })
 export class Derivacion {
   // Identificador único
   @PrimaryGeneratedColumn('uuid', { name: 'id_derivacion' })

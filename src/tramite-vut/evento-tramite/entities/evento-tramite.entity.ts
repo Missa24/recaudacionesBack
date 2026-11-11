@@ -28,7 +28,7 @@ import {
  *
  * Desarrollado por: Missael Apaza - Fecha: 11/11/2026
  */
-@Entity({ schema: 'tramite_vut', name: 'evento_tramite' })
+@Entity({ schema: 'tramite-vut', name: 'evento_tramite' })
 export class EventoTramite {
   /*
    * Identificador único del evento de trámite.

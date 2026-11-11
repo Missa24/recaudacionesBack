@@ -10,7 +10,7 @@
 
 import { Usuario } from 'src/seguridad/usuario/entities/usuario.entity';
 import { Tramite } from 'src/tramite/tramite/entities/tramite.entity';
-import { CotizacionDetalle } from 'src/tramite-vut/cotizacion_detalle/entities/cotizacion_detalle.entity';
+import { CotizacionDetalle } from 'src/tramite-vut/cotizacion-detalle/entities/cotizacion-detalle.entity';
 
 import {
   Entity,
@@ -21,7 +21,7 @@ import {
   JoinColumn,
 } from 'typeorm';
 
-@Entity({ schema: 'tramite', name: 'cotizacion' })
+@Entity({ schema: 'tramite-vut', name: 'cotizacion' })
 export class Cotizacion {
   /*
    * Identificador único de la cotización.
