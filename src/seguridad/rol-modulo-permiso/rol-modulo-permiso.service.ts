@@ -119,7 +119,7 @@ Notas adicionales:
   La paginación y las fechas corresponden a rol_modulo_permiso.
   Excluye asignaciones y registros relacionados eliminados.
 */
-  async listarRolesConModulosPermisos(
+  async listarRolesModulosPermisos(
     query: QueryRolModuloPermisoDto,
   ): Promise<PaginatedResponse<RolModuloPermisoListadoResponse>> {
     const q = prepararQuery(query);

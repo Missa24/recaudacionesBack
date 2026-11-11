@@ -26,6 +26,12 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { HttpModule } from '@nestjs/axios';
 import { BancoModule } from './catalogo/banco/banco.module';
 import { RolModuloPermisoModule } from './seguridad/rol-modulo-permiso/rol-modulo-permiso.module';
+import { TarifaModule } from './arancel/tarifa/tarifa.module';
+import { RequisitoModule } from './arancel/requisito/requisito.module';
+import { TipoTramiteCatalogoModule } from './arancel/tipo-tramite-catalogo/tipo-tramite-catalogo.module';
+import { ArancelGeneralModule } from './arancel/arancel-general/arancel-general.module';
+import { ArancelDetalleModule } from './arancel/arancel-detalle/arancel-detalle.module';
+import { ArancelRangoModule } from './arancel/arancel-rango/arancel-rango.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -62,6 +68,11 @@ import { RolModuloPermisoModule } from './seguridad/rol-modulo-permiso/rol-modul
     BitacoraModule,
     HttpModule,
     BancoModule,
+    TarifaModule,
+    TipoTramiteCatalogoModule,
+    ArancelGeneralModule,
+    ArancelDetalleModule,
+    ArancelRangoModule,
   ],
   controllers: [AppController],
   providers: [
