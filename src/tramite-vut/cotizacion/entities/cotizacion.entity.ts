@@ -10,7 +10,7 @@
 
 import { Usuario } from 'src/seguridad/usuario/entities/usuario.entity';
 import { Tramite } from 'src/tramite/tramite/entities/tramite.entity';
-import { CotizacionDetalle } from 'src/tramite_vut/cotizacion_detalle/entities/cotizacion_detalle.entity';
+import { CotizacionDetalle } from 'src/tramite-vut/cotizacion_detalle/entities/cotizacion_detalle.entity';
 
 import {
   Entity,

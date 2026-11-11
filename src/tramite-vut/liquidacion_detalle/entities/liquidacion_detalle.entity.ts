@@ -1,7 +1,7 @@
 import { ArancelDetalle } from 'src/arancel/arancel-detalle/entities/arancel-detalle.entity';
 import { Tarifa } from 'src/arancel/tarifa/entities/tarifa.entity';
 import { Usuario } from 'src/seguridad/usuario/entities/usuario.entity';
-import { Liquidacion } from 'src/tramite_vut/liquidacion/entities/liquidacion.entity';
+import { Liquidacion } from 'src/tramite-vut/liquidacion/entities/liquidacion.entity';
 
 import {
   Entity,

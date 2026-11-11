@@ -12,7 +12,7 @@ import { Usuario } from 'src/seguridad/usuario/entities/usuario.entity';
 import { PersonaNatural } from 'src/catalogo/persona-natural/entities/persona-natural.entity';
 import { PersonaJuridica } from 'src/catalogo/persona-juridica/entities/persona-juridica.entity';
 
-import { Liquidacion } from 'src/tramite_vut/liquidacion/entities/liquidacion.entity';
+import { Liquidacion } from 'src/tramite-vut/liquidacion/entities/liquidacion.entity';
 
 import {
   Entity,

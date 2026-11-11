@@ -32,8 +32,8 @@ import { TipoTramiteCatalogoModule } from './arancel/tipo-tramite-catalogo/tipo-
 import { ArancelGeneralModule } from './arancel/arancel-general/arancel-general.module';
 import { ArancelDetalleModule } from './arancel/arancel-detalle/arancel-detalle.module';
 import { ArancelRangoModule } from './arancel/arancel-rango/arancel-rango.module';
-import { EventoTramiteModule } from './tramite_vut/evento-tramite/evento-tramite.module';
-import { EntregaTramiteModule } from './tramite_vut/entrega-tramite/entrega-tramite.module';
+import { EventoTramiteModule } from './tramite-vut/evento-tramite/evento-tramite.module';
+import { EntregaTramiteModule } from './tramite-vut/entrega-tramite/entrega-tramite.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
