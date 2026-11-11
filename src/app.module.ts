@@ -12,7 +12,10 @@ import { CalendarioModule } from './catalogo/calendario/calendario.module';
 import { CuentaBancariaModule } from './catalogo/cuenta-bancaria/cuenta-bancaria.module';
 import { DependenciaModule } from './catalogo/dependencia/dependencia.module';
 import { UsuarioModule } from './seguridad/usuario/usuario.module';
+
 import { RolModule } from './seguridad/rol/rol.module';
+import { PermisoModule } from './seguridad/permiso/permiso.module';
+import { ModuloModule } from './seguridad/modulo/modulo.module';
 import { UsuarioRolModule } from './seguridad/usuario-rol/usuario-rol.module';
 import { SesionModule } from './seguridad/sesion/sesion.module';
 import { AuthModule } from './auth/auth.module';
@@ -22,7 +25,7 @@ import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { HttpModule } from '@nestjs/axios';
 import { BancoModule } from './catalogo/banco/banco.module';
-
+import { RolModuloPermisoModule } from './seguridad/rol-modulo-permiso/rol-modulo-permiso.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -48,7 +51,11 @@ import { BancoModule } from './catalogo/banco/banco.module';
     DependenciaModule,
     UsuarioModule,
     RolModule,
+    RolModule,
+    PermisoModule,
+    ModuloModule,
     UsuarioRolModule,
+    RolModuloPermisoModule,
     SesionModule,
     AuthModule,
     ApiTokensModule,
