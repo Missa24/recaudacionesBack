@@ -1,11 +1,15 @@
-import { QueryAsignacionDto } from '../../asignaciones-common/dto/query-asignacion.dto';
+import { ApiPropertyOptional } from '@nestjs/swagger';
+import { IsOptional, IsUUID } from 'class-validator';
+import { QueryPaginatedDto } from 'src/shared/dto/query-paginated.dto';
 
-/**
- * Módulo: Seguridad / UsuarioRol
- * Archivo: query-usuario-rol.dto.ts
- * Descripción:
- *   Filtros administrativos. status filtra el estado de las asignaciones.
- * Fecha de creación: 2026-11-11
- * Autor: Oscar Canchari
- */
-export class QueryUsuarioRolDto extends QueryAsignacionDto {}
+export class QueryUsuarioRolDto extends QueryPaginatedDto {
+  @ApiPropertyOptional({ example: '10000000-0000-4000-8000-000000000001' })
+  @IsOptional()
+  @IsUUID()
+  id_usuario?: string;
+
+  @ApiPropertyOptional({ example: '20000000-0000-4000-8000-000000000001' })
+  @IsOptional()
+  @IsUUID()
+  id_rol?: string;
+}

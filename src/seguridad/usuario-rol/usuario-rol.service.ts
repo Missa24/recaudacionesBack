@@ -1,757 +1,322 @@
 import { randomUUID } from 'node:crypto';
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
+  InternalServerErrorException,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
-import {
-  DataSource,
-  EntityManager,
-  FindOptionsOrder,
-  FindOptionsWhere,
-  ILike,
-  In,
-  IsNull,
-} from 'typeorm';
-import { Usuario } from '../usuario/entities/usuario.entity';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Brackets, FindOptionsWhere, Repository } from 'typeorm';
+import { PaginatedResponse } from 'src/shared/interface/paginated-response.interface';
 import { Rol } from '../rol/entities/rol.entity';
-import { UsuarioRol } from '../usuario-rol/entities/usuario-rol.entity';
-import { RolModuloPermiso } from '../rol-modulo-permiso/entities/rol-modulo-permiso.entity';
-import { PaginatedResponse } from '../../shared/interface/paginated-response.interface';
-import {
-  MensajeIdResponse,
-  MensajeIdsResponse,
-  UsuarioAccesos,
-  UsuarioConRoles,
-} from '../asignaciones-common/interfaces/asignaciones-response.interface';
-import {
-  escaparLike,
-  filtroAsignacion,
-  filtroIdentificadorUsuario,
-  idsUnicos,
-  paginar,
-  prepararQuery,
-  relanzarError,
-  uuid,
-} from '../asignaciones-common/util/asignaciones.util';
-import {
-  mapAccesos,
-  mapUsuarioRoles,
-} from '../asignaciones-common/util/map-asignaciones.util';
-import { AsignarRolesDto } from './dto/asignar-roles.dto';
-import { ActualizarRolesDto } from './dto/actualizar-roles.dto';
+import { Usuario } from '../usuario/entities/usuario.entity';
+import { CreateUsuarioRolDto } from './dto/create-usuario-rol.dto';
 import { QueryUsuarioRolDto } from './dto/query-usuario-rol.dto';
+import { UpdateUsuarioRolDto } from './dto/update-usuario-rol.dto';
+import { UsuarioRol } from './entities/usuario-rol.entity';
+import {
+  UsuarioRolMessageResponse,
+  UsuarioRolResponse,
+} from './interface/usuario-rol-response.interface';
+import { mapearRespuestaUsuarioRol } from './util/map-response-usuario-rol.util';
 
-/**
- * Módulo: Seguridad / Usuario Rol
- * Archivo: usuario-rol.service.ts
- * Descripción:
- *   Gestiona roles por usuario y consulta accesos efectivos sin QueryBuilder.
- * Fecha de creación: 2026-11-11
- * Autor: Oscar Canchari
- */
 @Injectable()
 export class UsuarioRolService {
-  constructor(private readonly dataSource: DataSource) {}
+  private readonly logger = new Logger(UsuarioRolService.name);
 
-  /*
-  Nombre del método: asignarRoles
-  Método HTTP relacionado: POST
-  Endpoint: /api/usuario-rol
+  constructor(
+    @InjectRepository(UsuarioRol)
+    private readonly asignacionRepository: Repository<UsuarioRol>,
+    @InjectRepository(Usuario)
+    private readonly usuarioRepository: Repository<Usuario>,
+    @InjectRepository(Rol)
+    private readonly rolRepository: Repository<Rol>,
+  ) {}
 
-  Descripción:
-    Agrega roles sin retirar los actuales. Reactiva asignaciones inactivas o retiradas.
+  async crear(
+    dto: CreateUsuarioRolDto,
+    idUsuarioResponsable: string,
+  ): Promise<UsuarioRolMessageResponse> {
+    await this.validarReferencias(dto.id_usuario, dto.id_rol);
+    await this.validarDuplicado(dto.id_usuario, dto.id_rol);
 
-  Parámetros:
-    - dto: Usuario y roles.
-    - responsable: UUID del actor.
-
-  Respuestas posibles:
-    - 201: Operación realizada correctamente.
-    - 400: Datos o parámetros inválidos.
-    - 401: No autorizado, cuando se habilita el guard JWT.
-    - 404: Registro relacionado no encontrado.
-    - 409: Conflicto de asignación.
-    - 500: Error interno del servidor.
-
-  Fecha de creación: 2026-11-11
-  Autor: Oscar Canchari
-
-  Notas adicionales:
-    Registra al responsable. Las operaciones múltiples son transaccionales.
-    El estado corresponde a la asignación, no a los catálogos.
-  */
-  async asignarRoles(
-    dto: AsignarRolesDto,
-    responsable: string,
-  ): Promise<MensajeIdsResponse> {
-    return this.guardarRoles(
-      uuid(dto.idUsuario),
-      idsUnicos(dto.idsRoles, false),
-      uuid(responsable),
-      false,
-    );
-  }
-
-  /*
-  Nombre del método: listarUsuariosConRoles
-  Método HTTP relacionado: GET
-  Endpoint: /api/usuario-rol
-
-  Descripción:
-    Pagina usuarios y agrupa sus roles. search busca username, CI o email.
-
-  Parámetros:
-    - query: Paginación, búsqueda, estado de asignaciones y fechas del usuario.
-
-  Respuestas posibles:
-    - 200: Operación realizada correctamente.
-    - 400: Datos o parámetros inválidos.
-    - 401: No autorizado, cuando se habilita el guard JWT.
-    - 404: Registro relacionado no encontrado.
-    
-    - 500: Error interno del servidor.
-
-  Fecha de creación: 2026-11-11
-  Autor: Oscar Canchari
-
-  Notas adicionales:
-    Devuelve únicamente los campos definidos en las interfaces.
-    Excluye asignaciones eliminadas, salvo las reactivadas al asignar.
-  */
-  async listarUsuariosConRoles(
-    query: QueryUsuarioRolDto,
-  ): Promise<PaginatedResponse<UsuarioConRoles>> {
-    const q = prepararQuery(query);
-    const base: FindOptionsWhere<Usuario> = { deletedAt: IsNull() };
-    if (q.fecha) base[q.dateField] = q.fecha;
-    const patron = ILike(`%${escaparLike(q.search)}%`);
-    const where: FindOptionsWhere<Usuario> | FindOptionsWhere<Usuario>[] =
-      q.search
-        ? [
-            { ...base, username: patron },
-            { ...base, ci: patron },
-            { ...base, email: patron },
-          ]
-        : base;
-    const order: FindOptionsOrder<Usuario> =
-      q.sortBy === 'updatedAt'
-        ? { updatedAt: q.sortOrder, idUsuario: 'ASC' }
-        : { createdAt: q.sortOrder, idUsuario: 'ASC' };
-    const [usuarios, total] = await this.dataSource
-      .getRepository(Usuario)
-      .findAndCount({
-        where,
-        order,
-        skip: (q.page - 1) * q.limit,
-        take: q.limit,
-        select: { idUsuario: true, username: true },
-      });
-    const asignaciones = usuarios.length
-      ? await this.dataSource.getRepository(UsuarioRol).find({
-          where: {
-            ...filtroAsignacion<UsuarioRol>(q.status),
-            idUsuario: In(usuarios.map((u) => u.idUsuario)),
-            rol: { deleted_at: IsNull() },
-          },
-          relations: { rol: true },
-          order: { rol: { nombre: 'ASC' }, id: 'ASC' },
-        })
-      : [];
-    return paginar(
-      usuarios.map((u) =>
-        mapUsuarioRoles(
-          u,
-          asignaciones.filter((a) => a.idUsuario === u.idUsuario),
-        ),
-      ),
-      total,
-      q.page,
-      q.limit,
-    );
-  }
-
-  /*
-  Nombre del método: buscarUsuarioConRoles
-  Método HTTP relacionado: GET
-  Endpoint: /api/usuario-rol/usuario/:valor
-
-  Descripción:
-    Busca por UUID, username o CI y devuelve los roles administrativos.
-
-  Parámetros:
-    - valor: Identificador del usuario.
-    - query: Estado, búsqueda de roles y fechas de asignación; no pagina el detalle.
-
-  Respuestas posibles:
-    - 200: Operación realizada correctamente.
-    - 400: Datos o parámetros inválidos.
-    - 401: No autorizado, cuando se habilita el guard JWT.
-    - 404: Registro relacionado no encontrado.
-    
-    - 500: Error interno del servidor.
-
-  Fecha de creación: 2026-11-11
-  Autor: Oscar Canchari
-
-  Notas adicionales:
-    Devuelve únicamente los campos definidos en las interfaces.
-    Excluye asignaciones eliminadas, salvo las reactivadas al asignar.
-  */
-  async buscarUsuarioConRoles(
-    valor: string,
-    query: QueryUsuarioRolDto,
-  ): Promise<UsuarioConRoles> {
-    const usuario = await this.buscarUsuario(valor);
-    const q = prepararQuery(query);
-    const base: FindOptionsWhere<UsuarioRol> = {
-      ...filtroAsignacion<UsuarioRol>(q.status),
-      idUsuario: usuario.idUsuario,
-    };
-    if (q.fecha) base[q.dateField] = q.fecha;
-    const rolBase: FindOptionsWhere<Rol> = { deleted_at: IsNull() };
-    const patron = ILike(`%${escaparLike(q.search)}%`);
-    const where = q.search
-      ? [
-          { ...base, rol: { ...rolBase, nombre: patron } },
-          { ...base, rol: { ...rolBase, codigo: patron } },
-        ]
-      : { ...base, rol: rolBase };
-    const order: FindOptionsOrder<UsuarioRol> =
-      q.sortBy === 'updatedAt'
-        ? { updatedAt: q.sortOrder, id: 'ASC' }
-        : { createdAt: q.sortOrder, id: 'ASC' };
-    const asignaciones = await this.dataSource
-      .getRepository(UsuarioRol)
-      .find({ where, relations: { rol: true }, order });
-    return mapUsuarioRoles(usuario, asignaciones);
-  }
-
-  /*
-  Nombre del método: actualizarRolesDeUsuario
-  Método HTTP relacionado: PUT
-  Endpoint: /api/usuario-rol/usuario/:idUsuario/roles
-
-  Descripción:
-    Guarda la selección completa. Retira roles omitidos y activa los incluidos. [] quita todos.
-
-  Parámetros:
-    - idUsuario: UUID del usuario.
-    - dto: Selección completa.
-    - responsable: UUID del actor.
-
-  Respuestas posibles:
-    - 200: Operación realizada correctamente.
-    - 400: Datos o parámetros inválidos.
-    - 401: No autorizado, cuando se habilita el guard JWT.
-    - 404: Registro relacionado no encontrado.
-    - 409: Conflicto de asignación.
-    - 500: Error interno del servidor.
-
-  Fecha de creación: 2026-11-11
-  Autor: Oscar Canchari
-
-  Notas adicionales:
-    Registra al responsable. Las operaciones múltiples son transaccionales.
-    El estado corresponde a la asignación, no a los catálogos.
-  */
-  async actualizarRolesDeUsuario(
-    idUsuario: string,
-    dto: ActualizarRolesDto,
-    responsable: string,
-  ): Promise<MensajeIdsResponse> {
-    return this.guardarRoles(
-      uuid(idUsuario),
-      idsUnicos(dto.idsRoles),
-      uuid(responsable),
-      true,
-    );
-  }
-
-  /*
-  Nombre del método: quitarRol
-  Método HTTP relacionado: DELETE
-  Endpoint: /api/usuario-rol/:id
-
-  Descripción:
-    Retira una asignación mediante eliminación lógica y conserva su historial.
-
-  Parámetros:
-    - id: UUID de la asignación.
-    - responsable: UUID del actor.
-
-  Respuestas posibles:
-    - 200: Operación realizada correctamente.
-    - 400: Datos o parámetros inválidos.
-    - 401: No autorizado, cuando se habilita el guard JWT.
-    - 404: Registro relacionado no encontrado.
-    - 409: Conflicto de asignación.
-    - 500: Error interno del servidor.
-
-  Fecha de creación: 2026-11-11
-  Autor: Oscar Canchari
-
-  Notas adicionales:
-    Registra al responsable. Las operaciones múltiples son transaccionales.
-    El estado corresponde a la asignación, no a los catálogos.
-  */
-  async quitarRol(id: string, responsable: string): Promise<MensajeIdResponse> {
-    return this.modificarAsignacion(uuid(id), uuid(responsable), true);
-  }
-
-  /*
-  Nombre del método: cambiarEstado
-  Método HTTP relacionado: PATCH
-  Endpoint: /api/usuario-rol/:id/estado
-
-  Descripción:
-    Alterna ACTIVO e INACTIVO. Para dar de alta valida usuario y rol habilitados.
-
-  Parámetros:
-    - id: UUID de la asignación.
-    - responsable: UUID del actor.
-
-  Respuestas posibles:
-    - 200: Operación realizada correctamente.
-    - 400: Datos o parámetros inválidos.
-    - 401: No autorizado, cuando se habilita el guard JWT.
-    - 404: Registro relacionado no encontrado.
-    - 409: Conflicto de asignación.
-    - 500: Error interno del servidor.
-
-  Fecha de creación: 2026-11-11
-  Autor: Oscar Canchari
-
-  Notas adicionales:
-    Registra al responsable. Las operaciones múltiples son transaccionales.
-    El estado corresponde a la asignación, no a los catálogos.
-  */
-  async cambiarEstado(
-    id: string,
-    responsable: string,
-  ): Promise<MensajeIdResponse> {
-    return this.modificarAsignacion(uuid(id), uuid(responsable), false);
-  }
-
-  /*
-  Nombre del método: listarUsuariosPorRol
-  Método HTTP relacionado: GET
-  Endpoint: /api/usuario-rol/rol/:idRol/usuarios
-
-  Descripción:
-    Pagina usuarios de un rol. El estado y las fechas filtran las asignaciones.
-
-  Parámetros:
-    - idRol: UUID del rol.
-    - query: Paginación y búsqueda por username, CI o email.
-
-  Respuestas posibles:
-    - 200: Operación realizada correctamente.
-    - 400: Datos o parámetros inválidos.
-    - 401: No autorizado, cuando se habilita el guard JWT.
-    - 404: Registro relacionado no encontrado.
-    
-    - 500: Error interno del servidor.
-
-  Fecha de creación: 2026-11-11
-  Autor: Oscar Canchari
-
-  Notas adicionales:
-    Devuelve únicamente los campos definidos en las interfaces.
-    Excluye asignaciones eliminadas, salvo las reactivadas al asignar.
-  */
-  async listarUsuariosPorRol(
-    idRol: string,
-    query: QueryUsuarioRolDto,
-  ): Promise<PaginatedResponse<UsuarioConRoles>> {
-    const rol = await this.dataSource
-      .getRepository(Rol)
-      .findOne({ where: { id: uuid(idRol), deleted_at: IsNull() } });
-    if (!rol) throw new NotFoundException('No se encontró el rol solicitado.');
-    const q = prepararQuery(query);
-    const base: FindOptionsWhere<UsuarioRol> = {
-      ...filtroAsignacion<UsuarioRol>(q.status),
-      idRol: rol.id,
-    };
-    if (q.fecha) base[q.dateField] = q.fecha;
-    const usuarioBase: FindOptionsWhere<Usuario> = { deletedAt: IsNull() };
-    const patron = ILike(`%${escaparLike(q.search)}%`);
-    const where = q.search
-      ? ['username', 'ci', 'email'].map((campo) => ({
-          ...base,
-          usuario: { ...usuarioBase, [campo]: patron },
-        }))
-      : { ...base, usuario: usuarioBase };
-    const order: FindOptionsOrder<UsuarioRol> =
-      q.sortBy === 'updatedAt'
-        ? { updatedAt: q.sortOrder, id: 'ASC' }
-        : { createdAt: q.sortOrder, id: 'ASC' };
-    const [asignaciones, total] = await this.dataSource
-      .getRepository(UsuarioRol)
-      .findAndCount({
-        where,
-        relations: { usuario: true, rol: true },
-        order,
-        skip: (q.page - 1) * q.limit,
-        take: q.limit,
-      });
-    return paginar(
-      asignaciones.map((a) => mapUsuarioRoles(a.usuario, [a])),
-      total,
-      q.page,
-      q.limit,
-    );
-  }
-
-  /*
-  Nombre del método: obtenerAccesosDeUsuario
-  Método HTTP relacionado: GET
-  Endpoint: /api/usuario-rol/usuario/:valor/accesos
-
-  Descripción:
-    Devuelve usuario, roles, módulos y permisos efectivos sin auditoría ni estados.
-
-  Parámetros:
-    - valor: UUID, username o CI del usuario.
-
-  Respuestas posibles:
-    - 200: Operación realizada correctamente.
-    - 400: Datos o parámetros inválidos.
-    - 401: No autorizado, cuando se habilita el guard JWT.
-    - 404: Registro relacionado no encontrado.
-    
-    - 500: Error interno del servidor.
-
-  Fecha de creación: 2026-11-11
-  Autor: Oscar Canchari
-
-  Notas adicionales:
-    Devuelve únicamente los campos definidos en las interfaces.
-    Excluye asignaciones eliminadas, salvo las reactivadas al asignar.
-  */
-  async obtenerAccesosDeUsuario(valor: string): Promise<UsuarioAccesos> {
-    // Una sola instantánea evita mezclar asignaciones anteriores y posteriores a un cambio.
-    return this.dataSource.transaction('REPEATABLE READ', async (manager) => {
-      const usuario = await this.buscarUsuario(valor, manager);
-      if (usuario.estado !== 'ACTIVO') return mapAccesos(usuario, [], []);
-      const roles = await manager.getRepository(UsuarioRol).find({
-        where: {
-          idUsuario: usuario.idUsuario,
-          estado: 'ACTIVO',
-          deletedAt: IsNull(),
-          rol: { estado: 'ACTIVO', deleted_at: IsNull() },
-        },
-        relations: { rol: true },
-        order: { rol: { nombre: 'ASC' }, id: 'ASC' },
-      });
-      const accesos = roles.length
-        ? await manager.getRepository(RolModuloPermiso).find({
-            where: {
-              idRol: In(roles.map((a) => a.idRol)),
-              estado: 'ACTIVO',
-              deletedAt: IsNull(),
-              rol: { estado: 'ACTIVO', deleted_at: IsNull() },
-              modulo: { estado: 'ACTIVO', deleted_at: IsNull() },
-              permiso: { estado: 'ACTIVO', deleted_at: IsNull() },
-            },
-            relations: { modulo: true, permiso: true },
-            order: {
-              modulo: { nombres: 'ASC' },
-              permiso: { codigo: 'ASC' },
-              id: 'ASC',
-            },
-          })
-        : [];
-      return mapAccesos(usuario, roles, accesos);
+    const asignacion = this.asignacionRepository.create({
+      id: randomUUID(),
+      idUsuario: dto.id_usuario,
+      idRol: dto.id_rol,
+      estado: 'ACTIVO',
+      userCreated: idUsuarioResponsable,
+      usuarioCreador: this.usuarioRepository.create({
+        idUsuario: idUsuarioResponsable,
+      }),
     });
-  }
 
-  /*
-  Nombre del método: guardarRoles
-  Método HTTP relacionado: POST / PUT
-  Endpoint: /api/usuario-rol
-
-  Descripción:
-    Método interno. Serializa los cambios por usuario y guarda todo en una transacción.
-
-  Parámetros:
-    - idUsuario, roles, responsable y reemplazar: Selección normalizada.
-
-  Respuestas posibles:
-    - 200: Operación realizada correctamente.
-    - 400: Datos o parámetros inválidos.
-    - 401: No autorizado, cuando se habilita el guard JWT.
-    - 404: Registro relacionado no encontrado.
-    - 409: Conflicto de asignación.
-    - 500: Error interno del servidor.
-
-  Fecha de creación: 2026-11-11
-  Autor: Oscar Canchari
-
-  Notas adicionales:
-    Registra al responsable. Las operaciones múltiples son transaccionales.
-    El estado corresponde a la asignación, no a los catálogos.
-  */
-  private async guardarRoles(
-    idUsuario: string,
-    roles: string[],
-    responsable: string,
-    reemplazar: boolean,
-  ): Promise<MensajeIdsResponse> {
     try {
-      return await this.dataSource.transaction(async (manager) => {
-        const usuario = await this.bloquearUsuario(manager, idUsuario);
-        if (roles.length && usuario.estado !== 'ACTIVO')
-          throw new BadRequestException(
-            'El usuario debe estar ACTIVO para asignar roles.',
-          );
-        await this.validarRoles(manager, roles);
-        const repo = manager.getRepository(UsuarioRol);
-        const existentes = await repo.find({ where: { idUsuario } });
-        const seleccion = new Set(roles);
-        const cambios: UsuarioRol[] = [];
-        const ids: string[] = [];
-        for (const idRol of roles) {
-          let asignacion = existentes.find((a) => a.idRol === idRol);
-          if (!asignacion) {
-            asignacion = repo.create({
-              id: randomUUID(),
-              idUsuario,
-              idRol,
-              estado: 'ACTIVO',
-              userCreated: responsable,
-              userUpdate: null,
-              userDeleted: null,
-              deletedAt: null,
-            });
-            cambios.push(asignacion);
-          } else if (
-            asignacion.estado !== 'ACTIVO' ||
-            asignacion.deletedAt !== null
-          ) {
-            asignacion.estado = 'ACTIVO';
-            asignacion.deletedAt = null;
-            asignacion.userDeleted = null;
-            asignacion.userUpdate = responsable;
-            cambios.push(asignacion);
-          }
-          ids.push(asignacion.id);
-        }
-        if (reemplazar)
-          for (const asignacion of existentes) {
-            if (
-              !seleccion.has(asignacion.idRol) &&
-              asignacion.deletedAt === null
-            ) {
-              asignacion.deletedAt = new Date();
-              asignacion.userDeleted = responsable;
-              asignacion.userUpdate = responsable;
-              asignacion.estado = 'INACTIVO';
-              cambios.push(asignacion);
-              ids.push(asignacion.id);
-            }
-          }
-        if (cambios.length) await repo.save(cambios);
-        return {
-          message: reemplazar
-            ? 'Roles del usuario actualizados correctamente.'
-            : 'Roles asignados correctamente.',
-          ids,
-        };
-      });
-    } catch (error) {
-      return relanzarError(error);
+      await this.asignacionRepository.save(asignacion);
+      return { message: 'Asignación de rol registrada correctamente.' };
+    } catch (error: unknown) {
+      this.logger.error(
+        'Error al crear la asignación de rol.',
+        error instanceof Error ? error.stack : String(error),
+      );
+      throw new InternalServerErrorException('No se pudo guardar el registro.');
     }
   }
 
-  /*
-  Nombre del método: modificarAsignacion
-  Método HTTP relacionado: PATCH / DELETE
-  Endpoint: /api/usuario-rol/:id
+  async listar(
+    query: QueryUsuarioRolDto,
+  ): Promise<PaginatedResponse<UsuarioRolResponse>> {
+    const {
+      page = 1,
+      limit = 10,
+      search,
+      status,
+      startDate,
+      endDate,
+      sortBy,
+      sortOrder,
+      id_usuario,
+      id_rol,
+    } = query;
 
-  Descripción:
-    Método interno. Diferencia el retiro lógico del alta o baja temporal.
-
-  Parámetros:
-    - id y responsable: UUID.
-    - quitar: Indica retiro lógico.
-
-  Respuestas posibles:
-    - 200: Operación realizada correctamente.
-    - 400: Datos o parámetros inválidos.
-    - 401: No autorizado, cuando se habilita el guard JWT.
-    - 404: Registro relacionado no encontrado.
-    - 409: Conflicto de asignación.
-    - 500: Error interno del servidor.
-
-  Fecha de creación: 2026-11-11
-  Autor: Oscar Canchari
-
-  Notas adicionales:
-    Registra al responsable. Las operaciones múltiples son transaccionales.
-    El estado corresponde a la asignación, no a los catálogos.
-  */
-  private async modificarAsignacion(
-    id: string,
-    responsable: string,
-    quitar: boolean,
-  ): Promise<MensajeIdResponse> {
-    return this.dataSource.transaction(async (manager) => {
-      const repo = manager.getRepository(UsuarioRol);
-      const inicial = await repo.findOne({
-        where: { id, deletedAt: IsNull() },
-      });
-      if (!inicial)
-        throw new NotFoundException('No se encontró la asignación de rol.');
-      const usuario = await this.bloquearUsuario(manager, inicial.idUsuario);
-      const asignacion = await repo.findOne({
-        where: { id, deletedAt: IsNull() },
-      });
-      if (!asignacion)
-        throw new NotFoundException('No se encontró la asignación de rol.');
-      let message: string;
-      if (quitar) {
-        asignacion.deletedAt = new Date();
-        asignacion.userDeleted = responsable;
-        asignacion.estado = 'INACTIVO';
-        message = 'Rol retirado del usuario correctamente.';
-      } else {
-        if (!['ACTIVO', 'INACTIVO'].includes(asignacion.estado))
-          throw new BadRequestException('El estado actual no es válido.');
-        if (asignacion.estado === 'INACTIVO') {
-          if (usuario.estado !== 'ACTIVO')
-            throw new BadRequestException('El usuario debe estar ACTIVO.');
-          await this.validarRoles(manager, [asignacion.idRol]);
-        }
-        asignacion.estado =
-          asignacion.estado === 'ACTIVO' ? 'INACTIVO' : 'ACTIVO';
-        message = `Rol del usuario dado de ${asignacion.estado === 'ACTIVO' ? 'alta' : 'baja'} correctamente.`;
-      }
-      asignacion.userUpdate = responsable;
-      await repo.save(asignacion);
-      return { message, id: asignacion.id };
-    });
-  }
-
-  /*
-  Nombre del método: bloquearUsuario
-  Método HTTP relacionado: Interno
-  Endpoint: /api/usuario-rol
-
-  Descripción:
-    Bloquea el usuario para que dos escrituras de sus roles no se intercalen.
-
-  Parámetros:
-    - manager: Transacción actual.
-    - idUsuario: UUID del usuario.
-
-  Respuestas posibles:
-    - 200: Operación realizada correctamente.
-    - 400: Datos o parámetros inválidos.
-    - 401: No autorizado, cuando se habilita el guard JWT.
-    - 404: Registro relacionado no encontrado.
-    
-    - 500: Error interno del servidor.
-
-  Fecha de creación: 2026-11-11
-  Autor: Oscar Canchari
-
-  Notas adicionales:
-    Devuelve únicamente los campos definidos en las interfaces.
-    Excluye asignaciones eliminadas, salvo las reactivadas al asignar.
-  */
-  private async bloquearUsuario(
-    manager: EntityManager,
-    idUsuario: string,
-  ): Promise<Usuario> {
-    const usuario = await manager.getRepository(Usuario).findOne({
-      where: { idUsuario, deletedAt: IsNull() },
-      lock: { mode: 'pessimistic_write' },
-    });
-    if (!usuario)
-      throw new NotFoundException('No se encontró el usuario solicitado.');
-    return usuario;
-  }
-
-  /*
-  Nombre del método: validarRoles
-  Método HTTP relacionado: Interno
-  Endpoint: /api/usuario-rol
-
-  Descripción:
-    Comprueba en una sola consulta que todos los roles existan y estén habilitados.
-
-  Parámetros:
-    - manager: Transacción actual.
-    - ids: Roles seleccionados.
-
-  Respuestas posibles:
-    - 200: Operación realizada correctamente.
-    - 400: Datos o parámetros inválidos.
-    - 401: No autorizado, cuando se habilita el guard JWT.
-    - 404: Registro relacionado no encontrado.
-    
-    - 500: Error interno del servidor.
-
-  Fecha de creación: 2026-11-11
-  Autor: Oscar Canchari
-
-  Notas adicionales:
-    Devuelve únicamente los campos definidos en las interfaces.
-    Excluye asignaciones eliminadas, salvo las reactivadas al asignar.
-  */
-  private async validarRoles(
-    manager: EntityManager,
-    ids: string[],
-  ): Promise<void> {
-    if (!ids.length) return;
-    const encontrados = await manager
-      .getRepository(Rol)
-      .find({ where: { id: In(ids), deleted_at: IsNull() } });
-    if (encontrados.length !== ids.length)
-      throw new NotFoundException('Uno o varios roles no existen.');
-    if (encontrados.some((r) => r.estado !== 'ACTIVO'))
+    if (startDate && endDate && startDate > endDate) {
       throw new BadRequestException(
-        'Todos los roles seleccionados deben estar ACTIVOS.',
+        'La fecha inicial no puede ser posterior a la fecha final.',
       );
+    }
+
+    const consulta = this.asignacionRepository
+      .createQueryBuilder('asignacion')
+      .leftJoinAndSelect('asignacion.usuario', 'usuario')
+      .leftJoinAndSelect('asignacion.rol', 'rol')
+      .leftJoinAndSelect('asignacion.usuarioCreador', 'usuario_creador')
+      .leftJoinAndSelect(
+        'asignacion.usuarioActualizador',
+        'usuario_actualizador',
+      );
+
+    if (status && status !== 'TODOS') {
+      consulta.andWhere('asignacion.estado = :status', { status });
+    } else if (!status) {
+      consulta.andWhere('asignacion.estado = :status', { status: 'ACTIVO' });
+    }
+    if (id_usuario) {
+      consulta.andWhere('asignacion.idUsuario = :id_usuario', { id_usuario });
+    }
+    if (id_rol) {
+      consulta.andWhere('asignacion.idRol = :id_rol', { id_rol });
+    }
+    if (startDate) {
+      consulta.andWhere('asignacion.createdAt >= :startDate', {
+        startDate: new Date(`${startDate}T00:00:00.000`),
+      });
+    }
+    if (endDate) {
+      consulta.andWhere('asignacion.createdAt < :endDate', {
+        endDate: new Date(
+          new Date(`${endDate}T00:00:00.000`).getTime() + 86400000,
+        ),
+      });
+    }
+    if (search?.trim()) {
+      const termino = `%${search.trim()}%`;
+      consulta.andWhere(
+        new Brackets((qb) => {
+          qb.where('usuario.username ILIKE :termino', { termino })
+            .orWhere('usuario.nombres ILIKE :termino', { termino })
+            .orWhere('usuario.ci ILIKE :termino', { termino })
+            .orWhere('rol.nombre ILIKE :termino', { termino })
+            .orWhere('rol.codigo ILIKE :termino', { termino });
+        }),
+      );
+    }
+
+    const camposOrdenamiento: Record<string, string> = {
+      createdAt: 'asignacion.createdAt',
+      updatedAt: 'asignacion.updatedAt',
+      estado: 'asignacion.estado',
+    };
+
+    try {
+      const [asignaciones, total] = await consulta
+        .orderBy(
+          camposOrdenamiento[sortBy] ?? 'asignacion.createdAt',
+          sortOrder ?? 'DESC',
+        )
+        .skip((page - 1) * limit)
+        .take(limit)
+        .getManyAndCount();
+
+      const totalPages = Math.ceil(total / limit);
+      return {
+        items: asignaciones.map(mapearRespuestaUsuarioRol),
+        pagination: {
+          total,
+          page,
+          limit,
+          totalPages,
+          hasNextPage: page < totalPages,
+          hasPreviousPage: page > 1,
+        },
+      };
+    } catch (error: unknown) {
+      this.logger.error(
+        `Error al listar asignaciones de rol. Página: ${page}, Límite: ${limit}`,
+        error instanceof Error ? error.stack : String(error),
+      );
+      throw error;
+    }
   }
 
-  /*
-  Nombre del método: buscarUsuario
-  Método HTTP relacionado: Interno
-  Endpoint: /api/usuario-rol
-
-  Descripción:
-    Resuelve el usuario por ID, username o CI; admite usuarios inactivos para administración.
-
-  Parámetros:
-    - valor: Identificador.
-    - manager: Contexto de consulta.
-
-  Respuestas posibles:
-    - 200: Operación realizada correctamente.
-    - 400: Datos o parámetros inválidos.
-    - 401: No autorizado, cuando se habilita el guard JWT.
-    - 404: Registro relacionado no encontrado.
-    
-    - 500: Error interno del servidor.
-
-  Fecha de creación: 2026-11-11
-  Autor: Oscar Canchari
-
-  Notas adicionales:
-    Devuelve únicamente los campos definidos en las interfaces.
-    Excluye asignaciones eliminadas, salvo las reactivadas al asignar.
-  */
-  private async buscarUsuario(
-    valor: string,
-    manager: EntityManager = this.dataSource.manager,
-  ): Promise<Usuario> {
-    const usuario = await manager.getRepository(Usuario).findOne({
-      where: { ...filtroIdentificadorUsuario(valor), deletedAt: IsNull() },
+  async buscarPorId(id: string): Promise<UsuarioRolResponse> {
+    const asignacion = await this.asignacionRepository.findOne({
+      where: { id },
+      relations: {
+        usuario: true,
+        rol: true,
+        usuarioCreador: true,
+        usuarioActualizador: true,
+      },
     });
-    if (!usuario)
-      throw new NotFoundException('No se encontró el usuario solicitado.');
-    return usuario;
+
+    if (!asignacion) {
+      throw new NotFoundException(
+        'No existe una asignación de rol con ese ID.',
+      );
+    }
+    return mapearRespuestaUsuarioRol(asignacion);
+  }
+
+  async actualizar(
+    id: string,
+    dto: UpdateUsuarioRolDto,
+    idUsuarioResponsable: string,
+  ): Promise<UsuarioRolMessageResponse> {
+    const asignacion = await this.asignacionRepository.findOne({
+      where: { id },
+    });
+
+    if (!asignacion) {
+      throw new NotFoundException(
+        'No existe una asignación de rol con ese ID.',
+      );
+    }
+    if (asignacion.estado !== 'ACTIVO') {
+      throw new BadRequestException(
+        'No se puede actualizar una asignación de rol inactiva.',
+      );
+    }
+
+    const idUsuario = dto.id_usuario ?? asignacion.idUsuario;
+    const idRol = dto.id_rol ?? asignacion.idRol;
+    await this.validarReferencias(idUsuario, idRol);
+    await this.validarDuplicado(idUsuario, idRol, id);
+
+    asignacion.idUsuario = idUsuario;
+    asignacion.idRol = idRol;
+    asignacion.userUpdate = idUsuarioResponsable;
+    asignacion.usuarioActualizador = this.usuarioRepository.create({
+      idUsuario: idUsuarioResponsable,
+    });
+
+    try {
+      await this.asignacionRepository.save(asignacion);
+      return { message: 'Asignación de rol actualizada correctamente.' };
+    } catch (error: unknown) {
+      this.logger.error(
+        `Error al actualizar la asignación de rol. ID: ${id}`,
+        error instanceof Error ? error.stack : String(error),
+      );
+      throw new InternalServerErrorException(
+        'No se pudo actualizar el registro.',
+      );
+    }
+  }
+
+  async cambiarEstado(
+    id: string,
+    idUsuarioResponsable: string,
+  ): Promise<UsuarioRolMessageResponse> {
+    const asignacion = await this.asignacionRepository.findOne({
+      where: { id },
+    });
+
+    if (!asignacion) {
+      throw new NotFoundException(
+        'No existe una asignación de rol con ese ID.',
+      );
+    }
+
+    const activar = asignacion.estado !== 'ACTIVO';
+    if (activar) {
+      await this.validarReferencias(asignacion.idUsuario, asignacion.idRol);
+    }
+    asignacion.estado = activar ? 'ACTIVO' : 'INACTIVO';
+    asignacion.deletedAt = activar ? null : new Date();
+    asignacion.userDeleted = activar ? null : idUsuarioResponsable;
+    asignacion.userUpdate = activar ? idUsuarioResponsable : null;
+    asignacion.usuarioActualizador = activar
+      ? this.usuarioRepository.create({ idUsuario: idUsuarioResponsable })
+      : null;
+
+    try {
+      await this.asignacionRepository.save(asignacion);
+      return {
+        message: 'Estado de la asignación de rol cambiado correctamente.',
+      };
+    } catch (error: unknown) {
+      this.logger.error(
+        `Error al cambiar el estado de la asignación de rol. ID: ${id}`,
+        error instanceof Error ? error.stack : String(error),
+      );
+      throw new InternalServerErrorException(
+        'No se pudo cambiar el estado del registro.',
+      );
+    }
+  }
+
+  private async validarReferencias(
+    idUsuario: string,
+    idRol: string,
+  ): Promise<void> {
+    const [usuario, rol] = await Promise.all([
+      this.usuarioRepository.findOneBy({ idUsuario }),
+      this.rolRepository.findOneBy({ id: idRol }),
+    ]);
+
+    if (!usuario || usuario.deletedAt) {
+      throw new NotFoundException('No existe el usuario indicado.');
+    }
+    if (!rol) throw new NotFoundException('No existe el rol indicado.');
+    if (usuario.estado !== 'ACTIVO') {
+      throw new BadRequestException(
+        'El usuario indicado se encuentra inactivo.',
+      );
+    }
+    if (rol.estado !== 'ACTIVO') {
+      throw new BadRequestException('El rol indicado se encuentra inactivo.');
+    }
+  }
+
+  private async validarDuplicado(
+    idUsuario: string,
+    idRol: string,
+    idExcluir?: string,
+  ): Promise<void> {
+    const filtros: FindOptionsWhere<UsuarioRol> = { idUsuario, idRol };
+    const consulta = this.asignacionRepository
+      .createQueryBuilder('asignacion')
+      .where(filtros);
+    if (idExcluir) {
+      consulta.andWhere('asignacion.id != :idExcluir', { idExcluir });
+    }
+
+    if (await consulta.getOne()) {
+      throw new ConflictException(
+        'Ya existe una asignación para ese usuario y rol.',
+      );
+    }
   }
 }

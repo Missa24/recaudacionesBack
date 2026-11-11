@@ -8,56 +8,60 @@ import {
 } from 'typeorm';
 
 /**
- * Representa la tabla seguridad.modulo. Conserva los nombres de columna proporcionados.
+ * Representa la tabla seguridad.modulo.
  * Desarrollado por: Oscar Canchari.
  */
 @Entity({ schema: 'seguridad', name: 'modulo' })
 export class Modulo {
-  /** Identificador generado por PostgreSQL/TypeORM. */
+  /** Llave primaria del módulo. */
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  /** Dato de modulo: nombres. */
+  /** Nombre del módulo. */
   @Column({ type: 'varchar', length: 150 })
   nombres!: string;
 
-  /** Dato de modulo: codigo. */
+  /** Código del módulo. */
   @Column({ type: 'varchar', length: 40 })
   codigo!: string;
 
   /** Descripción opcional. */
-  @Column({ type: 'text', nullable: true })
+  @Column({ type: 'varchar', length: 500, nullable: true })
   descripcion!: string | null;
 
-  /** Dato de modulo: ruta. */
+  /** Ruta del módulo. */
   @Column({ type: 'varchar', length: 200 })
   ruta!: string;
 
-  /** Estado gestionado por el servicio; no se recibe en el DTO. */
-  @Column({ type: 'text', default: 'ACTIVO' })
+  /** Estado gestionado por el servicio. */
+  @Column({
+    type: 'varchar',
+    length: 10,
+    default: 'ACTIVO',
+  })
   estado!: string;
 
-  /** Auditoría: created_at. */
+  /** Fecha de creación. */
   @CreateDateColumn({ type: 'timestamptz' })
   created_at!: Date;
 
-  /** Auditoría: updated_at. */
+  /** Fecha de actualización. */
   @UpdateDateColumn({ type: 'timestamptz' })
   updated_at!: Date;
 
-  /** Auditoría: deleted_at. */
+  /** Fecha de eliminación lógica. */
   @DeleteDateColumn({ type: 'timestamptz', nullable: true })
   deleted_at!: Date | null;
 
-  /** Auditoría: user_created. */
+  /** Usuario que creó el registro. */
   @Column({ type: 'uuid' })
   user_created!: string;
 
-  /** Auditoría: user_update. */
+  /** Usuario que actualizó el registro. */
   @Column({ type: 'uuid', nullable: true })
   user_update!: string | null;
 
-  /** Auditoría: user_deleted. */
+  /** Usuario que eliminó el registro. */
   @Column({ type: 'uuid', nullable: true })
   user_deleted!: string | null;
 }
