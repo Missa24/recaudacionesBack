@@ -1,34 +1,70 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { TipoTramiteCatalogoService } from './tipo-tramite-catalogo.service';
 import { CreateTipoTramiteCatalogoDto } from './dto/create-tipo-tramite-catalogo.dto';
+import { QueryTipoTramiteCatalogoDto } from './dto/query-tipo-tramite-catalogo.dto';
 import { UpdateTipoTramiteCatalogoDto } from './dto/update-tipo-tramite-catalogo.dto';
+import {
+  TipoTramiteCatalogoMessageResponse,
+  TipoTramiteCatalogoResponse,
+} from './interface/tipo-tramite-catalogo-response.interface';
+import { PaginatedResponse } from 'src/shared/interface/paginated-response.interface';
 
+const userId = '8b461287-8416-412e-84e7-b5c77615ea2a';
+
+@ApiTags('Arancel / Tipos de trámite')
+@ApiBearerAuth('JWT')
+@UseGuards(AuthGuard('jwt'))
 @Controller('tipo-tramite-catalogo')
 export class TipoTramiteCatalogoController {
-  constructor(private readonly tipoTramiteCatalogoService: TipoTramiteCatalogoService) {}
+  constructor(
+    private readonly tipoTramiteCatalogoService: TipoTramiteCatalogoService,
+  ) {}
 
   @Post()
-  create(@Body() createTipoTramiteCatalogoDto: CreateTipoTramiteCatalogoDto) {
-    return this.tipoTramiteCatalogoService.create(createTipoTramiteCatalogoDto);
+  crear(
+    @Body() dto: CreateTipoTramiteCatalogoDto,
+  ): Promise<TipoTramiteCatalogoMessageResponse> {
+    return this.tipoTramiteCatalogoService.crear(dto, userId);
   }
 
   @Get()
-  findAll() {
-    return this.tipoTramiteCatalogoService.findAll();
+  listar(
+    @Query() query: QueryTipoTramiteCatalogoDto,
+  ): Promise<PaginatedResponse<TipoTramiteCatalogoResponse>> {
+    return this.tipoTramiteCatalogoService.listar(query);
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.tipoTramiteCatalogoService.findOne(+id);
+  buscarPorId(
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<TipoTramiteCatalogoResponse> {
+    return this.tipoTramiteCatalogoService.buscarPorId(id);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateTipoTramiteCatalogoDto: UpdateTipoTramiteCatalogoDto) {
-    return this.tipoTramiteCatalogoService.update(+id, updateTipoTramiteCatalogoDto);
+  actualizar(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateTipoTramiteCatalogoDto,
+  ): Promise<TipoTramiteCatalogoMessageResponse> {
+    return this.tipoTramiteCatalogoService.actualizar(id, dto, userId);
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.tipoTramiteCatalogoService.remove(+id);
+  @Patch(':id/estado')
+  cambiarEstado(
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<TipoTramiteCatalogoMessageResponse> {
+    return this.tipoTramiteCatalogoService.cambiarEstado(id, userId);
   }
 }

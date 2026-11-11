@@ -1,26 +1,206 @@
-import { Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Usuario } from 'src/seguridad/usuario/entities/usuario.entity';
+import {
+  And,
+  FindOptionsWhere,
+  ILike,
+  LessThan,
+  MoreThanOrEqual,
+  Repository,
+} from 'typeorm';
+import { PaginatedResponse } from 'src/shared/interface/paginated-response.interface';
 import { CreateTarifaDto } from './dto/create-tarifa.dto';
+import { QueryTarifaDto } from './dto/query-tarifa.dto';
 import { UpdateTarifaDto } from './dto/update-tarifa.dto';
+import { Tarifa } from './entities/tarifa.entity';
+import {
+  TarifaMessageResponse,
+  TarifaResponse,
+} from './interface/tarifa-response.interface';
+import { mapearRespuestaTarifa } from './util/map-response-tarifa.util';
 
 @Injectable()
 export class TarifaService {
-  create(createTarifaDto: CreateTarifaDto) {
-    return 'This action adds a new tarifa';
+  private readonly logger = new Logger(TarifaService.name);
+
+  constructor(
+    @InjectRepository(Tarifa)
+    private readonly tarifaRepository: Repository<Tarifa>,
+  ) {}
+
+  async crear(
+    dto: CreateTarifaDto,
+    idUsuario: string,
+  ): Promise<TarifaMessageResponse> {
+    this.validarVigencia(dto.vigente_desde, dto.vigente_hasta);
+    const tarifa = this.tarifaRepository.create({
+      ...dto,
+      usuario_creador: { idUsuario } as Usuario,
+    });
+    try {
+      await this.tarifaRepository.save(tarifa);
+      return { message: 'Tarifa registrada correctamente.' };
+    } catch (error: unknown) {
+      this.logger.error(
+        'Error al crear una tarifa.',
+        error instanceof Error ? error.stack : String(error),
+      );
+      throw new InternalServerErrorException('No se pudo guardar el registro.');
+    }
   }
 
-  findAll() {
-    return `This action returns all tarifa`;
+  async listar(
+    query: QueryTarifaDto,
+  ): Promise<PaginatedResponse<TarifaResponse>> {
+    const {
+      page = 1,
+      limit = 10,
+      search,
+      status,
+      startDate,
+      endDate,
+      sortOrder,
+      arancel_det_id,
+      vigente_desde,
+      vigente_hasta,
+    } = query;
+    if (startDate && endDate && startDate > endDate) {
+      throw new BadRequestException(
+        'La fecha inicial no puede ser posterior a la fecha final.',
+      );
+    }
+
+    const filtros: FindOptionsWhere<Tarifa> = {};
+    if (status && status !== 'TODOS') filtros.estado = status;
+    else if (!status) filtros.estado = 'ACTIVO';
+    if (arancel_det_id) filtros.arancel_det_id = arancel_det_id;
+    if (vigente_desde) filtros.vigente_desde = vigente_desde;
+    if (vigente_hasta) filtros.vigente_hasta = vigente_hasta;
+    if (startDate && endDate) {
+      filtros._created_at = And(
+        MoreThanOrEqual(new Date(`${startDate}T00:00:00.000`)),
+        LessThan(
+          new Date(new Date(`${endDate}T00:00:00.000`).getTime() + 86400000),
+        ),
+      );
+    } else if (startDate) {
+      filtros._created_at = MoreThanOrEqual(
+        new Date(`${startDate}T00:00:00.000`),
+      );
+    } else if (endDate) {
+      filtros._created_at = LessThan(
+        new Date(new Date(`${endDate}T00:00:00.000`).getTime() + 86400000),
+      );
+    }
+
+    if (search?.trim()) {
+      filtros.referencia_aprobacion = ILike(`%${search.trim()}%`);
+    }
+    const [tarifas, total] = await this.tarifaRepository.findAndCount({
+      where: [filtros],
+      relations: {
+        usuario_creador: true,
+        usuario_actualizador: true,
+      },
+      order: { _created_at: sortOrder ?? 'DESC' },
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+    const totalPages = Math.ceil(total / limit);
+    return {
+      items: tarifas.map(mapearRespuestaTarifa),
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPreviousPage: page > 1,
+      },
+    };
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} tarifa`;
+  async buscarPorId(id: string): Promise<TarifaResponse> {
+    const tarifa = await this.tarifaRepository.findOne({
+      where: { id },
+      relations: {
+        usuario_creador: true,
+        usuario_actualizador: true,
+      },
+    });
+    if (!tarifa) {
+      throw new NotFoundException('No existe una tarifa con ese ID.');
+    }
+    return mapearRespuestaTarifa(tarifa);
   }
 
-  update(id: number, updateTarifaDto: UpdateTarifaDto) {
-    return `This action updates a #${id} tarifa`;
+  async actualizar(
+    id: string,
+    dto: UpdateTarifaDto,
+    idUsuario: string,
+  ): Promise<TarifaMessageResponse> {
+    const tarifa = await this.tarifaRepository.findOne({ where: { id } });
+    if (!tarifa) {
+      throw new NotFoundException('No existe una tarifa con ese ID.');
+    }
+    if (tarifa.estado !== 'ACTIVO') {
+      throw new BadRequestException(
+        'No se puede actualizar una tarifa inactiva.',
+      );
+    }
+    this.validarVigencia(
+      dto.vigente_desde ?? tarifa.vigente_desde,
+      dto.vigente_hasta === undefined
+        ? tarifa.vigente_hasta
+        : dto.vigente_hasta,
+    );
+    Object.assign(tarifa, dto);
+    tarifa._updated_at = new Date();
+    tarifa._user_update = idUsuario;
+    tarifa.usuario_actualizador = { idUsuario } as Usuario;
+    await this.tarifaRepository.save(tarifa);
+    return { message: 'Tarifa actualizada correctamente.' };
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} tarifa`;
+  async cambiarEstado(
+    id: string,
+    idUsuario: string,
+  ): Promise<TarifaMessageResponse> {
+    const tarifa = await this.tarifaRepository.findOne({ where: { id } });
+    if (!tarifa) {
+      throw new NotFoundException('No existe una tarifa con ese ID.');
+    }
+    tarifa.estado = tarifa.estado === 'ACTIVO' ? 'INACTIVO' : 'ACTIVO';
+    if (tarifa.estado === 'INACTIVO') {
+      tarifa._deleted_at = new Date();
+      tarifa._user_delete = idUsuario;
+      tarifa._updated_at = null;
+      tarifa._user_update = null;
+    } else {
+      tarifa._deleted_at = null;
+      tarifa._user_delete = null;
+      tarifa._updated_at = new Date();
+      tarifa._user_update = idUsuario;
+    }
+    await this.tarifaRepository.save(tarifa);
+    return { message: 'Estado de la tarifa cambiado correctamente.' };
+  }
+
+  private validarVigencia(
+    vigenteDesde: string,
+    vigenteHasta?: string | null,
+  ): void {
+    if (vigenteHasta && vigenteHasta < vigenteDesde) {
+      throw new BadRequestException(
+        'La fecha de vigencia final no puede ser anterior a la fecha inicial.',
+      );
+    }
   }
 }
