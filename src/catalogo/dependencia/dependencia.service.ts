@@ -61,13 +61,20 @@ export class DependenciaService {
     private readonly dependenciaRepository: Repository<Dependencia>,
   ) {}
 
-  /**
-   * Registra manualmente un nuevo valor de Dependencia.
-   * Verifica que no exista otro registro para el mismo código
-   * y asocia al usuario responsable de la creación.
-   *
-   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
-   */
+  /*
+  Nombre del método: crear
+  Descripción: Registra manualmente un nuevo valor de Dependencia. Verifica
+               duplicidad por código y asocia al usuario creador.
+  Parámetros:
+    - dto: CreateDependenciaDto (datos de la dependencia, incluye código)
+    - idUsuario: string (usuario que crea)
+  Respuestas posibles:
+    - 201: Dependencia registrada correctamente.
+    - 409: Ya existe una Dependencia con ese código.
+    - 500: No se pudo guardar el registro.
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+*/
   async crear(
     dto: CreateDependenciaDto,
     idUsuario: string,
@@ -110,12 +117,20 @@ export class DependenciaService {
     }
   }
 
-  /**
-   * Obtiene los registros de Dependencia aplicando filtros, búsqueda,
-   * ordenamiento y paginación.
-   *
-   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
-   */
+  /*
+  Nombre del método: listar
+  Descripción: Obtiene los registros de Dependencia aplicando filtros, búsqueda,
+               ordenamiento y paginación.
+  Parámetros:
+    - query: QueryDependenciaDto (page, limit, search, codigo, abreviacion,
+             es_unidad_desconcentrada, status, startDate, endDate, sortBy,
+             sortOrder)
+  Respuestas posibles:
+    - 200: Listado paginado de dependencias.
+    - 400: Rango de fechas inválido (startDate > endDate).
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+*/
   async listar(
     query: QueryDependenciaDto,
   ): Promise<PaginatedResponse<DependenciaResponse>> {
@@ -240,12 +255,18 @@ export class DependenciaService {
     }
   }
 
-  /**
-   * Busca un registro de Dependencia mediante su identificador único.
-   * Incluye los nombres de usuario asociados a su creación y actualización.
-   *
-   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
-   */
+  /*
+  Nombre del método: buscarPorId
+  Descripción: Busca un registro de Dependencia por su identificador único e
+               incluye los usuarios de creación y actualización.
+  Parámetros:
+    - id: string (identificador de la dependencia)
+  Respuestas posibles:
+    - 200: Registro encontrado.
+    - 404: No existe una Dependencia con ese Id.
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+*/
   async buscarPorId(id: string): Promise<DependenciaResponse> {
     const dependencia = await this.dependenciaRepository.findOne({
       where: { id },
@@ -262,12 +283,21 @@ export class DependenciaService {
     return mapearRespuesta(dependencia);
   }
 
-  /**
-   * Busca un registro de Dependencia por un código específico.
-   * Solo considera registros activos y que no hayan sido eliminados.
-   *
-   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
-   */
+  /*
+  Nombre del método: buscarPorCodigo
+  Descripción: Busca un registro de Dependencia por un código específico, solo
+               si está ACTIVO y no eliminado lógicamente.
+  Parámetros:
+    - codigo: string (código de la dependencia a buscar)
+  Respuestas posibles:
+    - 200: Registro encontrado.
+    - 404: No existe una Dependencia activa para ese código.
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+  Notas adicionales: Se usa para la ruta `dependencia/codigo/:codigo` y debe
+                     declararse antes de `:id` para que la ruta literal no sea
+                     capturada por el parámetro genérico.
+*/
   async buscarPorCodigo(codigo: string): Promise<DependenciaResponse> {
     const dependencia = await this.dependenciaRepository.findOne({
       where: {
@@ -289,13 +319,24 @@ export class DependenciaService {
 
     return mapearRespuesta(dependencia);
   }
-  /**
-   * Actualiza parcialmente un registro de Dependencia existente.
-   * Verifica su existencia, estado y posibles duplicados de código.
-   * También actualiza los campos de auditoría correspondientes.
-   *
-   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
-   */
+
+  /*
+  Nombre del método: actualizar
+  Descripción: Actualiza parcialmente un registro de Dependencia existente.
+               Verifica existencia, estado ACTIVO y posibles duplicados de
+               código, actualizando los campos de auditoría.
+  Parámetros:
+    - id: string (identificador de la dependencia)
+    - dto: UpdateDependenciaDto (campos a actualizar)
+    - idUsuario: string (usuario que actualiza)
+  Respuestas posibles:
+    - 200: Dependencia actualizada correctamente.
+    - 400: No se puede actualizar una dependencia inactiva.
+    - 404: No se encontró la dependencia solicitada.
+    - 409: Ya existe una dependencia con ese código.
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+*/
   async actualizar(
     id: string,
     dto: UpdateDependenciaDto,
@@ -339,14 +380,21 @@ export class DependenciaService {
     }
   }
 
-  /**
-   * Cambia el estado de un registro de una Dependencia
-   * entre ACTIVO e INACTIVO.
-   * Al desactivar, registra los datos de eliminación lógica.
-   * Al reactivar, limpia dichos datos y registra la actualización.
-   *
-   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
-   */
+  /*
+  Nombre del método: cambiarEstado
+  Descripción: Cambia el estado de una Dependencia entre ACTIVO e INACTIVO.
+               Al desactivar registra eliminación lógica; al reactivar limpia
+               esos datos y registra la actualización.
+  Parámetros:
+    - id: string (identificador de la dependencia)
+    - idUsuario: string (usuario que realiza el cambio)
+  Respuestas posibles:
+    - 200: Registro de la dependencia activado/inactivado correctamente.
+    - 404: No existe una Dependencia con esa identificación.
+    - 500: No se pudo cambiar el estado del registro.
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+*/
   async cambiarEstado(
     id: string,
     idUsuario: string,
@@ -406,10 +454,22 @@ export class DependenciaService {
       );
     }
   }
-
-  async validarDependencia(id_dependencia: string): Promise<void> {
+  /*
+  Nombre del método: validarDependencia
+  Descripción: Valida que una Dependencia exista y se encuentre ACTIVA. No
+               retorna datos; lanza excepción si no cumple las condiciones.
+  Parámetros:
+    - dependencia_id: string (identificador de la dependencia a validar)
+  Respuestas posibles:
+    - 200: Dependencia válida (sin retorno).
+    - 400: La dependencia seleccionada se encuentra inactiva.
+    - 404: No se encontró la dependencia solicitada.
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+*/
+  async validarDependencia(dependencia_id: string): Promise<void> {
     const dependencia = await this.dependenciaRepository.findOne({
-      where: { id: id_dependencia },
+      where: { id: dependencia_id },
     });
 
     if (!dependencia) {

@@ -33,7 +33,7 @@ export class CreateCuentaBancariaDto {
     description: 'Identificador del banco.',
   })
   @IsUUID('4', { message: 'El identificador del banco no es válido' })
-  id_banco!: string;
+  banco_id!: string;
 
   /**
    * Número de cuenta bancaria.
@@ -81,7 +81,7 @@ export class CreateCuentaBancariaDto {
   @IsUUID('4', {
     message: 'El identificador de la dependencia no es válido',
   })
-  id_dependencia?: string | null;
+  dependencia_id?: string | null;
 
   /**
    * Tipo de cuenta bancaria.

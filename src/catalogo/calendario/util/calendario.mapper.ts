@@ -21,7 +21,7 @@ export function mapearCalendario(calendario: Calendario): CalendarioResponse {
   return {
     id: calendario.id,
     fecha: calendario.fecha,
-    habil: calendario.habil,
+    dia_habil: calendario.dia_habil,
     descripcion: calendario.descripcion,
     estado: calendario.estado,
     responsable_creacion: calendario.usuario_creador?.username ?? null,

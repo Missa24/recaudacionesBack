@@ -9,11 +9,11 @@ export function mapearRespuesta(
   cuenta: CuentaBancaria,
 ): CuentaBancariaResponse {
   return {
-    id: cuenta.id_cuenta,
-    id_banco: cuenta.id_banco,
+    id: cuenta.id,
+    banco_id: cuenta.banco_id,
+    dependencia_id: cuenta.dependencia_id,
     nro_cuenta: cuenta.nro_cuenta,
     nombre_cuenta: cuenta.nombre_cuenta,
-    id_dependencia: cuenta.id_dependencia,
     tipo: cuenta.tipo,
     estado: cuenta.estado,
     responsable_creacion: cuenta.usuario_creador

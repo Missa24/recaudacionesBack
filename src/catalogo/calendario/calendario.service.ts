@@ -79,12 +79,20 @@ export class CalendarioService {
     private readonly dataSource: DataSource,
   ) {}
 
-  /**
-   * Registra una nueva fecha en el calendario,
-   * verificando que no se encuentre registrada previamente.
-   *
-   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
-   */
+  /*
+  Nombre del método: crear
+  Descripción: Registra una nueva fecha en el calendario, verificando que no
+               se encuentre registrada previamente.
+  Parámetros:
+    - dto: CreateCalendarioDto (fecha, habil?, descripcion?)
+    - idUsuario: string (usuario que crea)
+  Respuestas posibles:
+    - 201: La fecha fue registrada correctamente.
+    - 400: Fecha inválida.
+    - 409: La fecha ya se encuentra registrada en el calendario.
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+*/
   async crear(
     dto: CreateCalendarioDto,
     idUsuario: string,
@@ -103,7 +111,7 @@ export class CalendarioService {
 
     const calendario = this.calendarioRepository.create({
       fecha: dto.fecha,
-      habil: dto.habil ?? calcularDiaHabil(dto.fecha),
+      dia_habil: dto.habil ?? calcularDiaHabil(dto.fecha),
       descripcion: dto.descripcion ?? null,
       estado: 'ACTIVO',
       _created_at: new Date(),
@@ -134,13 +142,20 @@ export class CalendarioService {
     }
   }
 
-  /**
-   * Registra un rango continuo de fechas en el calendario.
-   * Genera todas las fechas entre fecha_inicio y fecha_fin (inclusive),
-   * calcula "habil" automáticamente si no se envía y evita duplicados.
-   *
-   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
-   */
+  /*
+  Nombre del método: crearPorRango
+  Descripción: Registra un rango continuo de fechas en el calendario.
+               Genera todas las fechas entre fecha_inicio y fecha_fin (inclusive),
+               calcula "habil" automáticamente si no se envía y evita duplicados.
+  Parámetros:
+    - dto: CreateCalendarioRangoDto (fecha_inicio, fecha_fin, habil?, descripcion?)
+    - idUsuario: string (usuario que crea)
+  Respuestas posibles:
+    - 201: Fechas registradas correctamente (con total y fechas omitidas).
+    - 400: Fecha inválida / fecha_inicio > fecha_fin / rango mayor a 366 días.
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+*/
   async crearPorRango(
     dto: CreateCalendarioRangoDto,
     idUsuario: string,
@@ -189,7 +204,7 @@ export class CalendarioService {
             const registros = fechasNuevas.map((fecha) =>
               repository.create({
                 fecha,
-                habil: dto.habil ?? calcularDiaHabil(fecha),
+                dia_habil: dto.habil ?? calcularDiaHabil(fecha),
                 descripcion: dto.descripcion ?? null,
                 estado: 'ACTIVO',
                 _created_at: fechaActual,
@@ -233,12 +248,19 @@ export class CalendarioService {
     }
   }
 
-  /**
-   * Obtiene el listado paginado de fechas del calendario
-   * aplicando búsqueda, filtros y ordenamiento.
-   *
-   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
-   */
+  /*
+  Nombre del método: listar
+  Descripción: Obtiene el listado paginado de fechas del calendario aplicando
+               búsqueda, filtros y ordenamiento.
+  Parámetros:
+    - query: QueryCalendarioDto (page, limit, search, status, habil, startDate,
+             endDate, sortBy, sortOrder)
+  Respuestas posibles:
+    - 200: Listado paginado de fechas.
+    - 400: Fecha inválida / rango de fechas inválido (startDate > endDate).
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+*/
 
   async listar(
     query: QueryCalendarioDto,
@@ -274,7 +296,7 @@ export class CalendarioService {
     // Campos permitidos para ordenar
     const camposOrdenamiento: Record<string, keyof Calendario> = {
       fecha: 'fecha',
-      habil: 'habil',
+      dia_habil: 'dia_habil',
       descripcion: 'descripcion',
       createdAt: '_created_at',
       updatedAt: '_updated_at',
@@ -294,7 +316,7 @@ export class CalendarioService {
 
     // Filtro por día hábil
     if (habil !== undefined) {
-      filtros.habil = habil;
+      filtros.dia_habil = habil;
     }
 
     // Filtro por rango de fechas
@@ -356,12 +378,20 @@ export class CalendarioService {
       throw error;
     }
   }
-  /**
-   * Busca una fecha específica y determina su condición
-   * de día hábil según la configuración o el día de la semana.
-   *
-   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
-   */
+  /*
+  Nombre del método: buscarPorFecha
+  Descripción: Busca una fecha específica y determina su condición de día hábil
+               según la configuración o el día de la semana.
+  Parámetros:
+    - fecha: string (fecha a buscar)
+  Respuestas posibles:
+    - 200: Resultado con fecha, dia_habil, configurada, origen y registro.
+    - 400: Fecha inválida.
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+  Notas adicionales: Si la fecha no está configurada, calcula "habil" por día
+                     de la semana (origen: DIA_SEMANA, registro: null).
+*/
   async buscarPorFecha(fecha: string): Promise<CalendarioFechaResponse> {
     validarFecha(fecha);
 
@@ -379,7 +409,7 @@ export class CalendarioService {
     if (calendario) {
       return {
         fecha: calendario.fecha,
-        habil: calendario.habil,
+        dia_habil: calendario.dia_habil,
         configurada: true,
         origen: 'CONFIGURACION',
         registro: mapearCalendario(calendario),
@@ -390,19 +420,25 @@ export class CalendarioService {
 
     return {
       fecha,
-      habil: habilCalculado,
+      dia_habil: habilCalculado,
       configurada: false,
       origen: 'DIA_SEMANA',
       registro: null,
     };
   }
 
-  /**
-   * Busca un registro del calendario mediante su identificador UUID.
-   * Si no existe, genera una excepción de recurso no encontrado.
-   *
-   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
-   */
+  /*
+  Nombre del método: buscarPorId
+  Descripción: Busca un registro del calendario mediante su identificador UUID.
+               Si no existe, lanza excepción de recurso no encontrado.
+  Parámetros:
+    - id: string (identificador del calendario)
+  Respuestas posibles:
+    - 200: Registro encontrado.
+    - 404: No se encontró el registro del calendario solicitado.
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+*/
   async buscarPorId(id: string): Promise<CalendarioResponse> {
     const calendario = await this.calendarioRepository.findOne({
       where: { id },
@@ -421,12 +457,22 @@ export class CalendarioService {
     return mapearCalendario(calendario);
   }
 
-  /**
-   * Actualiza la información de un registro del calendario.
-   * Verifica su estado y la unicidad de la fecha cuando esta cambia.
-   *
-   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
-   */
+  /*
+  Nombre del método: actualizar
+  Descripción: Actualiza la información de un registro del calendario.
+               Verifica su estado y la unicidad de la fecha cuando esta cambia.
+  Parámetros:
+    - id: string (identificador del calendario)
+    - dto: UpdateCalendarioDto (fecha?, habil?, descripcion?)
+    - idUsuario: string (usuario que actualiza)
+  Respuestas posibles:
+    - 200: El registro del calendario fue actualizado correctamente.
+    - 400: Fecha inválida / no se puede actualizar un registro inactivo.
+    - 404: No se encontró el registro del calendario solicitado.
+    - 409: La fecha ya se encuentra registrada en el calendario.
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+*/
   async actualizar(
     id: string,
     dto: UpdateCalendarioDto,
@@ -468,7 +514,7 @@ export class CalendarioService {
     }
 
     if (dto.habil !== undefined) {
-      calendario.habil = dto.habil;
+      calendario.dia_habil = dto.habil;
     }
 
     if (dto.descripcion !== undefined) {
@@ -499,13 +545,20 @@ export class CalendarioService {
       throw error;
     }
   }
-  /**
-   * Alterna el estado de un registro del calendario entre ACTIVO e INACTIVO.
-   * Actualiza los datos de auditoría y registra o limpia la información
-   * correspondiente a la inactivación del registro.
-   *
-   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
-   */
+  /*
+  Nombre del método: cambiarEstado
+  Descripción: Alterna el estado de un registro del calendario entre ACTIVO e
+               INACTIVO. Actualiza datos de auditoría y registra o limpia la
+               información de inactivación (eliminación lógica).
+  Parámetros:
+    - id: string (identificador del calendario)
+    - idUsuario: string (usuario que realiza el cambio)
+  Respuestas posibles:
+    - 200: Registro del calendario activado/inactivado correctamente.
+    - 404: No se encontró el registro del calendario solicitado.
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+*/
   async cambiarEstado(
     id: string,
     idUsuario: string,
