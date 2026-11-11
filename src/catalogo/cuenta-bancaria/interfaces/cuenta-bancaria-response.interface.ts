@@ -15,10 +15,10 @@
  */
 export interface CuentaBancariaResponse {
   id: string;
-  id_banco: string;
+  banco_id: string;
+  dependencia_id: string | null;
   nro_cuenta: string;
   nombre_cuenta: string;
-  id_dependencia: string | null;
   tipo: string;
   estado: string;
   responsable_creacion: string | null;

@@ -31,7 +31,7 @@ export class QueryCuentaBancariaDto extends QueryPaginatedDto {
   @IsUUID('4', {
     message: 'El identificador del banco no es válido',
   })
-  id_banco?: string;
+  banco_id?: string;
 
   /**
    * Identificador de la dependencia por la cual se filtrarán las cuentas.
@@ -43,7 +43,7 @@ export class QueryCuentaBancariaDto extends QueryPaginatedDto {
   @IsUUID('4', {
     message: 'El identificador de la dependencia no es válido',
   })
-  id_dependencia?: string;
+  dependencia_id?: string;
 
   /**
    * Tipo de cuenta bancaria.

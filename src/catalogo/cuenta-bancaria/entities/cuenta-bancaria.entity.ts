@@ -28,29 +28,52 @@ import {
  * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 @Entity({ schema: 'catalogo', name: 'cuenta_bancaria' })
-@Unique('uq_cuenta_bancaria_banco_nro_cuenta', ['id_banco', 'nro_cuenta'])
+@Unique('uq_cuenta_bancaria_banco_nro_cuenta', ['banco_id', 'nro_cuenta'])
 export class CuentaBancaria {
   /*
    * Identificador único de la cuenta bancaria.
    */
-  @PrimaryGeneratedColumn('uuid', { name: 'id_cuenta' })
-  id_cuenta!: string;
+  @PrimaryGeneratedColumn('uuid', { name: 'id' })
+  id!: string;
 
   /*
    * Identificador del banco al que pertenece la cuenta.
    */
-  @Column({ type: 'uuid', name: 'id_banco' })
-  id_banco!: string;
+  @Column({ type: 'uuid', name: 'banco_id' })
+  banco_id!: string;
 
   /*
    * Relación con el banco propietario de la cuenta.
    */
   @ManyToOne(() => Banco, { nullable: false, onDelete: 'RESTRICT' })
   @JoinColumn({
-    name: 'id_banco',
+    name: 'banco_id',
     referencedColumnName: 'id',
   })
   banco!: Banco;
+
+  /*
+   * Identificador de la dependencia asociada a la cuenta.
+   */
+  @Column({
+    type: 'uuid',
+    name: 'dependencia_id',
+    nullable: true,
+  })
+  dependencia_id!: string | null;
+
+  /*
+   * Relación con la dependencia asociada a la cuenta.
+   */
+  @ManyToOne(() => Dependencia, {
+    nullable: true,
+    onDelete: 'RESTRICT',
+  })
+  @JoinColumn({
+    name: 'dependencia_id',
+    referencedColumnName: 'id',
+  })
+  dependencia!: Dependencia | null;
 
   /*
    * Número de cuenta bancaria.
@@ -64,28 +87,6 @@ export class CuentaBancaria {
   @Column({ type: 'varchar', length: 150 })
   nombre_cuenta!: string;
 
-  /*
-   * Identificador de la dependencia asociada a la cuenta.
-   */
-  @Column({
-    type: 'uuid',
-    name: 'id_dependencia',
-    nullable: true,
-  })
-  id_dependencia!: string | null;
-
-  /*
-   * Relación con la dependencia asociada a la cuenta.
-   */
-  @ManyToOne(() => Dependencia, {
-    nullable: true,
-    onDelete: 'RESTRICT',
-  })
-  @JoinColumn({
-    name: 'id_dependencia',
-    referencedColumnName: 'id',
-  })
-  dependencia!: Dependencia | null;
   /*
    * Tipo de cuenta bancaria.
    */
