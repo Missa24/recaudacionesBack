@@ -1,5 +1,5 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { ArrayMaxSize, ArrayUnique, IsArray, IsUUID } from 'class-validator';
+import { ApiProperty } from "@nestjs/swagger";
+import { ArrayMaxSize, ArrayUnique, IsArray, IsUUID } from "class-validator";
 
 /**
  * Módulo: Seguridad / Usuario Rol
@@ -16,11 +16,11 @@ export class ActualizarRolesDto {
     type: [String],
     maxItems: 100,
     example: [],
-    description: 'Selección completa. [] quita todos los roles.',
+    description: "Selección completa. [] quita todos los roles.",
   })
   @IsArray()
   @ArrayMaxSize(100)
   @ArrayUnique()
-  @IsUUID('all', { each: true })
+  @IsUUID("all", { each: true })
   idsRoles!: string[];
 }

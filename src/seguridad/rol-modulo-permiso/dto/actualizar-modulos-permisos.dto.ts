@@ -1,12 +1,12 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
+import { ApiProperty } from "@nestjs/swagger";
+import { Type } from "class-transformer";
 import {
   ArrayMaxSize,
   ArrayUnique,
   IsArray,
   ValidateNested,
-} from 'class-validator';
-import { ModuloPermisosDto } from './asignar-modulos-permisos.dto';
+} from "class-validator";
+import { ModuloPermisosDto } from "./asignar-modulos-permisos.dto";
 
 /**
  * Módulo: Seguridad / Rol Módulo Permiso

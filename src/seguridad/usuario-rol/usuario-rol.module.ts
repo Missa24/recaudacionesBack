@@ -1,13 +1,13 @@
-import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { Usuario } from '../usuario/entities/usuario.entity';
-import { Rol } from '../rol/entities/rol.entity';
-import { Modulo } from '../modulo/entities/modulo.entity';
-import { Permiso } from '../permiso/entities/permiso.entity';
-import { UsuarioRol } from '../usuario-rol/entities/usuario-rol.entity';
-import { RolModuloPermiso } from '../rol-modulo-permiso/entities/rol-modulo-permiso.entity';
-import { UsuarioRolController } from './usuario-rol.controller';
-import { UsuarioRolService } from './usuario-rol.service';
+import { Module } from "@nestjs/common";
+import { TypeOrmModule } from "@nestjs/typeorm";
+import { Usuario } from "../usuario/entities/usuario.entity";
+import { Rol } from "../rol/entities/rol.entity";
+import { Modulo } from "../modulo/entities/modulo.entity";
+import { Permiso } from "../permiso/entities/permiso.entity";
+import { UsuarioRol } from "../usuario-rol/entities/usuario-rol.entity";
+import { RolModuloPermiso } from "../rol-modulo-permiso/entities/rol-modulo-permiso.entity";
+import { UsuarioRolController } from "./usuario-rol.controller";
+import { UsuarioRolService } from "./usuario-rol.service";
 
 /**
  * Módulo: Seguridad / UsuarioRol

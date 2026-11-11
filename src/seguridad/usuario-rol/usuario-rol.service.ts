@@ -1,9 +1,9 @@
-import { randomUUID } from 'node:crypto';
+import { randomUUID } from "node:crypto";
 import {
   BadRequestException,
   Injectable,
   NotFoundException,
-} from '@nestjs/common';
+} from "@nestjs/common";
 import {
   DataSource,
   EntityManager,
@@ -12,18 +12,18 @@ import {
   ILike,
   In,
   IsNull,
-} from 'typeorm';
-import { Usuario } from '../usuario/entities/usuario.entity';
-import { Rol } from '../rol/entities/rol.entity';
-import { UsuarioRol } from '../usuario-rol/entities/usuario-rol.entity';
-import { RolModuloPermiso } from '../rol-modulo-permiso/entities/rol-modulo-permiso.entity';
-import { PaginatedResponse } from '../../shared/interface/paginated-response.interface';
+} from "typeorm";
+import { Usuario } from "../usuario/entities/usuario.entity";
+import { Rol } from "../rol/entities/rol.entity";
+import { UsuarioRol } from "../usuario-rol/entities/usuario-rol.entity";
+import { RolModuloPermiso } from "../rol-modulo-permiso/entities/rol-modulo-permiso.entity";
+import { PaginatedResponse } from "../../shared/interface/paginated-response.interface";
 import {
   MensajeIdResponse,
   MensajeIdsResponse,
   UsuarioAccesos,
   UsuarioConRoles,
-} from '../asignaciones-common/interfaces/asignaciones-response.interface';
+} from "./interfaces/usuario-rol-response.interface";
 import {
   escaparLike,
   filtroAsignacion,
@@ -33,14 +33,14 @@ import {
   prepararQuery,
   relanzarError,
   uuid,
-} from '../asignaciones-common/util/asignaciones.util';
+} from "./util/asignaciones.util";
 import {
   mapAccesos,
   mapUsuarioRoles,
-} from '../asignaciones-common/util/map-asignaciones.util';
-import { AsignarRolesDto } from './dto/asignar-roles.dto';
-import { ActualizarRolesDto } from './dto/actualizar-roles.dto';
-import { QueryUsuarioRolDto } from './dto/query-usuario-rol.dto';
+} from "./util/map-response-usuario-rol.util";
+import { AsignarRolesDto } from "./dto/asignar-roles.dto";
+import { ActualizarRolesDto } from "./dto/actualizar-roles.dto";
+import { QueryUsuarioRolDto } from "./dto/query-usuario-rol.dto";
 
 /**
  * Módulo: Seguridad / Usuario Rol
@@ -135,9 +135,9 @@ export class UsuarioRolService {
           ]
         : base;
     const order: FindOptionsOrder<Usuario> =
-      q.sortBy === 'updatedAt'
-        ? { updatedAt: q.sortOrder, idUsuario: 'ASC' }
-        : { createdAt: q.sortOrder, idUsuario: 'ASC' };
+      q.sortBy === "updatedAt"
+        ? { updatedAt: q.sortOrder, idUsuario: "ASC" }
+        : { createdAt: q.sortOrder, idUsuario: "ASC" };
     const [usuarios, total] = await this.dataSource
       .getRepository(Usuario)
       .findAndCount({
@@ -155,7 +155,7 @@ export class UsuarioRolService {
             rol: { deleted_at: IsNull() },
           },
           relations: { rol: true },
-          order: { rol: { nombre: 'ASC' }, id: 'ASC' },
+          order: { rol: { nombre: "ASC" }, id: "ASC" },
         })
       : [];
     return paginar(
@@ -218,9 +218,9 @@ export class UsuarioRolService {
         ]
       : { ...base, rol: rolBase };
     const order: FindOptionsOrder<UsuarioRol> =
-      q.sortBy === 'updatedAt'
-        ? { updatedAt: q.sortOrder, id: 'ASC' }
-        : { createdAt: q.sortOrder, id: 'ASC' };
+      q.sortBy === "updatedAt"
+        ? { updatedAt: q.sortOrder, id: "ASC" }
+        : { createdAt: q.sortOrder, id: "ASC" };
     const asignaciones = await this.dataSource
       .getRepository(UsuarioRol)
       .find({ where, relations: { rol: true }, order });
@@ -229,7 +229,7 @@ export class UsuarioRolService {
 
   /*
   Nombre del método: actualizarRolesDeUsuario
-  Método HTTP relacionado: PUT
+  Método HTTP relacionado: PATCH
   Endpoint: /api/usuario-rol/usuario/:idUsuario/roles
 
   Descripción:
@@ -270,8 +270,8 @@ export class UsuarioRolService {
 
   /*
   Nombre del método: quitarRol
-  Método HTTP relacionado: DELETE
-  Endpoint: /api/usuario-rol/:id
+  Método HTTP relacionado: PATCH
+  Endpoint: /api/usuario-rol/:id/quitar
 
   Descripción:
     Retira una asignación mediante eliminación lógica y conserva su historial.
@@ -367,7 +367,7 @@ export class UsuarioRolService {
     const rol = await this.dataSource
       .getRepository(Rol)
       .findOne({ where: { id: uuid(idRol), deleted_at: IsNull() } });
-    if (!rol) throw new NotFoundException('No se encontró el rol solicitado.');
+    if (!rol) throw new NotFoundException("No se encontró el rol solicitado.");
     const q = prepararQuery(query);
     const base: FindOptionsWhere<UsuarioRol> = {
       ...filtroAsignacion<UsuarioRol>(q.status),
@@ -377,15 +377,15 @@ export class UsuarioRolService {
     const usuarioBase: FindOptionsWhere<Usuario> = { deletedAt: IsNull() };
     const patron = ILike(`%${escaparLike(q.search)}%`);
     const where = q.search
-      ? ['username', 'ci', 'email'].map((campo) => ({
+      ? ["username", "ci", "email"].map((campo) => ({
           ...base,
           usuario: { ...usuarioBase, [campo]: patron },
         }))
       : { ...base, usuario: usuarioBase };
     const order: FindOptionsOrder<UsuarioRol> =
-      q.sortBy === 'updatedAt'
-        ? { updatedAt: q.sortOrder, id: 'ASC' }
-        : { createdAt: q.sortOrder, id: 'ASC' };
+      q.sortBy === "updatedAt"
+        ? { updatedAt: q.sortOrder, id: "ASC" }
+        : { createdAt: q.sortOrder, id: "ASC" };
     const [asignaciones, total] = await this.dataSource
       .getRepository(UsuarioRol)
       .findAndCount({
@@ -431,34 +431,34 @@ export class UsuarioRolService {
   */
   async obtenerAccesosDeUsuario(valor: string): Promise<UsuarioAccesos> {
     // Una sola instantánea evita mezclar asignaciones anteriores y posteriores a un cambio.
-    return this.dataSource.transaction('REPEATABLE READ', async (manager) => {
+    return this.dataSource.transaction("REPEATABLE READ", async (manager) => {
       const usuario = await this.buscarUsuario(valor, manager);
-      if (usuario.estado !== 'ACTIVO') return mapAccesos(usuario, [], []);
+      if (usuario.estado !== "ACTIVO") return mapAccesos(usuario, [], []);
       const roles = await manager.getRepository(UsuarioRol).find({
         where: {
           idUsuario: usuario.idUsuario,
-          estado: 'ACTIVO',
+          estado: "ACTIVO",
           deletedAt: IsNull(),
-          rol: { estado: 'ACTIVO', deleted_at: IsNull() },
+          rol: { estado: "ACTIVO", deleted_at: IsNull() },
         },
         relations: { rol: true },
-        order: { rol: { nombre: 'ASC' }, id: 'ASC' },
+        order: { rol: { nombre: "ASC" }, id: "ASC" },
       });
       const accesos = roles.length
         ? await manager.getRepository(RolModuloPermiso).find({
             where: {
               idRol: In(roles.map((a) => a.idRol)),
-              estado: 'ACTIVO',
+              estado: "ACTIVO",
               deletedAt: IsNull(),
-              rol: { estado: 'ACTIVO', deleted_at: IsNull() },
-              modulo: { estado: 'ACTIVO', deleted_at: IsNull() },
-              permiso: { estado: 'ACTIVO', deleted_at: IsNull() },
+              rol: { estado: "ACTIVO", deleted_at: IsNull() },
+              modulo: { estado: "ACTIVO", deleted_at: IsNull() },
+              permiso: { estado: "ACTIVO", deleted_at: IsNull() },
             },
             relations: { modulo: true, permiso: true },
             order: {
-              modulo: { nombres: 'ASC' },
-              permiso: { codigo: 'ASC' },
-              id: 'ASC',
+              modulo: { nombres: "ASC" },
+              permiso: { codigo: "ASC" },
+              id: "ASC",
             },
           })
         : [];
@@ -468,7 +468,7 @@ export class UsuarioRolService {
 
   /*
   Nombre del método: guardarRoles
-  Método HTTP relacionado: POST / PUT
+  Método HTTP relacionado: POST / PATCH
   Endpoint: /api/usuario-rol
 
   Descripción:
@@ -501,9 +501,9 @@ export class UsuarioRolService {
     try {
       return await this.dataSource.transaction(async (manager) => {
         const usuario = await this.bloquearUsuario(manager, idUsuario);
-        if (roles.length && usuario.estado !== 'ACTIVO')
+        if (roles.length && usuario.estado !== "ACTIVO")
           throw new BadRequestException(
-            'El usuario debe estar ACTIVO para asignar roles.',
+            "El usuario debe estar ACTIVO para asignar roles.",
           );
         await this.validarRoles(manager, roles);
         const repo = manager.getRepository(UsuarioRol);
@@ -518,7 +518,7 @@ export class UsuarioRolService {
               id: randomUUID(),
               idUsuario,
               idRol,
-              estado: 'ACTIVO',
+              estado: "ACTIVO",
               userCreated: responsable,
               userUpdate: null,
               userDeleted: null,
@@ -526,10 +526,10 @@ export class UsuarioRolService {
             });
             cambios.push(asignacion);
           } else if (
-            asignacion.estado !== 'ACTIVO' ||
+            asignacion.estado !== "ACTIVO" ||
             asignacion.deletedAt !== null
           ) {
-            asignacion.estado = 'ACTIVO';
+            asignacion.estado = "ACTIVO";
             asignacion.deletedAt = null;
             asignacion.userDeleted = null;
             asignacion.userUpdate = responsable;
@@ -546,7 +546,7 @@ export class UsuarioRolService {
               asignacion.deletedAt = new Date();
               asignacion.userDeleted = responsable;
               asignacion.userUpdate = responsable;
-              asignacion.estado = 'INACTIVO';
+              asignacion.estado = "INACTIVO";
               cambios.push(asignacion);
               ids.push(asignacion.id);
             }
@@ -554,8 +554,8 @@ export class UsuarioRolService {
         if (cambios.length) await repo.save(cambios);
         return {
           message: reemplazar
-            ? 'Roles del usuario actualizados correctamente.'
-            : 'Roles asignados correctamente.',
+            ? "Roles del usuario actualizados correctamente."
+            : "Roles asignados correctamente.",
           ids,
         };
       });
@@ -566,7 +566,7 @@ export class UsuarioRolService {
 
   /*
   Nombre del método: modificarAsignacion
-  Método HTTP relacionado: PATCH / DELETE
+  Método HTTP relacionado: PATCH
   Endpoint: /api/usuario-rol/:id
 
   Descripción:
@@ -602,30 +602,30 @@ export class UsuarioRolService {
         where: { id, deletedAt: IsNull() },
       });
       if (!inicial)
-        throw new NotFoundException('No se encontró la asignación de rol.');
+        throw new NotFoundException("No se encontró la asignación de rol.");
       const usuario = await this.bloquearUsuario(manager, inicial.idUsuario);
       const asignacion = await repo.findOne({
         where: { id, deletedAt: IsNull() },
       });
       if (!asignacion)
-        throw new NotFoundException('No se encontró la asignación de rol.');
+        throw new NotFoundException("No se encontró la asignación de rol.");
       let message: string;
       if (quitar) {
         asignacion.deletedAt = new Date();
         asignacion.userDeleted = responsable;
-        asignacion.estado = 'INACTIVO';
-        message = 'Rol retirado del usuario correctamente.';
+        asignacion.estado = "INACTIVO";
+        message = "Rol retirado del usuario correctamente.";
       } else {
-        if (!['ACTIVO', 'INACTIVO'].includes(asignacion.estado))
-          throw new BadRequestException('El estado actual no es válido.');
-        if (asignacion.estado === 'INACTIVO') {
-          if (usuario.estado !== 'ACTIVO')
-            throw new BadRequestException('El usuario debe estar ACTIVO.');
+        if (!["ACTIVO", "INACTIVO"].includes(asignacion.estado))
+          throw new BadRequestException("El estado actual no es válido.");
+        if (asignacion.estado === "INACTIVO") {
+          if (usuario.estado !== "ACTIVO")
+            throw new BadRequestException("El usuario debe estar ACTIVO.");
           await this.validarRoles(manager, [asignacion.idRol]);
         }
         asignacion.estado =
-          asignacion.estado === 'ACTIVO' ? 'INACTIVO' : 'ACTIVO';
-        message = `Rol del usuario dado de ${asignacion.estado === 'ACTIVO' ? 'alta' : 'baja'} correctamente.`;
+          asignacion.estado === "ACTIVO" ? "INACTIVO" : "ACTIVO";
+        message = `Rol del usuario dado de ${asignacion.estado === "ACTIVO" ? "alta" : "baja"} correctamente.`;
       }
       asignacion.userUpdate = responsable;
       await repo.save(asignacion);
@@ -664,12 +664,14 @@ export class UsuarioRolService {
     manager: EntityManager,
     idUsuario: string,
   ): Promise<Usuario> {
-    const usuario = await manager.getRepository(Usuario).findOne({
-      where: { idUsuario, deletedAt: IsNull() },
-      lock: { mode: 'pessimistic_write' },
-    });
+    const usuario = await manager
+      .getRepository(Usuario)
+      .findOne({
+        where: { idUsuario, deletedAt: IsNull() },
+        lock: { mode: "pessimistic_write" },
+      });
     if (!usuario)
-      throw new NotFoundException('No se encontró el usuario solicitado.');
+      throw new NotFoundException("No se encontró el usuario solicitado.");
     return usuario;
   }
 
@@ -709,10 +711,10 @@ export class UsuarioRolService {
       .getRepository(Rol)
       .find({ where: { id: In(ids), deleted_at: IsNull() } });
     if (encontrados.length !== ids.length)
-      throw new NotFoundException('Uno o varios roles no existen.');
-    if (encontrados.some((r) => r.estado !== 'ACTIVO'))
+      throw new NotFoundException("Uno o varios roles no existen.");
+    if (encontrados.some((r) => r.estado !== "ACTIVO"))
       throw new BadRequestException(
-        'Todos los roles seleccionados deben estar ACTIVOS.',
+        "Todos los roles seleccionados deben estar ACTIVOS.",
       );
   }
 
@@ -747,11 +749,13 @@ export class UsuarioRolService {
     valor: string,
     manager: EntityManager = this.dataSource.manager,
   ): Promise<Usuario> {
-    const usuario = await manager.getRepository(Usuario).findOne({
-      where: { ...filtroIdentificadorUsuario(valor), deletedAt: IsNull() },
-    });
+    const usuario = await manager
+      .getRepository(Usuario)
+      .findOne({
+        where: { ...filtroIdentificadorUsuario(valor), deletedAt: IsNull() },
+      });
     if (!usuario)
-      throw new NotFoundException('No se encontró el usuario solicitado.');
+      throw new NotFoundException("No se encontró el usuario solicitado.");
     return usuario;
   }
 }

@@ -1,9 +1,9 @@
-import { randomUUID } from 'node:crypto';
+import { randomUUID } from "node:crypto";
 import {
   BadRequestException,
   Injectable,
   NotFoundException,
-} from '@nestjs/common';
+} from "@nestjs/common";
 import {
   DataSource,
   EntityManager,
@@ -12,17 +12,18 @@ import {
   ILike,
   In,
   IsNull,
-} from 'typeorm';
-import { Rol } from '../rol/entities/rol.entity';
-import { Modulo } from '../modulo/entities/modulo.entity';
-import { Permiso } from '../permiso/entities/permiso.entity';
-import { RolModuloPermiso } from '../rol-modulo-permiso/entities/rol-modulo-permiso.entity';
-import { PaginatedResponse } from '../../shared/interface/paginated-response.interface';
+} from "typeorm";
+import { Rol } from "../rol/entities/rol.entity";
+import { Modulo } from "../modulo/entities/modulo.entity";
+import { Permiso } from "../permiso/entities/permiso.entity";
+import { RolModuloPermiso } from "../rol-modulo-permiso/entities/rol-modulo-permiso.entity";
+import { PaginatedResponse } from "../../shared/interface/paginated-response.interface";
 import {
   MensajeIdResponse,
   MensajeIdsResponse,
   RolConModulos,
-} from '../asignaciones-common/interfaces/asignaciones-response.interface';
+  RolModuloPermisoListadoResponse,
+} from "./interfaces/rol-modulo-permiso-response.interface";
 import {
   escaparLike,
   filtroAsignacion,
@@ -31,15 +32,16 @@ import {
   prepararQuery,
   relanzarError,
   uuid,
-} from '../asignaciones-common/util/asignaciones.util';
-import { mapRolModulos } from '../asignaciones-common/util/map-asignaciones.util';
+} from "./util/asignaciones.util";
+import {
+  mapRolModulos,
+} from "./util/map-response-rol-modulo-permiso.util";
 import {
   AsignarModulosPermisosDto,
   ModuloPermisosDto,
-} from './dto/asignar-modulos-permisos.dto';
-import { ActualizarModulosPermisosDto } from './dto/actualizar-modulos-permisos.dto';
-import { QueryRolModuloPermisoDto } from './dto/query-rol-modulo-permiso.dto';
-import { RolModuloPermisoListadoResponse } from './interfaces/rol-modulo-permiso-response.interface';
+} from "./dto/asignar-modulos-permisos.dto";
+import { ActualizarModulosPermisosDto } from "./dto/actualizar-modulos-permisos.dto";
+import { QueryRolModuloPermisoDto } from "./dto/query-rol-modulo-permiso.dto";
 
 /**
  * Módulo: Seguridad / Rol Módulo Permiso
@@ -93,129 +95,76 @@ export class RolModuloPermisoService {
   }
 
   /*
-Nombre del método: listarRolesConModulosPermisos
-Método HTTP relacionado: GET
-Endpoint: /api/rol-modulo-permiso
+  Nombre del método: listarRolesConModulosPermisos
+  Método HTTP relacionado: GET
+  Endpoint: /api/rol-modulo-permiso
 
-Descripción:
-  Lista las asignaciones de rol, módulo y permiso.
-  Cada elemento devuelve primero la PK de rol_modulo_permiso.
+  Descripción:
+    Pagina asignaciones. El primer id es la PK de rol_modulo_permiso.
+    search busca por nombre o código del rol.
 
-Parámetros:
-  - query: Paginación, búsqueda, estado y fechas de la asignación.
+  Parámetros:
+    - query: Paginación, estado y fechas de la asignación.
 
-Respuestas posibles:
-  - 200: Listado obtenido correctamente.
-  - 400: Parámetros inválidos.
-  - 401: No autorizado, cuando se habilita JWT.
-  - 500: Error interno del servidor.
+  Respuestas posibles:
+    - 200: Operación realizada correctamente.
+    - 400: Datos o parámetros inválidos.
+    - 401: No autorizado, cuando se habilita el guard JWT.
+    - 404: Registro relacionado no encontrado.
+    
+    - 500: Error interno del servidor.
 
-Fecha de creación: 2026-11-11
-Autor: Oscar Canchari
+  Fecha de creación: 2026-11-11
+  Autor: Oscar Canchari
 
-Notas adicionales:
-  El primer id identifica la asignación completa.
-  La búsqueda se realiza por nombre o código del rol.
-  La paginación y las fechas corresponden a rol_modulo_permiso.
-  Excluye asignaciones y registros relacionados eliminados.
-*/
-  async listarRolesModulosPermisos(
+  Notas adicionales:
+    Devuelve únicamente los campos definidos en las interfaces.
+    Excluye asignaciones eliminadas, salvo las reactivadas al asignar.
+  */
+  async listarRolesConModulosPermisos(
     query: QueryRolModuloPermisoDto,
   ): Promise<PaginatedResponse<RolModuloPermisoListadoResponse>> {
     const q = prepararQuery(query);
 
-    // Filtrar las asignaciones y sus registros relacionados.
+    // Cada elemento corresponde a una fila de rol_modulo_permiso.
     const base: FindOptionsWhere<RolModuloPermiso> = {
       ...filtroAsignacion<RolModuloPermiso>(q.status),
-      rol: {
-        deleted_at: IsNull(),
-      },
-      modulo: {
-        deleted_at: IsNull(),
-      },
-      permiso: {
-        deleted_at: IsNull(),
-      },
+      rol: { deleted_at: IsNull() },
+      modulo: { deleted_at: IsNull() },
+      permiso: { deleted_at: IsNull() },
     };
+    if (q.fecha) base[q.dateField] = q.fecha;
 
-    // Las fechas filtran la creación o actualización de la asignación.
-    if (q.fecha) {
-      base[q.dateField] = q.fecha;
-    }
-
-    // Buscar por nombre o código del rol.
     const patron = ILike(`%${escaparLike(q.search)}%`);
-
-    const where:
-      | FindOptionsWhere<RolModuloPermiso>
-      | FindOptionsWhere<RolModuloPermiso>[] = q.search
+    const where: FindOptionsWhere<RolModuloPermiso> | FindOptionsWhere<RolModuloPermiso>[] = q.search
       ? [
-          {
-            ...base,
-            rol: {
-              deleted_at: IsNull(),
-              nombre: patron,
-            },
-          },
-          {
-            ...base,
-            rol: {
-              deleted_at: IsNull(),
-              codigo: patron,
-            },
-          },
+          { ...base, rol: { deleted_at: IsNull(), nombre: patron } },
+          { ...base, rol: { deleted_at: IsNull(), codigo: patron } },
         ]
       : base;
 
-    // Ordenar por fecha de asignación y desempatar por su PK.
-    const order: FindOptionsOrder<RolModuloPermiso> =
-      q.sortBy === 'updatedAt'
-        ? {
-            updatedAt: q.sortOrder,
-            id: 'ASC',
-          }
-        : {
-            createdAt: q.sortOrder,
-            id: 'ASC',
-          };
+    const order: FindOptionsOrder<RolModuloPermiso> = q.sortBy === 'updatedAt'
+      ? { updatedAt: q.sortOrder, id: 'ASC' }
+      : { createdAt: q.sortOrder, id: 'ASC' };
 
     const [asignaciones, total] = await this.dataSource
       .getRepository(RolModuloPermiso)
       .findAndCount({
         where,
-        relations: {
-          rol: true,
-          modulo: true,
-          permiso: true,
-        },
+        relations: { rol: true, modulo: true, permiso: true },
         order,
         skip: (q.page - 1) * q.limit,
         take: q.limit,
       });
 
-    // El primer ID es directamente la PK de rol_modulo_permiso.
-    const items: RolModuloPermisoListadoResponse[] = asignaciones.map(
-      (asignacion) => ({
-        id: asignacion.id,
-
-        rol: {
-          id: asignacion.idRol,
-          nombre: asignacion.rol.nombre,
-        },
-
-        modulo: {
-          id: asignacion.idModulo,
-          nombres: asignacion.modulo.nombres,
-        },
-
-        permiso: {
-          id: asignacion.idPermiso,
-          codigo: asignacion.permiso.codigo,
-        },
-
-        estado: asignacion.estado,
-      }),
-    );
+    const items: RolModuloPermisoListadoResponse[] = asignaciones.map(a => ({
+      // PK de la combinación rol, módulo y permiso.
+      id: a.id,
+      rol: { id: a.idRol, nombre: a.rol.nombre },
+      modulo: { id: a.idModulo, nombres: a.modulo.nombres },
+      permiso: { id: a.idPermiso, codigo: a.permiso.codigo },
+      estado: a.estado,
+    }));
 
     return paginar(items, total, q.page, q.limit);
   }
@@ -258,17 +207,19 @@ Notas adicionales:
       );
     if (!esUUID && !/^[A-Za-z0-9_]{1,40}$/.test(texto))
       throw new BadRequestException(
-        'Debe proporcionar un UUID o código válido.',
+        "Debe proporcionar un UUID o código válido.",
       );
-    const rol = await this.dataSource.getRepository(Rol).findOne({
-      where: {
-        ...(esUUID
-          ? { id: uuid(texto) }
-          : { codigo: ILike(escaparLike(texto)) }),
-        deleted_at: IsNull(),
-      },
-    });
-    if (!rol) throw new NotFoundException('No se encontró el rol solicitado.');
+    const rol = await this.dataSource
+      .getRepository(Rol)
+      .findOne({
+        where: {
+          ...(esUUID
+            ? { id: uuid(texto) }
+            : { codigo: ILike(escaparLike(texto)) }),
+          deleted_at: IsNull(),
+        },
+      });
+    if (!rol) throw new NotFoundException("No se encontró el rol solicitado.");
     const q = prepararQuery(query);
     const base: FindOptionsWhere<RolModuloPermiso> = {
       ...filtroAsignacion<RolModuloPermiso>(q.status),
@@ -287,9 +238,9 @@ Notas adicionales:
         ]
       : base;
     const order: FindOptionsOrder<RolModuloPermiso> =
-      q.sortBy === 'updatedAt'
-        ? { updatedAt: q.sortOrder, id: 'ASC' }
-        : { createdAt: q.sortOrder, id: 'ASC' };
+      q.sortBy === "updatedAt"
+        ? { updatedAt: q.sortOrder, id: "ASC" }
+        : { createdAt: q.sortOrder, id: "ASC" };
     const accesos = await this.dataSource
       .getRepository(RolModuloPermiso)
       .find({ where, relations: { modulo: true, permiso: true }, order });
@@ -298,7 +249,7 @@ Notas adicionales:
 
   /*
   Nombre del método: actualizarModulosPermisosDeRol
-  Método HTTP relacionado: PUT
+  Método HTTP relacionado: PATCH
   Endpoint: /api/rol-modulo-permiso/rol/:idRol/accesos
 
   Descripción:
@@ -339,8 +290,8 @@ Notas adicionales:
 
   /*
   Nombre del método: quitarAsignacion
-  Método HTTP relacionado: DELETE
-  Endpoint: /api/rol-modulo-permiso/:id
+  Método HTTP relacionado: PATCH
+  Endpoint: /api/rol-modulo-permiso/:id/quitar
 
   Descripción:
     Retira lógicamente una combinación rol, módulo y permiso.
@@ -407,7 +358,7 @@ Notas adicionales:
 
   /*
   Nombre del método: guardarAccesos
-  Método HTTP relacionado: POST / PUT
+  Método HTTP relacionado: POST / PATCH
   Endpoint: /api/rol-modulo-permiso
 
   Descripción:
@@ -440,9 +391,9 @@ Notas adicionales:
     try {
       return await this.dataSource.transaction(async (manager) => {
         const rol = await this.bloquearRol(manager, idRol);
-        if (seleccion.length && rol.estado !== 'ACTIVO')
+        if (seleccion.length && rol.estado !== "ACTIVO")
           throw new BadRequestException(
-            'El rol debe estar ACTIVO para asignar accesos.',
+            "El rol debe estar ACTIVO para asignar accesos.",
           );
         await this.validarCatalogos(manager, seleccion);
         const repo = manager.getRepository(RolModuloPermiso);
@@ -463,7 +414,7 @@ Notas adicionales:
                 idRol,
                 idModulo,
                 idPermiso,
-                estado: 'ACTIVO',
+                estado: "ACTIVO",
                 userCreated: responsable,
                 userUpdate: null,
                 deletedAt: null,
@@ -471,10 +422,10 @@ Notas adicionales:
               });
               cambios.push(asignacion);
             } else if (
-              asignacion.estado !== 'ACTIVO' ||
+              asignacion.estado !== "ACTIVO" ||
               asignacion.deletedAt !== null
             ) {
-              asignacion.estado = 'ACTIVO';
+              asignacion.estado = "ACTIVO";
               asignacion.deletedAt = null;
               asignacion.userDeleted = null;
               asignacion.userUpdate = responsable;
@@ -491,7 +442,7 @@ Notas adicionales:
               asignacion.deletedAt = new Date();
               asignacion.userDeleted = responsable;
               asignacion.userUpdate = responsable;
-              asignacion.estado = 'INACTIVO';
+              asignacion.estado = "INACTIVO";
               cambios.push(asignacion);
               ids.push(asignacion.id);
             }
@@ -499,8 +450,8 @@ Notas adicionales:
         if (cambios.length) await repo.save(cambios);
         return {
           message: reemplazar
-            ? 'Módulos y permisos del rol actualizados correctamente.'
-            : 'Módulos y permisos asignados correctamente.',
+            ? "Módulos y permisos del rol actualizados correctamente."
+            : "Módulos y permisos asignados correctamente.",
           ids,
         };
       });
@@ -511,7 +462,7 @@ Notas adicionales:
 
   /*
   Nombre del método: modificarAsignacion
-  Método HTTP relacionado: PATCH / DELETE
+  Método HTTP relacionado: PATCH
   Endpoint: /api/rol-modulo-permiso/:id
 
   Descripción:
@@ -546,25 +497,25 @@ Notas adicionales:
         where: { id, deletedAt: IsNull() },
       });
       if (!inicial)
-        throw new NotFoundException('No se encontró la asignación de acceso.');
+        throw new NotFoundException("No se encontró la asignación de acceso.");
       const rol = await this.bloquearRol(manager, inicial.idRol);
       const asignacion = await repo.findOne({
         where: { id, deletedAt: IsNull() },
       });
       if (!asignacion)
-        throw new NotFoundException('No se encontró la asignación de acceso.');
+        throw new NotFoundException("No se encontró la asignación de acceso.");
       let message: string;
       if (quitar) {
         asignacion.deletedAt = new Date();
         asignacion.userDeleted = responsable;
-        asignacion.estado = 'INACTIVO';
-        message = 'Asignación retirada correctamente.';
+        asignacion.estado = "INACTIVO";
+        message = "Asignación retirada correctamente.";
       } else {
-        if (!['ACTIVO', 'INACTIVO'].includes(asignacion.estado))
-          throw new BadRequestException('El estado actual no es válido.');
-        if (asignacion.estado === 'INACTIVO') {
-          if (rol.estado !== 'ACTIVO')
-            throw new BadRequestException('El rol debe estar ACTIVO.');
+        if (!["ACTIVO", "INACTIVO"].includes(asignacion.estado))
+          throw new BadRequestException("El estado actual no es válido.");
+        if (asignacion.estado === "INACTIVO") {
+          if (rol.estado !== "ACTIVO")
+            throw new BadRequestException("El rol debe estar ACTIVO.");
           await this.validarCatalogos(manager, [
             {
               idModulo: asignacion.idModulo,
@@ -573,8 +524,8 @@ Notas adicionales:
           ]);
         }
         asignacion.estado =
-          asignacion.estado === 'ACTIVO' ? 'INACTIVO' : 'ACTIVO';
-        message = `Asignación dada de ${asignacion.estado === 'ACTIVO' ? 'alta' : 'baja'} correctamente.`;
+          asignacion.estado === "ACTIVO" ? "INACTIVO" : "ACTIVO";
+        message = `Asignación dada de ${asignacion.estado === "ACTIVO" ? "alta" : "baja"} correctamente.`;
       }
       asignacion.userUpdate = responsable;
       await repo.save(asignacion);
@@ -619,7 +570,7 @@ Notas adicionales:
       (!permitirVacio && !modulos.length)
     )
       throw new BadRequestException(
-        'Debe enviar una selección válida de módulos.',
+        "Debe enviar una selección válida de módulos.",
       );
     idsUnicos(modulos.map((m) => m?.idModulo));
     return modulos.map((m) => ({
@@ -656,11 +607,13 @@ Notas adicionales:
     Excluye asignaciones eliminadas, salvo las reactivadas al asignar.
   */
   private async bloquearRol(manager: EntityManager, id: string): Promise<Rol> {
-    const rol = await manager.getRepository(Rol).findOne({
-      where: { id, deleted_at: IsNull() },
-      lock: { mode: 'pessimistic_write' },
-    });
-    if (!rol) throw new NotFoundException('No se encontró el rol solicitado.');
+    const rol = await manager
+      .getRepository(Rol)
+      .findOne({
+        where: { id, deleted_at: IsNull() },
+        lock: { mode: "pessimistic_write" },
+      });
+    if (!rol) throw new NotFoundException("No se encontró el rol solicitado.");
     return rol;
   }
 
@@ -709,14 +662,14 @@ Notas adicionales:
       permisos.length !== idsPermisos.length
     )
       throw new NotFoundException(
-        'Uno o varios módulos o permisos no existen.',
+        "Uno o varios módulos o permisos no existen.",
       );
     if (
-      modulos.some((m) => m.estado !== 'ACTIVO') ||
-      permisos.some((p) => p.estado !== 'ACTIVO')
+      modulos.some((m) => m.estado !== "ACTIVO") ||
+      permisos.some((p) => p.estado !== "ACTIVO")
     )
       throw new BadRequestException(
-        'Los módulos y permisos seleccionados deben estar ACTIVOS.',
+        "Los módulos y permisos seleccionados deben estar ACTIVOS.",
       );
   }
 }

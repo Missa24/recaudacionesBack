@@ -1,30 +1,60 @@
 /**
- * Módulo: Seguridad / RolModuloPermiso
  * Archivo: rol-modulo-permiso-response.interface.ts
- * Descripción:
- *   Reexporta los contratos utilizados por este módulo sin duplicar definiciones.
- * Fecha de creación: 2026-11-11
+ * Descripción: Respuestas de módulos y permisos de un rol.
+ * Fecha: 2026-11-11
  * Autor: Oscar Canchari
  */
-/** Una fila de seguridad.rol_modulo_permiso con sus datos relacionados. */
-export interface RolModuloPermisoListadoResponse {
-  /** PK de la tabla seguridad.rol_modulo_permiso. */
+
+/** Respuesta de una operación individual. */
+export interface MensajeIdResponse {
+  message: string;
   id: string;
+}
 
-  rol: {
-    id: string;
-    nombre: string;
-  };
+/** Respuesta de operaciones múltiples. */
+export interface MensajeIdsResponse {
+  message: string;
+  ids: string[];
+}
 
-  modulo: {
-    id: string;
-    nombres: string;
-  };
+/** Datos mínimos de un permiso. */
+export interface PermisoCompacto {
+  id: string;
+  codigo: string;
+}
 
-  permiso: {
-    id: string;
-    codigo: string;
-  };
+/** idAsignacion es la PK de la fila de seguridad.rol_modulo_permiso. */
+export interface PermisoAsignado extends PermisoCompacto {
+  idAsignacion: string;
+  estado: string;
+}
 
+/** Módulo con sus permisos efectivos. */
+export interface ModuloCompacto {
+  id: string;
+  nombres: string;
+  permisos: PermisoCompacto[];
+}
+
+/** Módulo con las asignaciones de permisos para administración. */
+export interface ModuloAsignado {
+  id: string;
+  nombres: string;
+  permisos: PermisoAsignado[];
+}
+
+/** Rol y accesos agrupados por módulo. */
+export interface RolConModulos {
+  id: string;
+  nombre: string;
+  modulos: ModuloAsignado[];
+}
+
+/** Contrato alternativo para el listado por fila, si tu servicio ya lo utiliza. */
+export interface RolModuloPermisoListadoResponse {
+  id: string;
+  rol: { id: string; nombre: string };
+  modulo: { id: string; nombres: string };
+  permiso: { id: string; codigo: string };
   estado: string;
 }

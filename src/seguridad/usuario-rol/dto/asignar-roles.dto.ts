@@ -1,11 +1,11 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty } from "@nestjs/swagger";
 import {
   ArrayMaxSize,
   ArrayMinSize,
   ArrayUnique,
   IsArray,
   IsUUID,
-} from 'class-validator';
+} from "class-validator";
 
 /**
  * Módulo: Seguridad / Usuario Rol
@@ -19,10 +19,10 @@ import {
 export class AsignarRolesDto {
   /** Usuario receptor de los roles; no es el responsable de auditoría. */
   @ApiProperty({
-    format: 'uuid',
-    example: '550e8400-e29b-41d4-a716-446655440000',
+    format: "uuid",
+    example: "550e8400-e29b-41d4-a716-446655440000",
   })
-  @IsUUID('all', { message: 'idUsuario debe ser un UUID válido.' })
+  @IsUUID("all", { message: "idUsuario debe ser un UUID válido." })
   idUsuario!: string;
 
   /** Entre uno y cien roles diferentes en una misma operación. */
@@ -30,12 +30,12 @@ export class AsignarRolesDto {
     type: [String],
     minItems: 1,
     maxItems: 100,
-    example: ['550e8400-e29b-41d4-a716-446655440001'],
+    example: ["550e8400-e29b-41d4-a716-446655440001"],
   })
   @IsArray()
   @ArrayMinSize(1)
   @ArrayMaxSize(100)
   @ArrayUnique()
-  @IsUUID('all', { each: true })
+  @IsUUID("all", { each: true })
   idsRoles!: string[];
 }
