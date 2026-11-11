@@ -103,7 +103,7 @@ export class CalendarioService {
 
     const calendario = this.calendarioRepository.create({
       fecha: dto.fecha,
-      habil: dto.habil ?? calcularDiaHabil(dto.fecha),
+      dia_habil: dto.habil ?? calcularDiaHabil(dto.fecha),
       descripcion: dto.descripcion ?? null,
       estado: 'ACTIVO',
       _created_at: new Date(),
@@ -189,7 +189,7 @@ export class CalendarioService {
             const registros = fechasNuevas.map((fecha) =>
               repository.create({
                 fecha,
-                habil: dto.habil ?? calcularDiaHabil(fecha),
+                dia_habil: dto.habil ?? calcularDiaHabil(fecha),
                 descripcion: dto.descripcion ?? null,
                 estado: 'ACTIVO',
                 _created_at: fechaActual,
@@ -274,7 +274,7 @@ export class CalendarioService {
     // Campos permitidos para ordenar
     const camposOrdenamiento: Record<string, keyof Calendario> = {
       fecha: 'fecha',
-      habil: 'habil',
+      dia_habil: 'dia_habil',
       descripcion: 'descripcion',
       createdAt: '_created_at',
       updatedAt: '_updated_at',
@@ -294,7 +294,7 @@ export class CalendarioService {
 
     // Filtro por día hábil
     if (habil !== undefined) {
-      filtros.habil = habil;
+      filtros.dia_habil = habil;
     }
 
     // Filtro por rango de fechas
@@ -379,7 +379,7 @@ export class CalendarioService {
     if (calendario) {
       return {
         fecha: calendario.fecha,
-        habil: calendario.habil,
+        dia_habil: calendario.dia_habil,
         configurada: true,
         origen: 'CONFIGURACION',
         registro: mapearCalendario(calendario),
@@ -390,7 +390,7 @@ export class CalendarioService {
 
     return {
       fecha,
-      habil: habilCalculado,
+      dia_habil: habilCalculado,
       configurada: false,
       origen: 'DIA_SEMANA',
       registro: null,
@@ -468,7 +468,7 @@ export class CalendarioService {
     }
 
     if (dto.habil !== undefined) {
-      calendario.habil = dto.habil;
+      calendario.dia_habil = dto.habil;
     }
 
     if (dto.descripcion !== undefined) {
