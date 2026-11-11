@@ -14,11 +14,11 @@ export interface PersonaNaturalResponse {
   nombres: string;
   apellido_paterno: string | null;
   apellido_materno: string | null;
+  apellido_casada: string | null;
   domicilio: string | null;
   telefono: string | null;
   email: string | null;
   fecha_nacimiento: string | null;
-  apellido_casada: string | null;
   estado_civil: string;
   estado: string;
   responsable_creacion: string | null;

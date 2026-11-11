@@ -61,7 +61,7 @@ export class PersonaJuridica {
   /**
    * Correo electrónico de contacto.
    */
-  @Column({ type: 'citext', nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   email!: string | null;
 
   /**
