@@ -84,8 +84,9 @@ export class Requisito {
     type: 'timestamptz',
     name: '_updated_at',
     default: () => 'clock_timestamp()',
+    nullable: true,
   })
-  _updated_at!: Date;
+  _updated_at!: Date | null;
 
   /*
    * Fecha y hora de eliminación lógica del registro.
