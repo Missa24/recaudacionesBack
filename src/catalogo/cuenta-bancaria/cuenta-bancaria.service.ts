@@ -37,7 +37,6 @@ import { QueryCuentaBancariaDto } from './dto/query-cuenta-bancaria.dto';
 import { PaginatedResponse } from 'src/shared/interface/paginated-response.interface';
 import { esErrorDuplicado } from 'src/shared/util/errores-duplicados.util';
 import {
-  CuentaBancariaCreateResponse,
   CuentaBancariaMessageResponse,
   CuentaBancariaResponse,
 } from './interfaces/cuenta-bancaria-response.interface';
@@ -92,7 +91,7 @@ export class CuentaBancariaService {
   async crear(
     dto: CreateCuentaBancariaDto,
     id_usuario: string,
-  ): Promise<CuentaBancariaCreateResponse> {
+  ): Promise<CuentaBancariaMessageResponse> {
     // Valida que el banco exista delegando al BancoService.
     await this.bancoService.validarBanco(dto.banco_id);
 
@@ -130,11 +129,10 @@ export class CuentaBancariaService {
     });
 
     try {
-      const guardada = await this.cuentaBancariaRepository.save(cuenta);
+      await this.cuentaBancariaRepository.save(cuenta);
 
       return {
         message: 'La cuenta bancaria fue registrada correctamente.',
-        id: guardada.id,
       };
     } catch (error) {
       if (esErrorDuplicado(error)) {

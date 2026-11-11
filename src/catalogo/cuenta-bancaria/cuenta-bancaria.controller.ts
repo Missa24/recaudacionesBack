@@ -33,7 +33,6 @@ import { CreateCuentaBancariaDto } from './dto/create-cuenta-bancaria.dto';
 import { UpdateCuentaBancariaDto } from './dto/update-cuenta-bancaria.dto';
 import { QueryCuentaBancariaDto } from './dto/query-cuenta-bancaria.dto';
 import {
-  CuentaBancariaCreateResponse,
   CuentaBancariaMessageResponse,
   CuentaBancariaResponse,
 } from './interfaces/cuenta-bancaria-response.interface';
@@ -49,7 +48,7 @@ const idUsuario = '8b461287-8416-412e-84e7-b5c77615ea2a';
  * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 @ApiTags('Catálogos / Cuentas bancarias')
-@ApiBearerAuth('jwt')
+@ApiBearerAuth('JWT')
 @UseGuards(AuthGuard('jwt'))
 @Controller('cuenta-bancaria')
 export class CuentaBancariaController {
@@ -97,7 +96,7 @@ export class CuentaBancariaController {
   })
   crear(
     @Body() dto: CreateCuentaBancariaDto,
-  ): Promise<CuentaBancariaCreateResponse> {
+  ): Promise<CuentaBancariaMessageResponse> {
     return this.cuentaBancariaService.crear(dto, idUsuario);
   }
 
