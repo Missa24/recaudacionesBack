@@ -35,8 +35,8 @@ export class Requisito {
    * Identificador único del requisito.
    * UUID generado automáticamente por la base de datos.
    */
-  @PrimaryGeneratedColumn('uuid', { name: 'id_requisito' })
-  id_requisito!: string;
+  @PrimaryGeneratedColumn('uuid', { name: 'id' })
+  id!: string;
 
   /*
    * Código único de identificación del requisito.

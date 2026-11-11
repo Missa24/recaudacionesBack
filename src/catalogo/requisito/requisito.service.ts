@@ -73,7 +73,7 @@ export class RequisitoService {
       - dto: CreateRequisitoDto (codigo, descripcion)
       - idUsuario: string (usuario que crea)
     Respuestas posibles:
-      - 201: Requisito registrado correctamente (con id_requisito).
+      - 201: Requisito registrado correctamente (con id).
       - 409: Ya existe un Requisito con ese código.
       - 500: No se pudo guardar el registro.
     Fecha de creación: 2026-11-10
@@ -249,16 +249,16 @@ export class RequisitoService {
     Descripción: Busca un registro de Requisito por su identificador único e
                  incluye los usuarios de creación, actualización y baja lógica.
     Parámetros:
-      - id_requisito: string (identificador del requisito)
+      - id: string (identificador del requisito)
     Respuestas posibles:
       - 200: Registro encontrado.
       - 404: No existe un Requisito con ese Id.
     Fecha de creación: 2026-11-10
     Autor: Missael Apaza
   */
-  async buscarPorId(id_requisito: string): Promise<RequisitoResponse> {
+  async buscarPorId(id: string): Promise<RequisitoResponse> {
     const requisito = await this.requisitoRepository.findOne({
-      where: { id_requisito },
+      where: { id },
       relations: {
         usuario_creador: true,
         usuario_actualizador: true,
@@ -317,7 +317,7 @@ export class RequisitoService {
                  Verifica existencia, estado ACTIVO y posibles duplicados de
                  código, actualizando los campos de auditoría.
     Parámetros:
-      - id_requisito: string (identificador del requisito)
+      - id: string (identificador del requisito)
       - dto: UpdateRequisitoDto (codigo?, descripcion?)
       - idUsuario: string (usuario que actualiza)
     Respuestas posibles:
@@ -329,12 +329,12 @@ export class RequisitoService {
     Autor: Missael Apaza
   */
   async actualizar(
-    id_requisito: string,
+    id: string,
     dto: UpdateRequisitoDto,
     idUsuario: string,
   ): Promise<RequisitoMessageResponse> {
     const requisito = await this.requisitoRepository.findOne({
-      where: { id_requisito },
+      where: { id },
     });
 
     if (!requisito) {
@@ -350,7 +350,7 @@ export class RequisitoService {
     // Verifica que el nuevo código no esté asignado a otro registro.
     if (dto.codigo !== undefined && dto.codigo !== requisito.codigo) {
       const codigoDuplicado = await this.requisitoRepository.findOne({
-        where: { codigo: dto.codigo, id_requisito: Not(id_requisito) },
+        where: { codigo: dto.codigo, id: Not(id) },
       });
 
       if (codigoDuplicado) {
@@ -381,7 +381,7 @@ export class RequisitoService {
       }
 
       this.logger.error(
-        `Error al actualizar Requisito. ID: ${id_requisito}`,
+        `Error al actualizar Requisito. ID: ${id}`,
         error instanceof Error ? error.stack : String(error),
       );
       throw error;
@@ -394,7 +394,7 @@ export class RequisitoService {
                  Al desactivar registra eliminación lógica; al reactivar limpia
                  esos datos y registra la actualización.
     Parámetros:
-      - id_requisito: string (identificador del requisito)
+      - id: string (identificador del requisito)
       - idUsuario: string (usuario que realiza el cambio)
     Respuestas posibles:
       - 200: Registro del Requisito activado/inactivado correctamente.
@@ -404,11 +404,11 @@ export class RequisitoService {
     Autor: Missael Apaza
   */
   async cambiarEstado(
-    id_requisito: string,
+    id: string,
     idUsuario: string,
   ): Promise<RequisitoMessageResponse> {
     const requisito = await this.requisitoRepository.findOne({
-      where: { id_requisito },
+      where: { id },
     });
 
     if (!requisito) {
@@ -448,7 +448,7 @@ export class RequisitoService {
       };
     } catch (error: unknown) {
       this.logger.error(
-        `Error al cambiar el estado del Requisito. ID: ${id_requisito}, Estado anterior: ${estadoAnterior}`,
+        `Error al cambiar el estado del Requisito. ID: ${id}, Estado anterior: ${estadoAnterior}`,
         error instanceof Error ? error.stack : String(error),
       );
       throw new InternalServerErrorException(

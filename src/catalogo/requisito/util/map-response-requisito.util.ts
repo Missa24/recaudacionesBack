@@ -21,7 +21,7 @@ import { RequisitoResponse } from '../interface/requisito-response.interface';
  */
 export function mapearRespuesta(requisito: Requisito): RequisitoResponse {
   return {
-    id_requisito: requisito.id_requisito,
+    id: requisito.id,
     codigo: requisito.codigo,
     descripcion: requisito.descripcion,
     estado: requisito.estado,

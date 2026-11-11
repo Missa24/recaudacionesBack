@@ -14,7 +14,7 @@
  * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
  */
 export interface RequisitoResponse {
-  id_requisito: string;
+  id: string;
   codigo: string;
   descripcion: string;
   estado: string;
