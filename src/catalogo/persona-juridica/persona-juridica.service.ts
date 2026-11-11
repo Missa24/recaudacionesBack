@@ -71,12 +71,20 @@ export class PersonaJuridicaService {
     private readonly personaJuridicaRepository: Repository<PersonaJuridica>,
   ) {}
 
-  /**
-   * Registra una nueva persona jurídica, verificando
-   * que el NIT no se encuentre registrado previamente.
-   *
-   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
-   */
+  /*
+  Nombre del método: crear
+  Descripción: Registra una nueva persona jurídica, verificando que el NIT no
+               se encuentre registrado previamente y asociando al usuario creador.
+  Parámetros:
+    - dto: CreatePersonaJuridicaDto (nit, razon_social, domicilio?, telefono?,
+           email?)
+    - idUsuario: string (usuario que crea)
+  Respuestas posibles:
+    - 201: Persona jurídica registrada exitosamente (con id).
+    - 409: Ya existe una persona jurídica registrada con ese NIT.
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+*/
   async crear(
     dto: CreatePersonaJuridicaDto,
     idUsuario: string,
@@ -122,12 +130,19 @@ export class PersonaJuridicaService {
     }
   }
 
-  /**
-   * Obtiene el listado paginado de personas jurídicas
-   * aplicando búsqueda, filtros, fechas y ordenamiento.
-   *
-   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
-   */
+  /*
+  Nombre del método: listar
+  Descripción: Obtiene el listado paginado de personas jurídicas aplicando
+               búsqueda, filtros, fechas y ordenamiento.
+  Parámetros:
+    - query: QueryPersonaJuridicaDto (page, limit, search, status, startDate,
+             endDate, sortBy, sortOrder)
+  Respuestas posibles:
+    - 200: Listado paginado de personas jurídicas.
+    - 400: Rango de fechas inválido (startDate > endDate).
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+*/
   async listar(
     query: QueryPersonaJuridicaDto,
   ): Promise<PaginatedResponse<PersonaJuridicaResponse>> {
@@ -236,12 +251,21 @@ export class PersonaJuridicaService {
     }
   }
 
-  /**
-   * Busca una persona jurídica mediante su NIT único.
-   * Devuelve el registro encontrado o null si no existe.
-   *
-   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
-   */
+  /*
+  Nombre del método: buscarPorNit
+  Descripción: Busca una persona jurídica mediante su NIT único. Devuelve el
+               registro encontrado junto con la bandera "encontrada".
+  Parámetros:
+    - dto: BuscarPersonaJuridicaDto (nit)
+  Respuestas posibles:
+    - 200: Resultado con encontrada y persona (registro o null).
+    - 404: No se encontró la persona jurídica solicitada.
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+  Notas adicionales: Se usa para la ruta `persona-juridica/nit/:nit` y debe
+                     declararse antes de `:id` para que la ruta literal no sea
+                     capturada por el parámetro genérico.
+*/
   async buscarPorNit(
     dto: BuscarPersonaJuridicaDto,
   ): Promise<BuscarPersonaJuridicaResponse> {
@@ -265,12 +289,18 @@ export class PersonaJuridicaService {
     };
   }
 
-  /**
-   * Busca una persona jurídica mediante su identificador UUID.
-   * Si no existe, genera una excepción de recurso no encontrado.
-   *
-   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
-   */
+  /*
+  Nombre del método: buscarPorId
+  Descripción: Busca una persona jurídica mediante su identificador UUID.
+               Si no existe, lanza excepción de recurso no encontrado.
+  Parámetros:
+    - id: string (identificador de la persona jurídica)
+  Respuestas posibles:
+    - 200: Registro encontrado.
+    - 404: No se encontró la persona jurídica solicitada.
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+*/
   async buscarPorId(id: string): Promise<PersonaJuridicaResponse> {
     const persona = await this.personaJuridicaRepository.findOne({
       where: { id },
@@ -289,12 +319,23 @@ export class PersonaJuridicaService {
     return mapearRespuesta(persona);
   }
 
-  /**
-   * Actualiza la información de una persona jurídica existente.
-   * Verifica su estado y la unicidad del NIT cuando este cambia.
-   *
-   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
-   */
+  /*
+  Nombre del método: actualizar
+  Descripción: Actualiza la información de una persona jurídica existente.
+               Verifica su estado ACTIVO y la unicidad del NIT cuando este cambia.
+  Parámetros:
+    - id: string (identificador de la persona jurídica)
+    - dto: UpdatePersonaJuridicaDto (nit?, razon_social?, domicilio?,
+           telefono?, email?)
+    - idUsuario: string (usuario que actualiza)
+  Respuestas posibles:
+    - 200: Persona jurídica actualizada correctamente.
+    - 400: No se puede actualizar una persona jurídica inactiva.
+    - 404: No se encontró la persona jurídica solicitada.
+    - 409: Ya existe otra persona jurídica registrada con ese NIT.
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+*/
   async actualizar(
     id: string,
     dto: UpdatePersonaJuridicaDto,
@@ -364,13 +405,20 @@ export class PersonaJuridicaService {
     }
   }
 
-  /**
-   * Alterna el estado de una persona jurídica entre ACTIVO e INACTIVO.
-   * Actualiza los datos de auditoría y registra o limpia la información
-   * correspondiente a la inactivación del registro.
-   *
-   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
-   */
+  /*
+  Nombre del método: cambiarEstado
+  Descripción: Alterna el estado de una persona jurídica entre ACTIVO e INACTIVO.
+               Actualiza datos de auditoría y registra o limpia la información
+               de inactivación (eliminación lógica).
+  Parámetros:
+    - id: string (identificador de la persona jurídica)
+    - idUsuario: string (usuario que realiza el cambio)
+  Respuestas posibles:
+    - 200: Registro de la Persona Jurídica activado/inactivado correctamente.
+    - 404: No se encontró la persona jurídica solicitada.
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+*/
   async cambiarEstado(
     id: string,
     idUsuario: string,

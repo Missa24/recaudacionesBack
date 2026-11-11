@@ -69,14 +69,23 @@ export class PersonaNaturalService {
     @InjectRepository(PersonaNatural)
     private readonly personaNaturalRepository: Repository<PersonaNatural>,
   ) {}
-
-  /**
-   * Registra una nueva persona natural, verificando
-   * la existencia de sus datos documentales y la validez
-   * de su fecha de nacimiento.
-   *
-   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
-   */
+  /*
+  Nombre del método: crear
+  Descripción: Registra una nueva persona natural, verificando la existencia de
+               sus datos documentales (tipo, número, complemento, expedido) y la
+               validez de su fecha de nacimiento.
+  Parámetros:
+    - dto: CreatePersonaNaturalDto (tipo_documento, numero_documento,
+           complemento?, expedido?, nombres, apellido_paterno, apellido_materno?,
+           fecha_nacimiento?, estado_civil?, email?, ...)
+    - idUsuario: string (usuario que crea)
+  Respuestas posibles:
+    - 201: Persona registrada exitosamente (con id).
+    - 400: La fecha de nacimiento no puede ser posterior a la fecha actual.
+    - 409: Ya existe una persona registrada con esos datos documentales.
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+*/
   async crear(
     dto: CreatePersonaNaturalDto,
     idUsuario: string,
@@ -141,13 +150,20 @@ export class PersonaNaturalService {
     }
   }
 
-  /**
-   * Obtiene el listado paginado de personas naturales
-   * aplicando filtros de búsqueda, estado y fechas,
-   * además de los criterios de ordenamiento.
-   *
-   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
-   */
+  /*
+  Nombre del método: listar
+  Descripción: Obtiene el listado paginado de personas naturales aplicando
+               filtros de búsqueda, estado, tipo de documento, estado civil,
+               fechas y ordenamiento.
+  Parámetros:
+    - query: QueryPersonaNaturalDto (page, limit, search, tipo_documento,
+             status, estado_civil, startDate, endDate, sortBy, sortOrder)
+  Respuestas posibles:
+    - 200: Listado paginado de personas naturales.
+    - 400: Rango de fechas inválido (startDate > endDate).
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+*/
   async listar(
     query: QueryPersonaNaturalDto,
   ): Promise<PaginatedResponse<PersonaNaturalResponse>> {
@@ -272,13 +288,22 @@ export class PersonaNaturalService {
     }
   }
 
-  /**
-   * Busca personas naturales mediante sus datos documentales.
-   * El tipo y número de documento son obligatorios, mientras que
-   * el complemento y lugar de expedición funcionan como filtros opcionales.
-   *
-   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
-   */
+  /*
+  Nombre del método: buscarPorDocumento
+  Descripción: Busca personas naturales mediante sus datos documentales.
+               Tipo y número de documento son obligatorios; complemento y lugar
+               de expedición funcionan como filtros opcionales.
+  Parámetros:
+    - dto: BuscarPersonaNaturalDto (tipo_documento, numero_documento,
+           complemento?, expedido?)
+  Respuestas posibles:
+    - 200: Resultado con encontrada y persona (lista de registros).
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+  Notas adicionales: Se usa para la ruta `persona-natural/documento/...` y debe
+                     declararse antes de `:id` para que la ruta literal no sea
+                     capturada por el parámetro genérico.
+*/
   async buscarPorDocumento(
     dto: BuscarPersonaNaturalDto,
   ): Promise<BuscarPersonaNaturalResponse> {
@@ -309,13 +334,19 @@ export class PersonaNaturalService {
     };
   }
 
-  /**
-   * Busca una persona natural mediante su identificador UUID.
-   * Si no existe un registro con el identificador proporcionado,
-   * genera una excepción de recurso no encontrado.
-   *
-   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
-   */
+  /*
+  Nombre del método: buscarPorId
+  Descripción: Busca una persona natural mediante su identificador UUID.
+               Si no existe un registro con ese identificador, lanza excepción
+               de recurso no encontrado.
+  Parámetros:
+    - id: string (identificador de la persona natural)
+  Respuestas posibles:
+    - 200: Registro encontrado.
+    - 404: No se encontró la persona natural solicitada.
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+*/
   async buscarPorId(id: string): Promise<PersonaNaturalResponse> {
     const persona = await this.personaNaturalRepository.findOne({
       where: { id },
@@ -333,13 +364,25 @@ export class PersonaNaturalService {
 
     return mapearRespuesta(persona);
   }
-  /**
-   * Actualiza la información de una persona natural existente.
-   * Verifica su estado, la fecha de nacimiento y la unicidad
-   * de los datos documentales cuando estos son modificados.
-   *
-   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
-   */
+  /*
+  Nombre del método: actualizar
+  Descripción: Actualiza la información de una persona natural existente.
+               Verifica su estado ACTIVO, la fecha de nacimiento y la unicidad de
+               los datos documentales cuando estos son modificados.
+  Parámetros:
+    - id: string (identificador de la persona natural)
+    - dto: UpdatePersonaNaturalDto (campos a actualizar, incl. datos documentales
+           y fecha_nacimiento)
+    - idUsuario: string (usuario que actualiza)
+  Respuestas posibles:
+    - 200: Persona natural actualizada correctamente.
+    - 400: No se puede actualizar una persona inactiva / fecha de nacimiento
+           posterior a la actual.
+    - 404: No se encontró la persona natural solicitada.
+    - 409: Ya existe otra persona registrada con esos datos documentales.
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+*/
   async actualizar(
     id: string,
     dto: UpdatePersonaNaturalDto,
@@ -429,13 +472,20 @@ export class PersonaNaturalService {
     }
   }
 
-  /**
-   * Alterna el estado de una persona natural entre ACTIVO e INACTIVO.
-   * Actualiza los datos de auditoría y registra o limpia la información
-   * correspondiente a la inactivación del registro.
-   *
-   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
-   */
+  /*
+  Nombre del método: cambiarEstado
+  Descripción: Alterna el estado de una persona natural entre ACTIVO e INACTIVO.
+               Actualiza datos de auditoría y registra o limpia la información
+               de inactivación (eliminación lógica).
+  Parámetros:
+    - id: string (identificador de la persona natural)
+    - idUsuario: string (usuario que realiza el cambio)
+  Respuestas posibles:
+    - 200: Registro de la persona natural activado/inactivado correctamente.
+    - 404: No se encontró la persona natural solicitada.
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+*/
   async cambiarEstado(
     id: string,
     idUsuario: string,

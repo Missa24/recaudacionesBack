@@ -71,28 +71,40 @@ export class CuentaBancariaService {
     private readonly dependenciaService: DependenciaService,
   ) {}
 
-  /**
-   * Registra una nueva cuenta bancaria,
-   * verificando sus referencias y unicidad.
-   *
-   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
-   */
+  /*
+  Nombre del método: crear
+  Descripción: Registra una nueva cuenta bancaria, verificando sus referencias
+               (banco y dependencia opcional) y la unicidad por banco + número.
+  Parámetros:
+    - dto: CreateCuentaBancariaDto (banco_id, nro_cuenta, nombre_cuenta,
+           dependencia_id?, tipo)
+    - id_usuario: string (usuario que crea)
+  Respuestas posibles:
+    - 201: La cuenta bancaria fue registrada correctamente.
+    - 400: Banco o dependencia inválidos/inactivos.
+    - 404: No se encontró el banco o la dependencia.
+    - 409: El número de cuenta ya se encuentra registrado para este banco.
+    - 500: Ocurrió un error al registrar la cuenta bancaria.
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+*/
+
   async crear(
     dto: CreateCuentaBancariaDto,
     id_usuario: string,
   ): Promise<CuentaBancariaCreateResponse> {
     // Valida que el banco exista delegando al BancoService.
-    await this.bancoService.validarBanco(dto.id_banco);
+    await this.bancoService.validarBanco(dto.banco_id);
 
     // Valida la dependencia solo si fue enviada.
-    if (dto.id_dependencia) {
-      await this.dependenciaService.validarDependencia(dto.id_dependencia);
+    if (dto.dependencia_id) {
+      await this.dependenciaService.validarDependencia(dto.dependencia_id);
     }
 
     // Comprueba duplicidad de la cuenta por banco + número.
     const existente = await this.cuentaBancariaRepository.findOne({
       where: {
-        id_banco: dto.id_banco,
+        banco_id: dto.banco_id,
         nro_cuenta: dto.nro_cuenta,
       },
     });
@@ -105,10 +117,10 @@ export class CuentaBancariaService {
 
     // Prepara la entidad asociando los datos del usuario creador.
     const cuenta = this.cuentaBancariaRepository.create({
-      id_banco: dto.id_banco,
+      banco_id: dto.banco_id,
       nro_cuenta: dto.nro_cuenta,
       nombre_cuenta: dto.nombre_cuenta,
-      id_dependencia: dto.id_dependencia ?? null,
+      dependencia_id: dto.dependencia_id ?? null,
       tipo: dto.tipo,
       estado: 'ACTIVO',
       _created_at: new Date(),
@@ -122,7 +134,7 @@ export class CuentaBancariaService {
 
       return {
         message: 'La cuenta bancaria fue registrada correctamente.',
-        id: guardada.id_cuenta,
+        id: guardada.id,
       };
     } catch (error) {
       if (esErrorDuplicado(error)) {
@@ -132,7 +144,7 @@ export class CuentaBancariaService {
       }
 
       this.logger.error(
-        `Error al registrar la cuenta bancaria. Banco: ${dto.id_banco}, Nro: ${dto.nro_cuenta}, Usuario: ${id_usuario}`,
+        `Error al registrar la cuenta bancaria. Banco: ${dto.banco_id}, Nro: ${dto.nro_cuenta}, Usuario: ${id_usuario}`,
         error instanceof Error ? error.stack : String(error),
       );
 
@@ -142,12 +154,21 @@ export class CuentaBancariaService {
     }
   }
 
-  /**
-   * Obtiene el listado paginado de cuentas bancarias
-   * aplicando búsqueda, filtros y ordenamiento.
-   *
-   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
-   */
+  /*
+  Nombre del método: listar
+  Descripción: Obtiene el listado paginado de cuentas bancarias aplicando
+               búsqueda, filtros (estado, banco, dependencia, tipo, fechas) y
+               ordenamiento.
+  Parámetros:
+    - query: QueryCuentaBancariaDto (page, limit, search, status, startDate,
+             endDate, sortBy, sortOrder, banco_id, dependencia_id, tipo)
+  Respuestas posibles:
+    - 200: Listado paginado de cuentas bancarias.
+    - 400: Rango de fechas inválido (startDate > endDate).
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+*/
+
   async listar(
     query: QueryCuentaBancariaDto,
   ): Promise<PaginatedResponse<CuentaBancariaResponse>> {
@@ -160,8 +181,8 @@ export class CuentaBancariaService {
       endDate,
       sortBy,
       sortOrder,
-      id_banco,
-      id_dependencia,
+      banco_id,
+      dependencia_id,
       tipo,
     } = query;
 
@@ -194,13 +215,13 @@ export class CuentaBancariaService {
     }
 
     // Filtro por banco
-    if (id_banco) {
-      filtros.id_banco = id_banco;
+    if (banco_id) {
+      filtros.banco_id = banco_id;
     }
 
     // Filtro por dependencia
-    if (id_dependencia) {
-      filtros.id_dependencia = id_dependencia;
+    if (dependencia_id) {
+      filtros.dependencia_id = dependencia_id;
     }
 
     // Filtro por tipo
@@ -277,15 +298,21 @@ export class CuentaBancariaService {
     }
   }
 
-  /**
-   * Busca una cuenta bancaria mediante su identificador UUID.
-   * Si no existe, genera una excepción de recurso no encontrado.
-   *
-   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
-   */
+  /*
+  Nombre del método: buscarPorId
+  Descripción: Busca una cuenta bancaria mediante su identificador UUID.
+               Si no existe, lanza excepción de recurso no encontrado.
+  Parámetros:
+    - id: string (identificador de la cuenta bancaria)
+  Respuestas posibles:
+    - 200: Registro encontrado.
+    - 404: No se encontró la cuenta bancaria solicitada.
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+*/
   async buscarPorId(id: string): Promise<CuentaBancariaResponse> {
     const cuenta = await this.cuentaBancariaRepository.findOne({
-      where: { id_cuenta: id },
+      where: { id: id },
       relations: {
         usuario_creador: true,
         usuario_actualizador: true,
@@ -301,19 +328,32 @@ export class CuentaBancariaService {
     return mapearRespuesta(cuenta);
   }
 
-  /**
-   * Actualiza la información de una cuenta bancaria.
-   * Verifica su estado, referencias y unicidad cuando corresponda.
-   *
-   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
-   */
+  /*
+  Nombre del método: actualizar
+  Descripción: Actualiza la información de una cuenta bancaria. Verifica su
+               estado ACTIVO, referencias (banco/dependencia) y unicidad por
+               banco + número cuando corresponda.
+  Parámetros:
+    - id: string (identificador de la cuenta bancaria)
+    - dto: UpdateCuentaBancariaDto (banco_id?, nro_cuenta?, nombre_cuenta?,
+           dependencia_id?, tipo?)
+    - id_usuario: string (usuario que actualiza)
+  Respuestas posibles:
+    - 200: La cuenta bancaria fue actualizada correctamente.
+    - 400: No se puede actualizar una cuenta bancaria inactiva / referencias inválidas.
+    - 404: No se encontró la cuenta bancaria / banco / dependencia.
+    - 409: El número de cuenta ya se encuentra registrado para este banco.
+    - 500: Ocurrió un error al actualizar la cuenta bancaria.
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+*/
   async actualizar(
     id: string,
     dto: UpdateCuentaBancariaDto,
     id_usuario: string,
   ): Promise<CuentaBancariaMessageResponse> {
     const cuenta = await this.cuentaBancariaRepository.findOne({
-      where: { id_cuenta: id },
+      where: { id: id },
     });
 
     if (!cuenta) {
@@ -328,24 +368,24 @@ export class CuentaBancariaService {
       );
     }
 
-    const nuevoBanco = dto.id_banco ?? cuenta.id_banco;
+    const nuevoBanco = dto.banco_id ?? cuenta.banco_id;
     const nuevoNumero = dto.nro_cuenta ?? cuenta.nro_cuenta;
 
-    if (dto.id_banco !== undefined) {
-      await this.bancoService.validarBanco(dto.id_banco);
+    if (dto.banco_id !== undefined) {
+      await this.bancoService.validarBanco(dto.banco_id);
     }
 
-    if (dto.id_dependencia !== undefined && dto.id_dependencia !== null) {
-      await this.dependenciaService.validarDependencia(dto.id_dependencia);
+    if (dto.dependencia_id !== undefined && dto.dependencia_id !== null) {
+      await this.dependenciaService.validarDependencia(dto.dependencia_id);
     }
 
     // Solo valida unicidad si cambia banco o número.
-    if (nuevoBanco !== cuenta.id_banco || nuevoNumero !== cuenta.nro_cuenta) {
+    if (nuevoBanco !== cuenta.banco_id || nuevoNumero !== cuenta.nro_cuenta) {
       const existente = await this.cuentaBancariaRepository.findOne({
         where: {
-          id_banco: nuevoBanco,
+          banco_id: nuevoBanco,
           nro_cuenta: nuevoNumero,
-          id_cuenta: Not(id),
+          id: Not(id),
         },
       });
 
@@ -356,8 +396,8 @@ export class CuentaBancariaService {
       }
     }
 
-    if (dto.id_banco !== undefined) {
-      cuenta.id_banco = dto.id_banco;
+    if (dto.banco_id !== undefined) {
+      cuenta.banco_id = dto.banco_id;
     }
 
     if (dto.nro_cuenta !== undefined) {
@@ -368,8 +408,8 @@ export class CuentaBancariaService {
       cuenta.nombre_cuenta = dto.nombre_cuenta;
     }
 
-    if (dto.id_dependencia !== undefined) {
-      cuenta.id_dependencia = dto.id_dependencia;
+    if (dto.dependencia_id !== undefined) {
+      cuenta.dependencia_id = dto.dependencia_id;
     }
 
     if (dto.tipo !== undefined) {
@@ -405,20 +445,27 @@ export class CuentaBancariaService {
       );
     }
   }
-
-  /**
-   * Alterna el estado de una cuenta bancaria entre ACTIVO e INACTIVO.
-   * Actualiza los datos de auditoría y registra o limpia la información
-   * correspondiente a la inactivación del registro.
-   *
-   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
-   */
+  /*
+  Nombre del método: cambiarEstado
+  Descripción: Alterna el estado de una cuenta bancaria entre ACTIVO e INACTIVO.
+               Actualiza datos de auditoría y registra o limpia la información
+               de inactivación (eliminación lógica).
+  Parámetros:
+    - id: string (identificador de la cuenta bancaria)
+    - id_usuario: string (usuario que realiza el cambio)
+  Respuestas posibles:
+    - 200: Registro de la cuenta bancaria activado/inactivado correctamente.
+    - 404: No se encontró la cuenta bancaria solicitada.
+    - 500: Ocurrió un error al cambiar el estado de la cuenta bancaria.
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+*/
   async cambiarEstado(
     id: string,
     id_usuario: string,
   ): Promise<CuentaBancariaMessageResponse> {
     const cuenta = await this.cuentaBancariaRepository.findOne({
-      where: { id_cuenta: id },
+      where: { id: id },
     });
 
     if (!cuenta) {
