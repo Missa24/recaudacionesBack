@@ -6,77 +6,68 @@ import {
   ManyToOne,
   PrimaryColumn,
   UpdateDateColumn,
-} from "typeorm";
-import { Rol } from "../../rol/entities/rol.entity";
-import { Modulo } from "../../modulo/entities/modulo.entity";
-import { Permiso } from "../../permiso/entities/permiso.entity";
+} from 'typeorm';
+import { Modulo } from '../../modulo/entities/modulo.entity';
+import { Permiso } from '../../permiso/entities/permiso.entity';
+import { Rol } from '../../rol/entities/rol.entity';
+import { Usuario } from '../../usuario/entities/usuario.entity';
 
-/**
- * Módulo: Seguridad / RolModuloPermiso
- * Archivo: rol-modulo-permiso.entity.ts
- * Descripción:
- *   Mapea la tabla de asignaciones con estado y auditoría.
- * Fecha de creación: 2026-11-11
- * Autor: Oscar Canchari
- */
-@Entity({ schema: "seguridad", name: "rol_modulo_permiso" })
+@Entity({ schema: 'seguridad', name: 'rol_modulo_permiso' })
 export class RolModuloPermiso {
-  /** UUID de la asignación, generado en el servicio con randomUUID. */
-  @PrimaryColumn({ name: "id", type: "uuid" })
+  @PrimaryColumn({ type: 'uuid' })
   id!: string;
 
-  /** UUID de rol relacionado. */
-  @Column({ name: "id_rol", type: "uuid" })
-  idRol!: string;
+  @Column({ name: 'rol_id', type: 'uuid' })
+  rol_id!: string;
 
-  /** Relación obligatoria; no elimina en cascada el registro relacionado. */
-  @ManyToOne(() => Rol, { nullable: false, onDelete: "RESTRICT" })
-  @JoinColumn({ name: "id_rol", referencedColumnName: "id" })
+  @ManyToOne(() => Rol, { nullable: false, onDelete: 'RESTRICT' })
+  @JoinColumn({ name: 'rol_id', referencedColumnName: 'id' })
   rol!: Rol;
 
-  /** UUID de modulo relacionado. */
-  @Column({ name: "id_modulo", type: "uuid" })
-  idModulo!: string;
+  @Column({ name: 'modulo_id', type: 'uuid' })
+  modulo_id!: string;
 
-  /** Relación obligatoria; no elimina en cascada el registro relacionado. */
-  @ManyToOne(() => Modulo, { nullable: false, onDelete: "RESTRICT" })
-  @JoinColumn({ name: "id_modulo", referencedColumnName: "id" })
+  @Column({ name: 'permiso_id', type: 'uuid' })
+  permiso_id!: string;
+
+  @ManyToOne(() => Modulo, { nullable: false, onDelete: 'RESTRICT' })
+  @JoinColumn({ name: 'modulo_id', referencedColumnName: 'id' })
   modulo!: Modulo;
 
-  /** UUID de permiso relacionado. */
-  @Column({ name: "id_permiso", type: "uuid" })
-  idPermiso!: string;
-
-  /** Relación obligatoria; no elimina en cascada el registro relacionado. */
-  @ManyToOne(() => Permiso, { nullable: false, onDelete: "RESTRICT" })
-  @JoinColumn({ name: "id_permiso", referencedColumnName: "id" })
+  @ManyToOne(() => Permiso, { nullable: false, onDelete: 'RESTRICT' })
+  @JoinColumn({ name: 'permiso_id', referencedColumnName: 'id' })
   permiso!: Permiso;
 
-  /** Alta o baja de esta asignación. */
-  @Column({ type: "text", default: "ACTIVO" })
+  @Column({ type: 'varchar', length: 50, default: 'ACTIVO' })
   estado!: string;
 
-  /** Auditoría: created_at. */
-  @CreateDateColumn({ name: "created_at", type: "timestamptz" })
+  @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt!: Date;
 
-  /** Auditoría: updated_at. */
-  @UpdateDateColumn({ name: "updated_at", type: "timestamptz" })
+  @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
   updatedAt!: Date;
 
-  /** Auditoría: deleted_at. */
-  @Column({ name: "deleted_at", type: "timestamptz", nullable: true })
+  @Column({ name: 'deleted_at', type: 'timestamptz', nullable: true })
   deletedAt!: Date | null;
 
-  /** Auditoría: user_created. */
-  @Column({ name: "user_created", type: "uuid" })
+  @Column({ name: 'user_created', type: 'uuid' })
   userCreated!: string;
 
-  /** Auditoría: user_update. */
-  @Column({ name: "user_update", type: "uuid", nullable: true })
+  @ManyToOne(() => Usuario, { nullable: false, onDelete: 'RESTRICT' })
+  @JoinColumn({ name: 'user_created', referencedColumnName: 'idUsuario' })
+  usuarioCreador!: Usuario;
+
+  @Column({ name: 'user_update', type: 'uuid', nullable: true })
   userUpdate!: string | null;
 
-  /** Auditoría: user_deleted. */
-  @Column({ name: "user_deleted", type: "uuid", nullable: true })
+  @ManyToOne(() => Usuario, { nullable: true, onDelete: 'RESTRICT' })
+  @JoinColumn({ name: 'user_update', referencedColumnName: 'idUsuario' })
+  usuarioActualizador!: Usuario | null;
+
+  @Column({ name: 'user_deleted', type: 'uuid', nullable: true })
   userDeleted!: string | null;
+
+  @ManyToOne(() => Usuario, { nullable: true, onDelete: 'RESTRICT' })
+  @JoinColumn({ name: 'user_deleted', referencedColumnName: 'idUsuario' })
+  usuarioEliminador!: Usuario | null;
 }

@@ -1,34 +1,34 @@
-import { Rol } from '../../rol/entities/rol.entity';
 import { RolModuloPermiso } from '../entities/rol-modulo-permiso.entity';
-import type { ModuloAsignado, RolConModulos } from '../interfaces/rol-modulo-permiso-response.interface';
+import { RolModuloPermisoResponse } from '../interface/rol-modulo-permiso-response.interface';
 
-/**
- * Archivo: map-response-rol-modulo-permiso.util.ts
- * Descripción: Agrupa módulos y permisos e incluye la PK de cada combinación.
- * Fecha: 2026-11-11
- * Autor: Oscar Canchari
- */
-/** Rol con módulos y permisos administrativos, agrupados sin repetir módulos. */
-export function mapRolModulos(
-  rol: Rol,
-  asignaciones: RolModuloPermiso[],
-): RolConModulos {
-  const modulos = new Map<string, ModuloAsignado>();
-  for (const a of asignaciones) {
-    if (!modulos.has(a.idModulo))
-      modulos.set(a.idModulo, {
-        id: a.modulo.id,
-        nombres: a.modulo.nombres,
-        permisos: [],
-      });
-    const modulo = modulos.get(a.idModulo)!;
-    if (!modulo.permisos.some((p) => p.id === a.idPermiso))
-      modulo.permisos.push({
-        id: a.permiso.id,
-        codigo: a.permiso.codigo,
-        idAsignacion: a.id,
-        estado: a.estado,
-      });
-  }
-  return { id: rol.id, nombre: rol.nombre, modulos: [...modulos.values()] };
+export function mapearRespuestaRolModuloPermiso(
+  asignacion: RolModuloPermiso,
+): RolModuloPermisoResponse {
+  return {
+    id: asignacion.id,
+    rol_id: asignacion.rol_id,
+    rol: {
+      id: asignacion.rol.id,
+      nombre: asignacion.rol.nombre,
+      codigo: asignacion.rol.codigo,
+    },
+    modulo_id: asignacion.modulo_id,
+    modulo: {
+      id: asignacion.modulo.id,
+      nombres: asignacion.modulo.nombres,
+      codigo: asignacion.modulo.codigo,
+    },
+    permiso_id: asignacion.permiso_id,
+    permiso: {
+      id: asignacion.permiso.id,
+      nombre: asignacion.permiso.nombre,
+      codigo: asignacion.permiso.codigo,
+    },
+    estado: asignacion.estado,
+    created_at: asignacion.createdAt,
+    updated_at: asignacion.updatedAt,
+    deleted_at: asignacion.deletedAt,
+    responsable_creacion: asignacion.usuarioCreador?.username ?? null,
+    responsable_actualizacion: asignacion.usuarioActualizador?.username ?? null,
+  };
 }

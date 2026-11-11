@@ -17,7 +17,6 @@ import { RolModule } from './seguridad/rol/rol.module';
 import { PermisoModule } from './seguridad/permiso/permiso.module';
 import { ModuloModule } from './seguridad/modulo/modulo.module';
 import { UsuarioRolModule } from './seguridad/usuario-rol/usuario-rol.module';
-import { SesionModule } from './seguridad/sesion/sesion.module';
 import { AuthModule } from './auth/auth.module';
 import { ApiTokensModule } from './api-tokens/api-tokens.module';
 import { BitacoraModule } from './bitacora/bitacora.module';
@@ -25,13 +24,13 @@ import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { HttpModule } from '@nestjs/axios';
 import { BancoModule } from './catalogo/banco/banco.module';
-import { RolModuloPermisoModule } from './seguridad/rol-modulo-permiso/rol-modulo-permiso.module';
 import { TarifaModule } from './arancel/tarifa/tarifa.module';
 import { RequisitoModule as ArancelRequisitoModule } from './arancel/requisito/requisito.module';
 import { TipoTramiteCatalogoModule } from './arancel/tipo-tramite-catalogo/tipo-tramite-catalogo.module';
 import { ArancelGeneralModule } from './arancel/arancel-general/arancel-general.module';
 import { ArancelDetalleModule } from './arancel/arancel-detalle/arancel-detalle.module';
 import { ArancelRangoModule } from './arancel/arancel-rango/arancel-rango.module';
+import { RolModuloPermisoModule } from './seguridad/rol-modulo-permiso/rol-modulo-permiso.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -61,8 +60,6 @@ import { ArancelRangoModule } from './arancel/arancel-rango/arancel-rango.module
     PermisoModule,
     ModuloModule,
     UsuarioRolModule,
-    RolModuloPermisoModule,
-    SesionModule,
     AuthModule,
     ApiTokensModule,
     BitacoraModule,
@@ -74,6 +71,7 @@ import { ArancelRangoModule } from './arancel/arancel-rango/arancel-rango.module
     ArancelGeneralModule,
     ArancelDetalleModule,
     ArancelRangoModule,
+    RolModuloPermisoModule,
   ],
   controllers: [AppController],
   providers: [

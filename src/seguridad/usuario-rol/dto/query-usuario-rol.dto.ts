@@ -1,22 +1,15 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsIn, IsOptional } from 'class-validator';
-import { QueryPaginatedDto } from '../../../shared/dto/query-paginated.dto';
+import { IsOptional, IsUUID } from 'class-validator';
+import { QueryPaginatedDto } from 'src/shared/dto/query-paginated.dto';
 
-/**
- * Archivo: query-usuario-rol.dto.ts
- * Descripción: Paginación, búsqueda y filtros de usuario-rol.
- * Fecha: 2026-11-11
- * Autor: Oscar Canchari
- */
 export class QueryUsuarioRolDto extends QueryPaginatedDto {
-  /** Fecha utilizada para aplicar startDate y endDate. */
-  @ApiPropertyOptional({
-    enum: ['createdAt', 'updatedAt'],
-    default: 'createdAt',
-  })
+  @ApiPropertyOptional({ example: '10000000-0000-4000-8000-000000000001' })
   @IsOptional()
-  @IsIn(['createdAt', 'updatedAt'], {
-    message: 'dateField debe ser createdAt o updatedAt.',
-  })
-  dateField: 'createdAt' | 'updatedAt' = 'createdAt';
+  @IsUUID()
+  id_usuario?: string;
+
+  @ApiPropertyOptional({ example: '20000000-0000-4000-8000-000000000001' })
+  @IsOptional()
+  @IsUUID()
+  id_rol?: string;
 }

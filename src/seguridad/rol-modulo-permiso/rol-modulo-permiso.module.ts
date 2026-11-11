@@ -1,35 +1,18 @@
-import { Module } from "@nestjs/common";
-import { TypeOrmModule } from "@nestjs/typeorm";
-import { Usuario } from "../usuario/entities/usuario.entity";
-import { Rol } from "../rol/entities/rol.entity";
-import { Modulo } from "../modulo/entities/modulo.entity";
-import { Permiso } from "../permiso/entities/permiso.entity";
-import { UsuarioRol } from "../usuario-rol/entities/usuario-rol.entity";
-import { RolModuloPermiso } from "../rol-modulo-permiso/entities/rol-modulo-permiso.entity";
-import { RolModuloPermisoController } from "./rol-modulo-permiso.controller";
-import { RolModuloPermisoService } from "./rol-modulo-permiso.service";
+import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { RolModuloPermisoService } from './rol-modulo-permiso.service';
+import { RolModuloPermisoController } from './rol-modulo-permiso.controller';
+import { Modulo } from '../modulo/entities/modulo.entity';
+import { Permiso } from '../permiso/entities/permiso.entity';
+import { Rol } from '../rol/entities/rol.entity';
+import { Usuario } from '../usuario/entities/usuario.entity';
+import { RolModuloPermiso } from './entities/rol-modulo-permiso.entity';
 
-/**
- * Módulo: Seguridad / RolModuloPermiso
- * Archivo: rol-modulo-permiso.module.ts
- * Descripción:
- *   Registra las entidades consultadas y exporta su servicio, sin dependencias circulares.
- * Fecha de creación: 2026-11-11
- * Autor: Oscar Canchari
- */
 @Module({
   imports: [
-    TypeOrmModule.forFeature([
-      Usuario,
-      Rol,
-      Modulo,
-      Permiso,
-      UsuarioRol,
-      RolModuloPermiso,
-    ]),
+    TypeOrmModule.forFeature([RolModuloPermiso, Rol, Modulo, Permiso, Usuario]),
   ],
   controllers: [RolModuloPermisoController],
   providers: [RolModuloPermisoService],
-  exports: [RolModuloPermisoService],
 })
 export class RolModuloPermisoModule {}

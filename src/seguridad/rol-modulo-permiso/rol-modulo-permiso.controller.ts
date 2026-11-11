@@ -7,433 +7,102 @@ import {
   Patch,
   Post,
   Query,
+  UseGuards,
 } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 import {
-  ApiBody,
+  ApiBearerAuth,
   ApiOperation,
   ApiParam,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { PaginatedResponse } from '../../shared/interface/paginated-response.interface';
-import {
-  MensajeIdResponse,
-  MensajeIdsResponse,
-  RolConModulos,
-  RolModuloPermisoListadoResponse,
-} from './interfaces/rol-modulo-permiso-response.interface';
-import { AsignarModulosPermisosDto } from './dto/asignar-modulos-permisos.dto';
-import { ActualizarModulosPermisosDto } from './dto/actualizar-modulos-permisos.dto';
+import { PaginatedResponse } from 'src/shared/interface/paginated-response.interface';
+import { CreateRolModuloPermisoDto } from './dto/create-rol-modulo-permiso.dto';
 import { QueryRolModuloPermisoDto } from './dto/query-rol-modulo-permiso.dto';
+import { UpdateRolModuloPermisoDto } from './dto/update-rol-modulo-permiso.dto';
+import {
+  RolModuloPermisoMessageResponse,
+  RolModuloPermisoResponse,
+} from './interface/rol-modulo-permiso-response.interface';
 import { RolModuloPermisoService } from './rol-modulo-permiso.service';
 
-/** UUID temporal del responsable, igual que en Usuario. Debe existir si la auditoría tiene FK. */
 const userId = '8b461287-8416-412e-84e7-b5c77615ea2a';
 
-/**
- * Módulo: Seguridad / RolModuloPermiso
- * Archivo: rol-modulo-permiso.controller.ts
- * Descripción:
- *   Rutas y documentación Swagger. La envoltura success/status/data la agrega el interceptor global.
- * Fecha de creación: 2026-11-11
- * Autor: Oscar Canchari
- */
 @ApiTags('Seguridad / Rol Módulo Permiso')
-// Integración JWT: importar ApiBearerAuth, UseGuards y AuthGuard y habilitar:
-// @ApiBearerAuth('JWT')
-// @UseGuards(AuthGuard('jwt'))
+@ApiBearerAuth('JWT')
+@UseGuards(AuthGuard('jwt'))
 @Controller('rol-modulo-permiso')
 export class RolModuloPermisoController {
-  constructor(private readonly servicio: RolModuloPermisoService) {}
+  constructor(
+    private readonly rolModuloPermisoService: RolModuloPermisoService,
+  ) {}
 
-  /*
-  Nombre del método: asignarModulosPermisos
-  Método HTTP relacionado: POST
-  Endpoint: /api/rol-modulo-permiso
-
-  Descripción:
-    Asigna a un rol módulos con sus respectivos permisos, sin duplicados.
-
-  Parámetros:
-    - dto: Rol, módulos y permisos.
-
-  Respuestas posibles:
-    - 201: Operación realizada correctamente.
-    - 400: Datos o parámetros inválidos.
-    - 401: No autorizado, cuando se habilita el guard JWT.
-    - 404: Registro relacionado no encontrado.
-    - 409: Conflicto de asignación.
-    - 500: Error interno del servidor.
-
-  Fecha de creación: 2026-11-11
-  Autor: Oscar Canchari
-
-  Notas adicionales:
-    Registra al responsable. Las operaciones múltiples son transaccionales.
-    El estado corresponde a la asignación, no a los catálogos.
-  */
   @Post()
   @ApiOperation({
-    summary: 'Asignar modulos permisos',
-    description:
-      'Asigna a un rol módulos con sus respectivos permisos, sin duplicados.',
+    summary: 'Registrar una asignación de rol, módulo y permiso',
   })
-  @ApiBody({
-    type: AsignarModulosPermisosDto,
-    examples: {
-      ejemplo: {
-        value: {
-          idRol: '550e8400-e29b-41d4-a716-446655440001',
-          modulos: [
-            {
-              idModulo: '550e8400-e29b-41d4-a716-446655440002',
-              idsPermisos: ['550e8400-e29b-41d4-a716-446655440003'],
-            },
-          ],
-        },
-      },
-    },
-  })
+  @ApiResponse({ status: 201, description: 'Asignación registrada.' })
   @ApiResponse({
-    status: 201,
-    description: 'Operación realizada correctamente.',
-    schema: {
-      example: {
-        success: true,
-        status: 201,
-        data: {
-          message: 'Módulos y permisos asignados correctamente.',
-          ids: ['550e8400-e29b-41d4-a716-446655440000'],
-        },
-      },
-    },
+    status: 400,
+    description: 'Datos inválidos o referencia inactiva.',
   })
-  @ApiResponse({ status: 400, description: 'Datos o parámetros inválidos.' })
-  @ApiResponse({
-    status: 401,
-    description: 'No autorizado; aplica al habilitar JWT.',
-  })
-  @ApiResponse({
-    status: 404,
-    description: 'Registro relacionado no encontrado.',
-  })
-  @ApiResponse({ status: 409, description: 'Conflicto de asignación.' })
-  @ApiResponse({ status: 500, description: 'Error interno del servidor.' })
-  asignarModulosPermisos(
-    @Body() dto: AsignarModulosPermisosDto,
-  ): Promise<MensajeIdsResponse> {
-    return this.servicio.asignarModulosPermisos(dto, userId);
+  @ApiResponse({ status: 404, description: 'Referencia no encontrada.' })
+  @ApiResponse({ status: 409, description: 'La asignación ya existe.' })
+  crear(
+    @Body() dto: CreateRolModuloPermisoDto,
+  ): Promise<RolModuloPermisoMessageResponse> {
+    return this.rolModuloPermisoService.crear(dto, userId);
   }
 
-  /*
-  Nombre del método: listarRolesConModulosPermisos
-  Método HTTP relacionado: GET
-  Endpoint: /api/rol-modulo-permiso
-
-  Descripción:
-    Lista asignaciones con su PK, rol, módulo y permiso, con paginación y filtros.
-
-  Parámetros:
-    - query: Paginación y filtros.
-
-  Respuestas posibles:
-    - 200: Operación realizada correctamente.
-    - 400: Datos o parámetros inválidos.
-    - 401: No autorizado, cuando se habilita el guard JWT.
-    - 404: Registro relacionado no encontrado.
-    
-    - 500: Error interno del servidor.
-
-  Fecha de creación: 2026-11-11
-  Autor: Oscar Canchari
-
-  Notas adicionales:
-    Devuelve únicamente los campos definidos en las interfaces.
-    Excluye asignaciones eliminadas, salvo las reactivadas al asignar.
-  */
   @Get()
-  @ApiOperation({
-    summary: 'Listar roles con modulos permisos',
-    description:
-      'Lista asignaciones con su PK, rol, módulo y permiso, con paginación y filtros.',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Listado obtenido correctamente.',
-    schema: {
-      example: {
-        success: true,
-        status: 200,
-        data: {
-          items: [
-            {
-              id: '60000000-0000-4000-8000-000000000034',
-              rol: {
-                id: '20000000-0000-4000-8000-000000000004',
-                nombre: 'Supervisor',
-              },
-              modulo: {
-                id: '30000000-0000-4000-8000-000000000004',
-                nombres: 'Registro de muebles',
-              },
-              permiso: {
-                id: '40000000-0000-4000-8000-000000000003',
-                codigo: 'MODIFICAR',
-              },
-              estado: 'ACTIVO',
-            },
-          ],
-          pagination: {
-            total: 1,
-            page: 1,
-            limit: 10,
-            totalPages: 1,
-            hasNextPage: false,
-            hasPreviousPage: false,
-          },
-        },
-      },
-    },
-  })
-  @ApiResponse({ status: 400, description: 'Datos o parámetros inválidos.' })
-  @ApiResponse({
-    status: 401,
-    description: 'No autorizado; aplica al habilitar JWT.',
-  })
-  @ApiResponse({
-    status: 404,
-    description: 'Registro relacionado no encontrado.',
-  })
-  @ApiResponse({ status: 500, description: 'Error interno del servidor.' })
-  listarRolesConModulosPermisos(
+  @ApiOperation({ summary: 'Listar asignaciones con filtros y paginación' })
+  @ApiResponse({ status: 200, description: 'Listado paginado obtenido.' })
+  listar(
     @Query() query: QueryRolModuloPermisoDto,
-  ): Promise<PaginatedResponse<RolModuloPermisoListadoResponse>> {
-    return this.servicio.listarRolesModulosPermisos(query);
+  ): Promise<PaginatedResponse<RolModuloPermisoResponse>> {
+    return this.rolModuloPermisoService.listar(query);
   }
 
-  /*
-  Nombre del método: buscarRolConModulosPermisos
-  Método HTTP relacionado: GET
-  Endpoint: /api/rol-modulo-permiso/rol/:valor
+  @Get(':id')
+  @ApiOperation({ summary: 'Obtener una asignación por ID' })
+  @ApiParam({ name: 'id', description: 'Identificador UUID de la asignación.' })
+  @ApiResponse({ status: 200, description: 'Asignación encontrada.' })
+  @ApiResponse({ status: 404, description: 'Asignación no encontrada.' })
+  buscarPorId(
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<RolModuloPermisoResponse> {
+    return this.rolModuloPermisoService.buscarPorId(id);
+  }
 
-  Descripción:
-    Consulta por ID o código un rol con sus módulos y permisos.
-
-  Parámetros:
-    - valor: UUID o código.
-    - query: Filtros de asignación.
-
-  Respuestas posibles:
-    - 200: Operación realizada correctamente.
-    - 400: Datos o parámetros inválidos.
-    - 401: No autorizado, cuando se habilita el guard JWT.
-    - 404: Registro relacionado no encontrado.
-    
-    - 500: Error interno del servidor.
-
-  Fecha de creación: 2026-11-11
-  Autor: Oscar Canchari
-
-  Notas adicionales:
-    Devuelve únicamente los campos definidos en las interfaces.
-    Excluye asignaciones eliminadas, salvo las reactivadas al asignar.
-  */
-  @Get('rol/:valor')
-  @ApiOperation({
-    summary: 'Buscar rol con modulos permisos',
-    description: 'Consulta por ID o código un rol con sus módulos y permisos.',
-  })
-  @ApiParam({
-    name: 'valor',
-    type: String,
-    description: 'UUID o código del rol.',
-  })
+  @Patch(':id')
+  @ApiOperation({ summary: 'Actualizar una asignación' })
+  @ApiParam({ name: 'id', description: 'Identificador UUID de la asignación.' })
+  @ApiResponse({ status: 200, description: 'Asignación actualizada.' })
   @ApiResponse({
-    status: 200,
-    description: 'Operación realizada correctamente.',
-    schema: {
-      example: {
-        success: true,
-        status: 200,
-        data: {
-          id: '550e8400-e29b-41d4-a716-446655440001',
-          nombre: 'Consulta',
-          modulos: [
-            {
-              id: '550e8400-e29b-41d4-a716-446655440002',
-              nombres: 'Reporte de trámites',
-              permisos: [
-                {
-                  id: '550e8400-e29b-41d4-a716-446655440003',
-                  codigo: 'LEER',
-                  idAsignacion: '550e8400-e29b-41d4-a716-446655440000',
-                  estado: 'ACTIVO',
-                },
-              ],
-            },
-          ],
-        },
-      },
-    },
-  })
-  @ApiResponse({ status: 400, description: 'Datos o parámetros inválidos.' })
-  @ApiResponse({
-    status: 401,
-    description: 'No autorizado; aplica al habilitar JWT.',
+    status: 400,
+    description: 'Asignación inactiva o referencia inválida.',
   })
   @ApiResponse({
     status: 404,
-    description: 'Registro relacionado no encontrado.',
+    description: 'Asignación o referencia no encontrada.',
   })
-  @ApiResponse({ status: 500, description: 'Error interno del servidor.' })
-  buscarRolConModulosPermisos(
-    @Param('valor') valor: string,
-    @Query() query: QueryRolModuloPermisoDto,
-  ): Promise<RolConModulos> {
-    return this.servicio.buscarRolConModulosPermisos(valor, query);
+  @ApiResponse({ status: 409, description: 'La asignación ya existe.' })
+  actualizar(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateRolModuloPermisoDto,
+  ): Promise<RolModuloPermisoMessageResponse> {
+    return this.rolModuloPermisoService.actualizar(id, dto, userId);
   }
 
-  /*
-  Nombre del método: actualizarModulosPermisosDeRol
-  Método HTTP relacionado: PATCH
-  Endpoint: /api/rol-modulo-permiso/rol/:idRol/accesos
-
-  Descripción:
-    Guarda la configuración completa del rol, retirando los accesos omitidos.
-
-  Parámetros:
-    - idRol: UUID.
-    - dto: Módulos y permisos finales; [] quita todos.
-
-  Respuestas posibles:
-    - 200: Operación realizada correctamente.
-    - 400: Datos o parámetros inválidos.
-    - 401: No autorizado, cuando se habilita el guard JWT.
-    - 404: Registro relacionado no encontrado.
-    - 409: Conflicto de asignación.
-    - 500: Error interno del servidor.
-
-  Fecha de creación: 2026-11-11
-  Autor: Oscar Canchari
-
-  Notas adicionales:
-    Registra al responsable. Las operaciones múltiples son transaccionales.
-    El estado corresponde a la asignación, no a los catálogos.
-  */
-  @Patch('rol/:idRol/accesos')
-  @ApiOperation({
-    summary: 'Actualizar modulos permisos de rol',
-    description:
-      'Guarda la configuración completa del rol, retirando los accesos omitidos.',
-  })
-  @ApiBody({
-    type: ActualizarModulosPermisosDto,
-    examples: {
-      ejemplo: {
-        value: {
-          modulos: [
-            {
-              idModulo: '550e8400-e29b-41d4-a716-446655440002',
-              idsPermisos: ['550e8400-e29b-41d4-a716-446655440003'],
-            },
-          ],
-        },
-      },
-    },
-  })
-  @ApiParam({ name: 'idRol', type: String, description: 'UUID del registro.' })
-  @ApiResponse({
-    status: 200,
-    description: 'Operación realizada correctamente.',
-    schema: {
-      example: {
-        success: true,
-        status: 200,
-        data: {
-          message: 'Módulos y permisos del rol actualizados correctamente.',
-          ids: ['550e8400-e29b-41d4-a716-446655440000'],
-        },
-      },
-    },
-  })
-  @ApiResponse({ status: 400, description: 'Datos o parámetros inválidos.' })
-  @ApiResponse({
-    status: 401,
-    description: 'No autorizado; aplica al habilitar JWT.',
-  })
-  @ApiResponse({
-    status: 404,
-    description: 'Registro relacionado no encontrado.',
-  })
-  @ApiResponse({ status: 409, description: 'Conflicto de asignación.' })
-  @ApiResponse({ status: 500, description: 'Error interno del servidor.' })
-  actualizarModulosPermisosDeRol(
-    @Param('idRol', ParseUUIDPipe) idRol: string,
-    @Body() dto: ActualizarModulosPermisosDto,
-  ): Promise<MensajeIdsResponse> {
-    return this.servicio.actualizarModulosPermisosDeRol(idRol, dto, userId);
-  }
-
-  /*
-  Nombre del método: cambiarEstado
-  Método HTTP relacionado: PATCH
-  Endpoint: /api/rol-modulo-permiso/:id/estado
-
-  Descripción:
-    Alterna alta/baja de una combinación sin recibir body.
-
-  Parámetros:
-    - id: UUID de la asignación.
-
-  Respuestas posibles:
-    - 200: Operación realizada correctamente.
-    - 400: Datos o parámetros inválidos.
-    - 401: No autorizado, cuando se habilita el guard JWT.
-    - 404: Registro relacionado no encontrado.
-    - 409: Conflicto de asignación.
-    - 500: Error interno del servidor.
-
-  Fecha de creación: 2026-11-11
-  Autor: Oscar Canchari
-
-  Notas adicionales:
-    Registra al responsable. Las operaciones múltiples son transaccionales.
-    El estado corresponde a la asignación, no a los catálogos.
-  */
   @Patch(':id/estado')
-  @ApiOperation({
-    summary: 'Cambiar estado',
-    description: 'Alterna alta/baja de una combinación sin recibir body.',
-  })
-  @ApiParam({ name: 'id', type: String, description: 'UUID de la asignación.' })
-  @ApiResponse({
-    status: 200,
-    description: 'Operación realizada correctamente.',
-    schema: {
-      example: {
-        success: true,
-        status: 200,
-        data: {
-          message: 'Asignación dada de baja correctamente.',
-          id: '550e8400-e29b-41d4-a716-446655440000',
-        },
-      },
-    },
-  })
-  @ApiResponse({ status: 400, description: 'Datos o parámetros inválidos.' })
-  @ApiResponse({
-    status: 401,
-    description: 'No autorizado; aplica al habilitar JWT.',
-  })
-  @ApiResponse({
-    status: 404,
-    description: 'Registro relacionado no encontrado.',
-  })
-  @ApiResponse({ status: 409, description: 'Conflicto de asignación.' })
-  @ApiResponse({ status: 500, description: 'Error interno del servidor.' })
+  @ApiOperation({ summary: 'Cambiar el estado de una asignación' })
+  @ApiParam({ name: 'id', description: 'Identificador UUID de la asignación.' })
+  @ApiResponse({ status: 200, description: 'Estado cambiado.' })
+  @ApiResponse({ status: 404, description: 'Asignación no encontrada.' })
   cambiarEstado(
     @Param('id', ParseUUIDPipe) id: string,
-  ): Promise<MensajeIdResponse> {
-    return this.servicio.cambiarEstado(id, userId);
+  ): Promise<RolModuloPermisoMessageResponse> {
+    return this.rolModuloPermisoService.cambiarEstado(id, userId);
   }
 }
