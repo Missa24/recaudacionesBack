@@ -61,13 +61,20 @@ export class UfvService {
     private readonly ufvRepository: Repository<Ufv>,
   ) {}
 
-  /**
-   * Registra manualmente un nuevo valor UFV.
-   * Verifica que no exista otro registro para la misma fecha
-   * y asocia al usuario responsable de la creación.
-   *
-   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
-   */
+  /*
+  Nombre del método: crear
+  Descripción: Registra manualmente un nuevo valor UFV. Verifica que no exista
+               otro registro para la misma fecha y asocia al usuario creador.
+  Parámetros:
+    - dto: CreateUfvDto (fecha, valor, ...)
+    - idUsuario: string (usuario que crea)
+  Respuestas posibles:
+    - 201: UFV registrada correctamente.
+    - 409: Ya existe una UFV para esa fecha.
+    - 500: No se pudo guardar el registro.
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+*/
   async crear(
     dto: CreateUfvDto,
     idUsuario: string,
@@ -108,13 +115,21 @@ export class UfvService {
     }
   }
 
-  /**
-   * Registra un valor UFV obtenido desde una fuente externa.
-   * Evita duplicados por fecha y utiliza el identificador del usuario
-   * recibido mediante el DTO de integración.
-   *
-   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
-   */
+  /*
+  Nombre del método: crearDesdeApi
+  Descripción: Registra un valor UFV obtenido desde una fuente externa.
+               Evita duplicados por fecha y usa el identificador del usuario
+               recibido en el DTO de integración. No lanza conflicto por
+               duplicados; retorna un estado "registrado".
+  Parámetros:
+    - dto: CreateUfvApiDto (fecha, valor, userId)
+  Respuestas posibles:
+    - 201: { registrado: true, mensaje: 'UFV registrada correctamente' }.
+    - 201: { registrado: false, mensaje: 'La UFV de esta fecha ya se encuentra registrada' }.
+    - 500: No se pudo registrar la UFV obtenida desde la API.
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+*/
   async crearDesdeApi(dto: CreateUfvApiDto) {
     const { fecha, valor, userId } = dto;
 
@@ -164,12 +179,20 @@ export class UfvService {
     }
   }
 
-  /**
-   * Obtiene los registros UFV aplicando filtros, búsqueda,
-   * ordenamiento y paginación.
-   *
-   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
-   */
+  /*
+  Nombre del método: listar
+  Descripción: Obtiene los registros UFV aplicando filtros, búsqueda,
+               ordenamiento y paginación.
+  Parámetros:
+    - query: QueryUfvDto (page, limit, sortBy, sortOrder, startDate, endDate,
+             status)
+  Respuestas posibles:
+    - 200: Listado paginado de UFVs.
+    - 400: Rango de fechas inválido (startDate > endDate) / campo de
+           ordenamiento no válido.
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+*/
   async listar(query: QueryUfvDto): Promise<PaginatedResponse<UfvResponse>> {
     const {
       page = 1,
@@ -265,12 +288,18 @@ export class UfvService {
       throw error;
     }
   }
-  /**
-   * Busca un registro UFV mediante su identificador único.
-   * Incluye los nombres de usuario asociados a su creación y actualización.
-   *
-   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
-   */
+  /*
+  Nombre del método: buscarPorId
+  Descripción: Busca un registro UFV por su identificador único e incluye los
+               usuarios de creación y actualización.
+  Parámetros:
+    - id: string (identificador de la UFV)
+  Respuestas posibles:
+    - 200: Registro encontrado.
+    - 404: No existe una UFV con ese identificador.
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+*/
   async buscarPorId(id: string): Promise<UfvResponse> {
     const ufv = await this.ufvRepository.findOne({
       where: { id },
@@ -285,12 +314,21 @@ export class UfvService {
     return mapearRespuesta(ufv);
   }
 
-  /**
-   * Busca un registro UFV por una fecha específica.
-   * Solo considera registros activos y que no hayan sido eliminados.
-   *
-   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
-   */
+  /*
+  Nombre del método: buscarPorFecha
+  Descripción: Busca un registro UFV por una fecha específica, solo si está
+               ACTIVO y no eliminado lógicamente.
+  Parámetros:
+    - fecha: string (fecha de la UFV a buscar)
+  Respuestas posibles:
+    - 200: Registro encontrado.
+    - 404: No existe una UFV activa para esa fecha.
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+  Notas adicionales: Se usa para la ruta `ufv/fecha/:fecha` y debe declararse
+                     antes de `:id` para que la ruta literal no sea capturada por
+                     el parámetro genérico.
+*/
   async buscarPorFecha(fecha: string): Promise<UfvResponse> {
     const ufv = await this.ufvRepository.findOne({
       where: { fecha, estado: 'ACTIVO', _deleted_at: IsNull() },
@@ -304,13 +342,24 @@ export class UfvService {
     return mapearRespuesta(ufv);
   }
 
-  /**
-   * Actualiza parcialmente un registro UFV existente.
-   * Verifica su existencia, estado y posibles duplicados de fecha.
-   * También actualiza los campos de auditoría correspondientes.
-   *
-   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
-   */
+  /*
+  Nombre del método: actualizar
+  Descripción: Actualiza parcialmente un registro UFV existente. Verifica
+               existencia, estado ACTIVO (no eliminado) y posibles duplicados de
+               fecha, actualizando los campos de auditoría.
+  Parámetros:
+    - id: string (identificador de la UFV)
+    - dto: UpdateUfvDto (campos a actualizar)
+    - idUsuario: string (usuario que actualiza)
+  Respuestas posibles:
+    - 200: UFV actualizada correctamente.
+    - 404: No existe una UFV con ese identificador.
+    - 409: No se puede actualizar una UFV inactiva / ya existe otra UFV para
+           esa fecha.
+    - 500: No se pudo actualizar el registro.
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+*/
   async actualizar(
     id: string,
     dto: UpdateUfvDto,
@@ -373,13 +422,21 @@ export class UfvService {
     }
   }
 
-  /**
-   * Cambia el estado de un registro UFV entre ACTIVO e INACTIVO.
-   * Al desactivar, registra los datos de eliminación lógica.
-   * Al reactivar, limpia dichos datos y registra la actualización.
-   *
-   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
-   */
+  /*
+  Nombre del método: cambiarEstado
+  Descripción: Cambia el estado de un registro UFV entre ACTIVO e INACTIVO.
+               Al desactivar registra eliminación lógica; al reactivar limpia esos
+               datos y registra la actualización.
+  Parámetros:
+    - id: string (identificador de la UFV)
+    - idUsuario: string (usuario que realiza el cambio)
+  Respuestas posibles:
+    - 200: Registro del UFV activado/inactivado correctamente.
+    - 404: No existe una UFV con ese identificador.
+    - 500: No se pudo cambiar el estado del registro.
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+*/
   async cambiarEstado(
     id: string,
     idUsuario: string,

@@ -19,7 +19,7 @@
 export interface CalendarioResponse {
   id: string;
   fecha: string;
-  habil: boolean;
+  dia_habil: boolean;
   descripcion: string | null;
   estado: string;
   responsable_creacion: string | null;
@@ -72,7 +72,7 @@ export interface CalendarioLoteResponse {
  */
 export interface CalendarioFechaResponse {
   fecha: string;
-  habil: boolean;
+  dia_habil: boolean;
   configurada: boolean;
   origen: 'CONFIGURACION' | 'DIA_SEMANA';
   registro: CalendarioResponse | null;

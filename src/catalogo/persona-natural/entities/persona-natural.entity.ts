@@ -82,6 +82,12 @@ export class PersonaNatural {
   apellido_materno!: string | null;
 
   /*
+   * Apellido de casada, cuando corresponda.
+   */
+  @Column({ type: 'varchar', length: 150, nullable: true })
+  apellido_casada!: string | null;
+
+  /*
    * Domicilio de la persona natural.
    */
   @Column({ type: 'varchar', length: 250, nullable: true })
@@ -96,7 +102,7 @@ export class PersonaNatural {
   /*
    * Correo electrónico de la persona natural.
    */
-  @Column({ type: 'citext', nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   email!: string | null;
 
   /*
@@ -104,12 +110,6 @@ export class PersonaNatural {
    */
   @Column({ type: 'date', nullable: true })
   fecha_nacimiento!: string | null;
-
-  /*
-   * Apellido de casada, cuando corresponda.
-   */
-  @Column({ type: 'varchar', length: 150, nullable: true })
-  apellido_casada!: string | null;
 
   /*
    * Estado civil de la persona natural.
@@ -124,7 +124,7 @@ export class PersonaNatural {
    * Estado actual del registro: ACTIVO o INACTIVO.
    */
   @Column({
-    type: 'text',
+    type: 'varchar',
     default: 'ACTIVO',
   })
   estado!: string;

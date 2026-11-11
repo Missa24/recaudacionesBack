@@ -57,13 +57,20 @@ export class BancoService {
     private readonly bancoRepository: Repository<Banco>,
   ) {}
 
-  /**
-   * Registra manualmente un nuevo valor del Banco.
-   * Verifica que no exista otro registro para el mismo código
-   * y asocia al usuario responsable de la creación.
-   *
-   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
-   */
+  /*
+  Nombre del método: crear
+  Descripción: Registra manualmente un nuevo Banco. Verifica duplicidad por nombre
+               y asocia al usuario creador.
+  Parámetros:
+    - dto: CreateBancoDto (datos del banco)
+    - idUsuario: string (usuario que crea)
+  Respuestas posibles:
+    - 201: Banco registrado correctamente.
+    - 409: Ya existe un Banco con ese mismo nombre.
+    - 500: No se pudo guardar el registro.
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+*/
 
   async crear(
     dto: CreateBancoDto,
@@ -99,12 +106,19 @@ export class BancoService {
       throw new InternalServerErrorException('No se pudo guardar el registro');
     }
   }
-  /**
-   * Obtiene los registros de Dependencia aplicando filtros, búsqueda,
-   * ordenamiento y paginación.
-   *
-   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
-   */
+
+  /*
+  Nombre del método: listar
+  Descripción: Obtiene los registros de Banco aplicando filtros, búsqueda,
+               ordenamiento y paginación.
+  Parámetros:
+    - query: QueryBancoDto (page, limit, search, status, startDate, endDate, sortBy, sortOrder)
+  Respuestas posibles:
+    - 200: Listado paginado de bancos.
+    - 400: Rango de fechas inválido (startDate > endDate).
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+*/
   async listar(
     query: QueryBancoDto,
   ): Promise<PaginatedResponse<BancoResponse>> {
@@ -209,12 +223,19 @@ export class BancoService {
       throw error;
     }
   }
-  /**
-   * Busca un registro de Banco mediante su identificador único.
-   * Incluye los nombres de usuario asociados a su creación y actualización.
-   *
-   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
-   */
+
+  /*
+  Nombre del método: buscarPorId
+  Descripción: Busca un registro de Banco por su identificador único e incluye
+               los usuarios de creación y actualización.
+  Parámetros:
+    - id: string (identificador del banco)
+  Respuestas posibles:
+    - 200: Registro encontrado.
+    - 404: No existe un Banco con ese Id.
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+*/
   async buscarPorId(id: string): Promise<BancoResponse> {
     const banco = await this.bancoRepository.findOne({
       where: { id },
@@ -231,12 +252,21 @@ export class BancoService {
     return mapearRespuesta(banco);
   }
 
-  /**
-   * Busca un registro de Banco por un código específico.
-   * Solo considera registros activos y que no hayan sido eliminados.
-   *
-   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
-   */
+  /*
+  Nombre del método: buscarPorNombre
+  Descripción: Obtiene un registro de Banco correspondiente a un nombre específico,
+               solo si está ACTIVO y no eliminado lógicamente.
+  Parámetros:
+    - nombre: string (nombre del banco a buscar)
+  Respuestas posibles:
+    - 200: Registro encontrado.
+    - 404: No existe un Banco activo para ese nombre.
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+  Notas adicionales: Se usa para la ruta `banco/nombre/:nombre` y debe declararse
+                     antes de `:id` para que la ruta literal no sea capturada por
+                     el parámetro genérico.
+*/
   async buscarPorNombre(nombre: string): Promise<BancoResponse> {
     const banco = await this.bancoRepository.findOne({
       where: {
@@ -257,13 +287,22 @@ export class BancoService {
     return mapearRespuesta(banco);
   }
 
-  /**
-   * Actualiza parcialmente un registro de Banco existente.
-   * Verifica su existencia, estado y posibles duplicados de código.
-   * También actualiza los campos de auditoría correspondientes.
-   *
-   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
-   */
+  /*
+  Nombre del método: actualizar
+  Descripción: Actualiza parcialmente un Banco existente. Verifica existencia y
+               estado ACTIVO, y actualiza los campos de auditoría.
+  Parámetros:
+    - id: string (identificador del banco)
+    - dto: UpdateBancoDto (campos a actualizar)
+    - idUsuario: string (usuario que actualiza)
+  Respuestas posibles:
+    - 200: Banco actualizado correctamente.
+    - 400: No se puede actualizar un banco inactivo.
+    - 404: No se encontró el Banco solicitado.
+    - 409: Ya existe un Banco con ese nombre/código.
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+*/
   async actualizar(
     id: string,
     dto: UpdateBancoDto,
@@ -305,15 +344,22 @@ export class BancoService {
       throw error;
     }
   }
-  /**
-   * Cambia el estado de un registro de una Dependencia
-   * entre ACTIVO e INACTIVO.
-   * Al desactivar, registra los datos de eliminación lógica.
-   * Al reactivar, limpia dichos datos y registra la actualización.
-   *
-   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
-   */
 
+  /*
+  Nombre del método: cambiarEstado
+  Descripción: Cambia el estado de un Banco entre ACTIVO e INACTIVO.
+               Al desactivar registra eliminación lógica; al reactivar limpia
+               esos datos y registra actualización.
+  Parámetros:
+    - id: string (identificador del banco)
+    - idUsuario: string (usuario que realiza el cambio)
+  Respuestas posibles:
+    - 200: Estado del Banco cambiado correctamente.
+    - 404: No existe un Banco con esa identificación.
+    - 500: No se pudo cambiar el estado del registro.
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+*/
   async cambiarEstado(
     id: string,
     idUsuario: string,
@@ -358,9 +404,22 @@ export class BancoService {
     }
   }
 
-  async validarBanco(id_banco: string): Promise<void> {
+  /*
+  Nombre del método: validarBanco
+  Descripción: Valida que un Banco exista y se encuentre ACTIVO. No retorna datos;
+               lanza excepción si no cumple las condiciones.
+  Parámetros:
+    - banco_id: string (identificador del banco a validar)
+  Respuestas posibles:
+    - 200: Banco válido (sin retorno).
+    - 400: El banco seleccionado se encuentra inactivo.
+    - 404: No se encontró el banco solicitado.
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+*/
+  async validarBanco(banco_id: string): Promise<void> {
     const banco = await this.bancoRepository.findOne({
-      where: { id: id_banco },
+      where: { id: banco_id },
     });
 
     if (!banco) {

@@ -60,13 +60,20 @@ export class InteresService {
     private readonly interesRepository: Repository<Interes>,
   ) {}
 
-  /**
-   * Registra manualmente un nuevo valor de Interés.
-   * Verifica que no exista otro registro para la misma fecha
-   * y asocia al usuario responsable de la creación.
-   *
-   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
-   */
+  /*
+  Nombre del método: crear
+  Descripción: Registra manualmente un nuevo valor de Interés. Verifica que no
+               exista otro registro para la misma fecha y asocia al usuario creador.
+  Parámetros:
+    - dto: CreateInteresDto (fecha_publicacion, valor, ...)
+    - idUsuario: string (usuario que crea)
+  Respuestas posibles:
+    - 201: Interés registrado exitosamente.
+    - 409: Ya existe un Interés para esa fecha.
+    - 500: No se pudo guardar el registro del interés.
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+*/
   async crear(
     dto: CreateInteresDto,
     idUsuario: string,
@@ -107,12 +114,20 @@ export class InteresService {
     }
   }
 
-  /**
-   * Obtiene los registros UFV aplicando filtros, búsqueda,
-   * ordenamiento y paginación.
-   *
-   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
-   */
+  /*
+  Nombre del método: listar
+  Descripción: Obtiene los registros de Interés (UFV) aplicando filtros,
+               búsqueda, ordenamiento y paginación.
+  Parámetros:
+    - query: QueryInteresDto (page, limit, sortBy, sortOrder, startDate,
+             endDate, status)
+  Respuestas posibles:
+    - 200: Listado paginado de intereses.
+    - 400: Rango de fechas inválido (startDate > endDate) / campo de
+           ordenamiento no válido.
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+*/
   async listar(
     query: QueryInteresDto,
   ): Promise<PaginatedResponse<InteresResponse>> {
@@ -208,12 +223,18 @@ export class InteresService {
     }
   }
 
-  /**
-   * Busca un registro de Interés mediante su identificador único.
-   * Incluye los nombres de usuario asociados a su creación y actualización.
-   *
-   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
-   */
+  /*
+  Nombre del método: buscarPorId
+  Descripción: Busca un registro de Interés por su identificador único e incluye
+               los usuarios de creación y actualización.
+  Parámetros:
+    - id: string (identificador del interés)
+  Respuestas posibles:
+    - 200: Registro encontrado.
+    - 404: No existe un interés con ese identificador.
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+*/
   async buscarPorId(id: string): Promise<InteresResponse> {
     const interes = await this.interesRepository.findOne({
       where: { id },
@@ -230,12 +251,21 @@ export class InteresService {
     return mapearRespuesta(interes);
   }
 
-  /**
-   * Busca un registro de Interés por una fecha específica.
-   * Solo considera registros activos y que no hayan sido eliminados.
-   *
-   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
-   */
+  /*
+  Nombre del método: buscarPorFecha
+  Descripción: Busca un registro de Interés por una fecha específica, solo si
+               está ACTIVO y no eliminado lógicamente.
+  Parámetros:
+    - fecha: string (fecha de publicación a buscar)
+  Respuestas posibles:
+    - 200: Registro encontrado.
+    - 404: No existe un interés activo para esa fecha.
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+  Notas adicionales: Se usa para la ruta `interes/fecha/:fecha` y debe declararse
+                     antes de `:id` para que la ruta literal no sea capturada por
+                     el parámetro genérico.
+*/
   async buscarPorFecha(fecha: string): Promise<InteresResponse> {
     const interes = await this.interesRepository.findOne({
       where: {
@@ -255,13 +285,24 @@ export class InteresService {
 
     return mapearRespuesta(interes);
   }
-  /**
-   * Actualiza parcialmente un registro de Interés existente.
-   * Verifica su existencia, estado y posibles duplicados de fecha.
-   * También actualiza los campos de auditoría correspondientes.
-   *
-   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
-   */
+
+  /*
+  Nombre del método: actualizar
+  Descripción: Actualiza parcialmente un registro de Interés existente.
+               Verifica existencia, estado ACTIVO (no eliminado) y posibles
+               duplicados de fecha, actualizando los campos de auditoría.
+  Parámetros:
+    - id: string (identificador del interés)
+    - dto: UpdateInteresDto (campos a actualizar)
+    - idUsuario: string (usuario que actualiza)
+  Respuestas posibles:
+    - 200: Interés actualizado correctamente.
+    - 404: No existe un interés con ese identificador.
+    - 409: No se puede actualizar el Interés / ya existe otro Interés para esa fecha.
+    - 500: No se pudo actualizar el registro.
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+*/
   async actualizar(
     id: string,
     dto: UpdateInteresDto,
@@ -328,13 +369,21 @@ export class InteresService {
     }
   }
 
-  /**
-   * Cambia el estado de un registro de Interés entre ACTIVO e INACTIVO.
-   * Al desactivar, registra los datos de eliminación lógica.
-   * Al reactivar, limpia dichos datos y registra la actualización.
-   *
-   * Desarrollado por: Missael Apaza - Fecha: 10/11/2026
-   */
+  /*
+  Nombre del método: cambiarEstado
+  Descripción: Cambia el estado de un registro de Interés entre ACTIVO e
+               INACTIVO. Al desactivar registra eliminación lógica; al reactivar
+               limpia esos datos y registra la actualización.
+  Parámetros:
+    - id: string (identificador del interés)
+    - idUsuario: string (usuario que realiza el cambio)
+  Respuestas posibles:
+    - 200: Registro del interés activado/inactivado correctamente.
+    - 404: No existe un Interés con esa identificación.
+    - 500: No se pudo cambiar el estado del registro.
+  Fecha de creación: 2026-11-10
+  Autor: Missael Apaza
+*/
   async cambiarEstado(
     id: string,
     idUsuario: string,
