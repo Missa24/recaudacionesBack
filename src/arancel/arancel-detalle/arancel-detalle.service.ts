@@ -78,7 +78,7 @@ export class ArancelDetalleService {
     const filtros: FindOptionsWhere<ArancelDetalle> = {};
     if (status && status !== 'TODOS') filtros.estado = status;
     else if (!status) filtros.estado = 'ACTIVO';
-    if (arancel_gral_id) filtros.arancel_gral_id = arancel_gral_id;
+    if (arancel_gral_id) filtros.arancel_general_id = arancel_gral_id;
     if (tipo_tramite_id) filtros.tipo_tramite_id = tipo_tramite_id;
     if (startDate && endDate) {
       filtros._created_at = And(

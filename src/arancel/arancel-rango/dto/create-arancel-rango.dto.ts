@@ -3,10 +3,10 @@ import { Type } from 'class-transformer';
 import { IsNumber, IsOptional, IsUUID, Max, Min } from 'class-validator';
 
 export class CreateArancelRangoDto {
-  @ApiProperty({ example: 'uuid-arancel-detalle' })
+  @ApiProperty({ example: 'uuid-tarifa' })
   @IsUUID()
-  arancel_det_id!: string;
-
+  tarifa_id!: string;
+  
   @ApiProperty({ example: 0, minimum: 0, maximum: 999999999999.99 })
   @Type(() => Number)
   @IsNumber({ maxDecimalPlaces: 2 })
@@ -46,9 +46,5 @@ export class CreateArancelRangoDto {
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
   @Max(999999999999.99)
-  excedente!: number;
-
-  @ApiProperty({ example: 'uuid-tarifa' })
-  @IsUUID()
-  tarifa_id!: string;
+  excedente!: number; 
 }

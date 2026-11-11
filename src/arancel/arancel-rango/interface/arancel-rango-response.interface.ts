@@ -1,6 +1,5 @@
 export interface ArancelRangoResponse {
   id: string;
-  arancel_det_id: string;
   desde: number;
   hasta: number | null;
   base_fija: number;

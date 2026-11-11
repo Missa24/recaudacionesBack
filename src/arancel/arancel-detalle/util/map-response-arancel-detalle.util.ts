@@ -6,7 +6,7 @@ export function mapearRespuestaArancelDetalle(
 ): ArancelDetalleResponse {
   return {
     id: arancel.id,
-    arancel_gral_id: arancel.arancel_gral_id,
+    arancel_general_id: arancel.arancel_general_id,
     tipo_tramite_id: arancel.tipo_tramite_id,
     nro_arancel_det: arancel.nro_arancel_det,
     descripcion: arancel.descripcion,

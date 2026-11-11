@@ -6,7 +6,6 @@ export function mapearRespuestaArancelRango(
 ): ArancelRangoResponse {
   return {
     id: rango.id,
-    arancel_det_id: rango.arancel_det_id,
     desde: rango.desde,
     hasta: rango.hasta,
     base_fija: rango.base_fija,

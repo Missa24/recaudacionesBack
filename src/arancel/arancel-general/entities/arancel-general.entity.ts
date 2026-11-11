@@ -9,7 +9,7 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
-@Entity({ schema: 'arancel', name: 'arancel_gral' })
+@Entity({ schema: 'arancel', name: 'arancel_general' })
 export class ArancelGeneral {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
@@ -17,18 +17,14 @@ export class ArancelGeneral {
   @Column({ type: 'uuid', name: 'dependencia_id' })
   dependencia_id!: string;
 
-  @ManyToOne(() => Dependencia, { nullable: false, onDelete: 'RESTRICT' })
-  @JoinColumn({ name: 'dependencia_id', referencedColumnName: 'id' })
-  dependencia!: Dependencia;
+  @Column({ type: 'uuid', name: 'cuenta_destino_id', nullable: true })
+  cuenta_destino_id!: string | null;  
 
   @Column({ type: 'varchar', length: 15, name: 'nro_arancel_gral' })
   nro_arancel_gral!: string;
 
   @Column({ type: 'varchar', length: 200 })
-  descripcion!: string;
-
-  @Column({ type: 'uuid', name: 'cuenta_destino_id', nullable: true })
-  cuenta_destino_id!: string | null;
+  descripcion!: string;  
 
   @ManyToOne(() => CuentaBancaria, { nullable: true, onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'cuenta_destino_id', referencedColumnName: 'id' })
