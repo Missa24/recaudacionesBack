@@ -34,7 +34,6 @@ import { ArancelDetalleModule } from './arancel/arancel-detalle/arancel-detalle.
 import { ArancelRangoModule } from './arancel/arancel-rango/arancel-rango.module';
 import { EventoTramiteModule } from './tramite-vut/evento-tramite/evento-tramite.module';
 import { EntregaTramiteModule } from './tramite-vut/entrega-tramite/entrega-tramite.module';
-import { CorrelativoAnualModule } from './tramite_vut/correlativo-anual/correlativo-anual.module';
 import { CorrelativoAnualModule } from './tramite-vut/correlativo-anual/correlativo-anual.module';
 import { CotizacionDetalleModule } from './tramite-vut/cotizacion-detalle/cotizacion-detalle.module';
 import { LiquidicacionDetalleModule } from './tramite-vut/liquidicacion-detalle/liquidicacion-detalle.module';

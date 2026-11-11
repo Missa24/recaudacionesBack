@@ -19,40 +19,64 @@ import {
   ManyToOne,
   OneToMany,
   JoinColumn,
+  Unique,
+  Check,
 } from 'typeorm';
 
-@Entity({ schema: 'tramite-vut', name: 'cotizacion' })
+/**
+ * Entidad Cotizacion.
+ * Representa la cabecera del presupuesto de un trámite.
+ *
+ * Los ítems comerciales se encuentran normalizados
+ * en la entidad CotizacionDetalle.
+ *
+ * Desarrollado por: Missael Apaza - Fecha: 11/11/2026
+ */
+
+@Entity({ schema: 'tramite_vut', name: 'cotizacion' })
+@Unique('cotizacion_nro_cotizacion_key', ['nro_cotizacion'])
+@Check('cotizacion_monto_cotizado_check', '"monto_cotizado" >= 0::numeric')
 export class Cotizacion {
   /*
    * Identificador único de la cotización.
    */
-  @PrimaryGeneratedColumn('uuid', { name: 'id_cotizacion' })
-  id_cotizacion!: string;
+  @PrimaryGeneratedColumn('uuid', { name: 'id' })
+  id!: string;
 
   /*
    * Identificador del trámite asociado.
    */
-  @Column({ type: 'uuid', name: 'id_tramite' })
+  @Column({
+    type: 'uuid',
+    name: 'tramite_id',
+  })
   id_tramite!: string;
 
   /*
-   * Relación con el trámite.
+   * Relación con el expediente.
    */
-  @ManyToOne(() => Tramite, { nullable: false, onDelete: 'RESTRICT' })
+  @ManyToOne(() => Tramite, {
+    nullable: false,
+    onDelete: 'RESTRICT',
+  })
   @JoinColumn({
-    name: 'id_tramite',
-    referencedColumnName: 'id_tramite',
+    name: 'tramite_id',
+    referencedColumnName: 'id',
   })
   tramite!: Tramite;
 
   /*
-   * Número único de cotización.
+   * Número externo único de cotización.
+   * Asignado por la aplicación.
    */
-  @Column({ type: 'varchar', length: 20, unique: true })
+  @Column({
+    type: 'varchar',
+    length: 20,
+  })
   nro_cotizacion!: string;
 
   /*
-   * Fecha de generación de la cotización.
+   * Fecha y hora de generación de la cotización.
    */
   @Column({
     type: 'timestamptz',
@@ -62,57 +86,74 @@ export class Cotizacion {
 
   /*
    * Monto total cotizado.
+   * Debe coincidir con la suma de los subtotales
+   * de los detalles al confirmar la transacción.
    */
-  @Column({ type: 'numeric', precision: 14, scale: 2 })
+  @Column({
+    type: 'numeric',
+    precision: 14,
+    scale: 2,
+  })
   monto_cotizado!: string;
 
   /*
-   * Información auxiliar en formato JSON.
+   * Información auxiliar en formato JSONB.
+   * No contiene los ítems comerciales.
    */
-  @Column({ type: 'jsonb', nullable: true })
+  @Column({
+    type: 'jsonb',
+    nullable: true,
+  })
   metadata!: Record<string, any> | null;
 
   /*
    * Fecha de vencimiento de la cotización.
    */
-  @Column({ type: 'date', nullable: true })
+  @Column({
+    type: 'date',
+    nullable: true,
+  })
   valida_hasta!: string | null;
 
   /*
    * Relación inversa con los detalles de cotización.
-   * No genera una columna adicional en PostgreSQL.
    */
   @OneToMany(() => CotizacionDetalle, (detalle) => detalle.cotizacion)
   detalles!: CotizacionDetalle[];
 
   /*
-   * Estado del registro.
+   * Estado del registro: ACTIVO o INACTIVO.
    */
-  @Column({ type: 'varchar', length: 20, default: 'ACTIVO' })
+  @Column({
+    type: 'varchar',
+    default: 'ACTIVO',
+  })
   estado!: string;
 
   /*
-   * Fecha de creación.
+   * Fecha y hora de creación.
+   * Administrada por el trigger.
    */
   @Column({
     type: 'timestamptz',
     name: '_created_at',
-    default: () => 'CURRENT_TIMESTAMP',
+    default: () => 'clock_timestamp()',
   })
   _created_at!: Date;
 
   /*
-   * Fecha de actualización.
+   * Fecha y hora de última actualización.
+   * Administrada por el trigger.
    */
   @Column({
     type: 'timestamptz',
     name: '_updated_at',
-    default: () => 'CURRENT_TIMESTAMP',
+    default: () => 'clock_timestamp()',
   })
   _updated_at!: Date;
 
   /*
-   * Fecha de baja lógica.
+   * Fecha y hora de baja lógica.
    */
   @Column({
     type: 'timestamptz',
@@ -122,12 +163,21 @@ export class Cotizacion {
   _deleted_at!: Date | null;
 
   /*
-   * Usuario que creó el registro.
+   * Identificador del usuario creador.
    */
-  @Column({ type: 'uuid', name: '_user_created' })
+  @Column({
+    type: 'uuid',
+    name: '_user_created',
+  })
   _user_created!: string;
 
-  @ManyToOne(() => Usuario, { nullable: false, onDelete: 'RESTRICT' })
+  /*
+   * Relación con el usuario creador.
+   */
+  @ManyToOne(() => Usuario, {
+    nullable: false,
+    onDelete: 'RESTRICT',
+  })
   @JoinColumn({
     name: '_user_created',
     referencedColumnName: 'idUsuario',
@@ -135,12 +185,22 @@ export class Cotizacion {
   usuarioCreador!: Usuario;
 
   /*
-   * Usuario que actualizó el registro.
+   * Identificador del usuario actualizador.
    */
-  @Column({ type: 'uuid', name: '_user_update', nullable: true })
+  @Column({
+    type: 'uuid',
+    name: '_user_update',
+    nullable: true,
+  })
   _user_update!: string | null;
 
-  @ManyToOne(() => Usuario, { nullable: true, onDelete: 'RESTRICT' })
+  /*
+   * Relación con el usuario actualizador.
+   */
+  @ManyToOne(() => Usuario, {
+    nullable: true,
+    onDelete: 'RESTRICT',
+  })
   @JoinColumn({
     name: '_user_update',
     referencedColumnName: 'idUsuario',
@@ -148,12 +208,22 @@ export class Cotizacion {
   usuarioActualizador!: Usuario | null;
 
   /*
-   * Usuario que realizó la baja lógica.
+   * Identificador del usuario que realizó la baja lógica.
    */
-  @Column({ type: 'uuid', name: '_user_delete', nullable: true })
+  @Column({
+    type: 'uuid',
+    name: '_user_delete',
+    nullable: true,
+  })
   _user_delete!: string | null;
 
-  @ManyToOne(() => Usuario, { nullable: true, onDelete: 'RESTRICT' })
+  /*
+   * Relación con el usuario eliminador.
+   */
+  @ManyToOne(() => Usuario, {
+    nullable: true,
+    onDelete: 'RESTRICT',
+  })
   @JoinColumn({
     name: '_user_delete',
     referencedColumnName: 'idUsuario',

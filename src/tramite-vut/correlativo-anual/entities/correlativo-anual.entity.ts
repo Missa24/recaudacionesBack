@@ -1,17 +1,17 @@
 /**
- * Módulo: Trámites - Detalle de Cotización
- * Archivo: cotizacion_detalle.entity.ts
+ * Módulo: Trámites - Expediente Central
+ * Archivo: correlativo-anual.entity.ts
  * Descripción:
- * Define la estructura y las relaciones de la entidad CotizacionDetalle,
- * correspondiente a la tabla cotizacion_detalle del esquema tramite.
+ * Define la estructura y las relaciones de la entidad CorrelativoAnual,
+ * correspondiente a la tabla correlativo_anual del esquema tramite.
+ *
+ * Administra el contador interno anual utilizado bajo bloqueo
+ * por el trigger de numeración de los trámites.
  *
  * Desarrollado por: Missael Apaza - Fecha: 11/11/2026
  */
 
-import { ArancelDetalle } from 'src/arancel/arancel-detalle/entities/arancel-detalle.entity';
-import { Tarifa } from 'src/arancel/tarifa/entities/tarifa.entity';
 import { Usuario } from 'src/seguridad/usuario/entities/usuario.entity';
-import { Cotizacion } from 'src/tramite-vut/cotizacion/entities/cotizacion.entity';
 
 import {
   Entity,
@@ -19,136 +19,72 @@ import {
   Column,
   ManyToOne,
   JoinColumn,
+  Unique,
 } from 'typeorm';
 
-@Entity({ schema: 'tramite-vut', name: 'cotizacion_detalle' })
-export class CotizacionDetalle {
+@Entity({ schema: 'tramite_vut', name: 'correlativo_anual' })
+@Unique('correlativo_anual_gestion_key', ['gestion'])
+export class CorrelativoAnual {
   /*
-   * Identificador único del detalle.
+   * Identificador único del contador anual.
+   * UUID generado automáticamente por PostgreSQL.
    */
-  @PrimaryGeneratedColumn('uuid', { name: 'id_detalle' })
-  id_detalle!: string;
+  @PrimaryGeneratedColumn('uuid', { name: 'id' })
+  id!: string;
 
   /*
-   * Identificador de la cotización.
-   */
-  @Column({ type: 'uuid', name: 'id_cotizacion' })
-  id_cotizacion!: string;
-
-  /*
-   * Identificador del detalle arancelario.
-   */
-  @Column({ type: 'uuid', name: 'id_arancel_det' })
-  id_arancel_det!: string;
-
-  /*
-   * Identificador de la tarifa.
-   */
-  @Column({ type: 'uuid', name: 'id_tarifa' })
-  id_tarifa!: string;
-
-  /*
-   * Relación con la cotización.
-   */
-  @ManyToOne(() => Cotizacion, (cotizacion) => cotizacion.detalles, {
-    nullable: false,
-    onDelete: 'RESTRICT',
-  })
-  @JoinColumn({
-    name: 'id_cotizacion',
-    referencedColumnName: 'id_cotizacion',
-  })
-  cotizacion!: Cotizacion;
-
-  /*
-   * Relación con el detalle arancelario.
-   */
-  @ManyToOne(() => ArancelDetalle, { nullable: false, onDelete: 'RESTRICT' })
-  @JoinColumn({
-    name: 'id_arancel_det',
-    referencedColumnName: 'id_arancel_det',
-  })
-  arancel_det!: ArancelDetalle;
-
-  /*
-   * Relación con la tarifa.
-   * La FK es compuesta: id_tarifa + id_arancel_det.
-   */
-  @ManyToOne(() => Tarifa, { nullable: false, onDelete: 'RESTRICT' })
-  @JoinColumn([
-    {
-      name: 'id_tarifa',
-      referencedColumnName: 'id_tarifa',
-    },
-    {
-      name: 'id_arancel_det',
-      referencedColumnName: 'id_arancel_det',
-    },
-  ])
-  tarifa!: Tarifa;
-
-  /*
-   * Descripción conservada al momento de cotizar.
-   */
-  @Column({ type: 'text' })
-  descripcion_aplicada!: string;
-
-  /*
-   * Cantidad de unidades.
-   */
-  @Column({ type: 'integer' })
-  cantidad!: number;
-
-  /*
-   * Precio unitario.
-   */
-  @Column({ type: 'numeric', precision: 14, scale: 2 })
-  precio_unitario!: string;
-
-  /*
-   * Subtotal generado y almacenado por PostgreSQL.
-   * No enviar en INSERT ni UPDATE.
+   * Gestión administrativa.
+   * Identifica el año del contador anual.
    */
   @Column({
-    type: 'numeric',
-    precision: 14,
-    scale: 2,
-    insert: false,
-    update: false,
-    nullable: true,
-    asExpression: 'cantidad::numeric * precio_unitario',
-    generatedType: 'STORED',
+    type: 'smallint',
+    name: 'gestion',
   })
-  subtotal!: string | null;
+  gestion!: number;
 
   /*
-   * Estado del registro.
+   * Último correlativo anual asignado.
+   * Administrado por el trigger de numeración.
    */
-  @Column({ type: 'varchar', length: 20, default: 'ACTIVO' })
+  @Column({
+    type: 'integer',
+    name: 'ultimo_valor',
+  })
+  ultimo_valor!: number;
+
+  /*
+   * Estado del registro: ACTIVO / INACTIVO.
+   * Independiente del estado funcional del trámite.
+   */
+  @Column({
+    type: 'varchar',
+    name: 'estado',
+    default: 'ACTIVO',
+  })
   estado!: string;
 
   /*
-   * Fecha de creación.
+   * Fecha y hora de creación.
    */
   @Column({
     type: 'timestamptz',
     name: '_created_at',
-    default: () => 'CURRENT_TIMESTAMP',
+    default: () => 'clock_timestamp()',
   })
   _created_at!: Date;
 
   /*
-   * Fecha de actualización.
+   * Fecha y hora de última actualización.
    */
   @Column({
     type: 'timestamptz',
     name: '_updated_at',
-    default: () => 'CURRENT_TIMESTAMP',
+    default: () => 'clock_timestamp()',
   })
   _updated_at!: Date;
 
   /*
-   * Fecha de baja lógica.
+   * Fecha y hora de baja lógica.
    */
   @Column({
     type: 'timestamptz',
@@ -158,12 +94,21 @@ export class CotizacionDetalle {
   _deleted_at!: Date | null;
 
   /*
-   * Usuario que creó el registro.
+   * Identificador del usuario que creó el registro.
    */
-  @Column({ type: 'uuid', name: '_user_created' })
+  @Column({
+    type: 'uuid',
+    name: '_user_created',
+  })
   _user_created!: string;
 
-  @ManyToOne(() => Usuario, { nullable: false, onDelete: 'RESTRICT' })
+  /*
+   * Relación con el usuario creador.
+   */
+  @ManyToOne(() => Usuario, {
+    nullable: false,
+    onDelete: 'RESTRICT',
+  })
   @JoinColumn({
     name: '_user_created',
     referencedColumnName: 'idUsuario',
@@ -171,12 +116,22 @@ export class CotizacionDetalle {
   usuarioCreador!: Usuario;
 
   /*
-   * Usuario que actualizó el registro.
+   * Identificador del usuario que actualizó el registro.
    */
-  @Column({ type: 'uuid', name: '_user_update', nullable: true })
+  @Column({
+    type: 'uuid',
+    name: '_user_update',
+    nullable: true,
+  })
   _user_update!: string | null;
 
-  @ManyToOne(() => Usuario, { nullable: true, onDelete: 'RESTRICT' })
+  /*
+   * Relación con el usuario actualizador.
+   */
+  @ManyToOne(() => Usuario, {
+    nullable: true,
+    onDelete: 'RESTRICT',
+  })
   @JoinColumn({
     name: '_user_update',
     referencedColumnName: 'idUsuario',
@@ -184,12 +139,22 @@ export class CotizacionDetalle {
   usuarioActualizador!: Usuario | null;
 
   /*
-   * Usuario que realizó la baja lógica.
+   * Identificador del usuario que realizó la baja lógica.
    */
-  @Column({ type: 'uuid', name: '_user_delete', nullable: true })
+  @Column({
+    type: 'uuid',
+    name: '_user_delete',
+    nullable: true,
+  })
   _user_delete!: string | null;
 
-  @ManyToOne(() => Usuario, { nullable: true, onDelete: 'RESTRICT' })
+  /*
+   * Relación con el usuario que realizó la baja lógica.
+   */
+  @ManyToOne(() => Usuario, {
+    nullable: true,
+    onDelete: 'RESTRICT',
+  })
   @JoinColumn({
     name: '_user_delete',
     referencedColumnName: 'idUsuario',

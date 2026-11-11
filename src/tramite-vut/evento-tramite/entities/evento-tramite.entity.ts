@@ -10,6 +10,7 @@
 
 import { Usuario } from 'src/seguridad/usuario/entities/usuario.entity';
 import { Tramite } from 'src/tramite/tramite/entities/tramite.entity';
+
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -20,171 +21,245 @@ import {
 
 /**
  * Entidad EventoTramite.
- * Representa un evento o transición de estado ocurrido sobre un trámite,
- * incluyendo el estado anterior y nuevo, el paso, el actor, la fecha,
- * observaciones y metadatos adicionales.
+ * Representa la bitácora de estados y eventos de un trámite.
  *
- * Cada evento está asociado a un trámite y opcionalmente a un usuario.
+ * Registra el estado anterior, estado nuevo, paso del flujo,
+ * actor responsable, fecha, observaciones y metadatos.
  *
  * Desarrollado por: Missael Apaza - Fecha: 11/11/2026
  */
-@Entity({ schema: 'tramite-vut', name: 'evento_tramite' })
+
+@Entity({ schema: 'tramite_vut', name: 'evento_tramite' })
 export class EventoTramite {
   /*
-   * Identificador único del evento de trámite.
-   * UUID generado automáticamente por la base de datos.
-   * Columna BD: id_evento.
+   * Identificador único del evento.
+   * UUID generado automáticamente por PostgreSQL.
    */
-  @PrimaryGeneratedColumn('uuid')
+  @PrimaryGeneratedColumn('uuid', { name: 'id' })
   id!: string;
 
-  // FK
-
   /*
-   * Identificador del trámite al que pertenece el evento.
-   * Columna BD: id_tramite.
+   * Identificador del trámite asociado.
+   * FK: tramite_id.
    */
-  @Column({ type: 'uuid', name: 'tramites_id' })
-  tramites_id!: string;
+  @Column({
+    type: 'uuid',
+    name: 'tramite_id',
+  })
+  tramite_id!: string;
 
   /*
    * Identificador del usuario asociado al evento.
-   * Columna BD: id_usuario. Puede ser nulo.
+   * FK: usuario_id. Puede ser nulo.
    */
-  @Column({ type: 'uuid', name: 'usuarios_id', nullable: true })
-  usuarios_id!: string | null;
+  @Column({
+    type: 'uuid',
+    name: 'usuario_id',
+    nullable: true,
+  })
+  usuario_id!: string | null;
 
   /*
-   * Identificador del usuario que creó el registro.
-   * Columna BD: _user_created.
+   * Identificador del usuario creador.
+   * Columna física: _user_created.
    */
-  @Column({ type: 'uuid', name: '_user_created' })
+  @Column({
+    type: 'uuid',
+    name: '_user_created',
+  })
   usuarios_created_id!: string;
 
   /*
-   * Identificador del usuario que actualizó el registro.
-   * Columna BD: _user_update. Puede ser nulo.
+   * Identificador del usuario actualizador.
+   * Columna física: _user_update.
    */
-  @Column({ type: 'uuid', name: '_user_update', nullable: true })
+  @Column({
+    type: 'uuid',
+    name: '_user_update',
+    nullable: true,
+  })
   usuarios_update_id!: string | null;
 
   /*
-   * Identificador del usuario que realizó la baja lógica del registro.
-   * Columna BD: _user_delete. Puede ser nulo.
+   * Identificador del usuario que realizó la baja lógica.
+   * Columna física: _user_delete.
    */
-  @Column({ type: 'uuid', name: '_user_delete', nullable: true })
+  @Column({
+    type: 'uuid',
+    name: '_user_delete',
+    nullable: true,
+  })
   usuarios_delete_id!: string | null;
 
   /*
-   * Relación con el trámite al que pertenece el evento.
+   * Relación con el trámite.
    */
-  @ManyToOne(() => Tramite)
-  @JoinColumn({ name: 'tramites_id', referencedColumnName: 'id' })
+  @ManyToOne(() => Tramite, {
+    nullable: false,
+    onDelete: 'RESTRICT',
+  })
+  @JoinColumn({
+    name: 'tramite_id',
+    referencedColumnName: 'id',
+  })
   tramite!: Tramite;
 
   /*
-   * Relación con el usuario asociado al evento (opcional).
+   * Relación con el usuario asociado al evento.
    */
-  @ManyToOne(() => Usuario, { nullable: true })
-  @JoinColumn({ name: 'usuarios_id', referencedColumnName: 'idUsuario' })
+  @ManyToOne(() => Usuario, {
+    nullable: true,
+    onDelete: 'RESTRICT',
+  })
+  @JoinColumn({
+    name: 'usuario_id',
+    referencedColumnName: 'id',
+  })
   usuario!: Usuario | null;
 
   /*
-   * Relación con el usuario responsable de la creación.
+   * Relación con el usuario creador.
    */
-  @ManyToOne(() => Usuario)
-  @JoinColumn({ name: '_user_created', referencedColumnName: 'idUsuario' })
+  @ManyToOne(() => Usuario, {
+    nullable: false,
+    onDelete: 'RESTRICT',
+  })
+  @JoinColumn({
+    name: '_user_created',
+    referencedColumnName: 'id',
+  })
   usuarioCreador!: Usuario;
 
   /*
-   * Relación con el usuario responsable de la actualización.
+   * Relación con el usuario actualizador.
    */
-  @ManyToOne(() => Usuario, { nullable: true })
-  @JoinColumn({ name: '_user_update', referencedColumnName: 'idUsuario' })
+  @ManyToOne(() => Usuario, {
+    nullable: true,
+    onDelete: 'RESTRICT',
+  })
+  @JoinColumn({
+    name: '_user_update',
+    referencedColumnName: 'id',
+  })
   usuarioActualizador!: Usuario | null;
 
   /*
-   * Relación con el usuario responsable de la baja lógica.
+   * Relación con el usuario que realizó la baja lógica.
    */
-  @ManyToOne(() => Usuario, { nullable: true })
-  @JoinColumn({ name: '_user_delete', referencedColumnName: 'idUsuario' })
+  @ManyToOne(() => Usuario, {
+    nullable: true,
+    onDelete: 'RESTRICT',
+  })
+  @JoinColumn({
+    name: '_user_delete',
+    referencedColumnName: 'id',
+  })
   usuarioEliminador!: Usuario | null;
 
-  // Atributos
-
   /*
-   * Estado anterior del trámite antes del evento.
-   * Longitud máxima: 40 caracteres. Puede ser nulo.
+   * Estado anterior del trámite.
+   * NULL cuando corresponde al evento inicial.
    */
-  @Column({ type: 'varchar', length: 40, nullable: true })
+  @Column({
+    type: 'varchar',
+    length: 40,
+    nullable: true,
+  })
   estado_anterior!: string | null;
 
   /*
-   * Estado nuevo del trámite después del evento.
-   * Longitud máxima: 40 caracteres.
+   * Estado nuevo del trámite.
    */
-  @Column({ type: 'varchar', length: 40 })
+  @Column({
+    type: 'varchar',
+    length: 40,
+  })
   estado_nuevo!: string;
 
   /*
-   * Paso del flujo en el que ocurrió el evento.
-   * Puede ser nulo.
+   * Número informativo del paso del flujo.
    */
-  @Column({ type: 'smallint', nullable: true })
+  @Column({
+    type: 'smallint',
+    nullable: true,
+  })
   paso!: number | null;
 
   /*
-   * Actor que ejecutó el evento (por ejemplo: SISTEMA, FUNCIONARIO, CIUDADANO).
-   * Longitud máxima: 40 caracteres.
+   * Identificación textual del actor.
    */
-  @Column({ type: 'varchar', length: 40 })
+  @Column({
+    type: 'varchar',
+    length: 40,
+  })
   actor!: string;
 
   /*
-   * Fecha y hora en que ocurrió el evento.
+   * Fecha y hora del evento.
    */
-  @Column({ type: 'timestamptz' })
+  @Column({
+    type: 'timestamptz',
+    default: () => 'now()',
+  })
   fecha!: Date;
 
   /*
-   * Observaciones adicionales del evento.
-   * Puede ser nulo.
+   * Observaciones del evento.
    */
-  @Column({ type: 'text', nullable: true })
+  @Column({
+    type: 'text',
+    nullable: true,
+  })
   observacion!: string | null;
 
   /*
-   * Metadatos adicionales del evento en formato JSON.
-   * Puede ser nulo.
+   * Información adicional en formato JSONB.
    */
-  @Column({ type: 'jsonb', nullable: true })
+  @Column({
+    type: 'jsonb',
+    nullable: true,
+  })
   metadata!: Record<string, unknown> | null;
 
   /*
    * Estado del registro: ACTIVO o INACTIVO.
-   * Por defecto: 'ACTIVO'.
    */
-  @Column({ type: 'varchar', length: 20, default: 'ACTIVO' })
+  @Column({
+    type: 'varchar',
+    length: 20,
+    default: 'ACTIVO',
+  })
   estado!: string;
 
   /*
-   * Fecha y hora de creación del registro.
-   * Por defecto: CURRENT_TIMESTAMP.
+   * Fecha y hora de creación.
+   * Administrada por el trigger.
    */
-  @Column({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
+  @Column({
+    type: 'timestamptz',
+    name: '_created_at',
+    default: () => 'clock_timestamp()',
+  })
   _created_at!: Date;
 
   /*
-   * Fecha y hora de la última actualización del registro.
-   * Por defecto: CURRENT_TIMESTAMP.
+   * Fecha y hora de última actualización.
+   * Administrada por el trigger.
    */
-  @Column({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
+  @Column({
+    type: 'timestamptz',
+    name: '_updated_at',
+    default: () => 'clock_timestamp()',
+  })
   _updated_at!: Date;
 
   /*
-   * Fecha y hora de eliminación lógica del registro.
-   * Puede ser nula si no fue eliminado.
+   * Fecha y hora de baja lógica.
    */
-  @Column({ type: 'timestamptz', nullable: true })
+  @Column({
+    type: 'timestamptz',
+    name: '_deleted_at',
+    nullable: true,
+  })
   _deleted_at!: Date | null;
 }

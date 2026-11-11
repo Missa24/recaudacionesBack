@@ -1,3 +1,13 @@
+/**
+ * Módulo: Trámites VUT - Detalle de Liquidación
+ * Archivo: liquidacion-detalle.entity.ts
+ * Descripción:
+ * Define la estructura y las relaciones de la entidad LiquidacionDetalle,
+ * correspondiente a la tabla liquidacion_detalle del esquema tramite_vut.
+ *
+ * Desarrollado por: Missael Apaza - Fecha: 11/11/2026
+ */
+
 import { ArancelDetalle } from 'src/arancel/arancel-detalle/entities/arancel-detalle.entity';
 import { Tarifa } from 'src/arancel/tarifa/entities/tarifa.entity';
 import { Usuario } from 'src/seguridad/usuario/entities/usuario.entity';
@@ -12,25 +22,32 @@ import {
 } from 'typeorm';
 
 /**
- * Módulo: Trámite - Liquidación
- * Archivo: liquidacion_detalle.entity.ts
- * Descripción:
- * Define los detalles de una liquidación.
+ * Entidad LiquidacionDetalle.
+ * Representa los conceptos, cantidades y precios
+ * asociados a una liquidación.
+ *
+ * La relación con Tarifa utiliza una FK compuesta.
+ *
+ * Desarrollado por: Missael Apaza - Fecha: 11/11/2026
  */
-@Entity({ schema: 'tramite-vut', name: 'liquidacion_detalle' })
+
+@Entity({ schema: 'tramite_vut', name: 'liquidacion_detalle' })
 export class LiquidacionDetalle {
-  @PrimaryGeneratedColumn('uuid', { name: 'id_detalle' })
-  id_detalle!: string;
+  // Identificador único
+
+  @PrimaryGeneratedColumn('uuid')
+  id!: string;
 
   // Claves foráneas
-  @Column({ type: 'uuid', name: 'id_liquidacion' })
-  id_liquidacion!: string;
 
-  @Column({ type: 'uuid', name: 'id_arancel_det' })
-  id_arancel_det!: string;
+  @Column({ type: 'uuid', name: 'liquidacion_id' })
+  liquidacion_id!: string;
 
-  @Column({ type: 'uuid', name: 'id_tarifa' })
-  id_tarifa!: string;
+  @Column({ type: 'uuid', name: 'arancel_det_id' })
+  arancel_det_id!: string;
+
+  @Column({ type: 'uuid', name: 'tarifa_id' })
+  tarifa_id!: string;
 
   @Column({ type: 'uuid', name: '_user_created' })
   usuarios_created_id!: string;
@@ -41,58 +58,69 @@ export class LiquidacionDetalle {
   @Column({ type: 'uuid', name: '_user_delete', nullable: true })
   usuarios_delete_id!: string | null;
 
-  // Relación con Liquidación
-  @ManyToOne(() => Liquidacion, (liquidacion) => liquidacion.detalles)
+  // Relaciones
+
+  @ManyToOne(() => Liquidacion, (liquidacion) => liquidacion.detalles, {
+    nullable: false,
+    onDelete: 'RESTRICT',
+  })
   @JoinColumn({
-    name: 'id_liquidacion',
-    referencedColumnName: 'id_liquidacion',
+    name: 'liquidacion_id',
+    referencedColumnName: 'id',
   })
   liquidacion!: Liquidacion;
 
-  // Relación con Arancel
-  @ManyToOne(() => ArancelDetalle)
-  @JoinColumn({
-    name: 'id_arancel_det',
-    referencedColumnName: 'id_arancel_det',
+  @ManyToOne(() => ArancelDetalle, {
+    nullable: false,
   })
-  arancelDet!: ArancelDetalle;
+  @JoinColumn({
+    name: 'arancel_det_id',
+    referencedColumnName: 'id',
+  })
+  arancelDetalle!: ArancelDetalle;
 
-  // Relación compuesta con Tarifa
-  @ManyToOne(() => Tarifa)
+  /*
+   * Relación con tarifa mediante FK compuesta.
+   */
+  @ManyToOne(() => Tarifa, {
+    nullable: false,
+  })
   @JoinColumn([
-    { name: 'id_tarifa', referencedColumnName: 'id_tarifa' },
-    { name: 'id_arancel_det', referencedColumnName: 'id_arancel_det' },
+    {
+      name: 'tarifa_id',
+      referencedColumnName: 'id',
+    },
+    {
+      name: 'arancel_det_id',
+      referencedColumnName: 'id',
+    },
   ])
   tarifa!: Tarifa;
 
-  // Relación con usuarios
-  @ManyToOne(() => Usuario)
-  @JoinColumn({ name: '_user_created', referencedColumnName: 'idUsuario' })
-  usuarioCreador!: Usuario;
-
-  @ManyToOne(() => Usuario, { nullable: true })
-  @JoinColumn({ name: '_user_update', referencedColumnName: 'idUsuario' })
-  usuarioActualizador!: Usuario | null;
-
-  @ManyToOne(() => Usuario, { nullable: true })
-  @JoinColumn({ name: '_user_delete', referencedColumnName: 'idUsuario' })
-  usuarioEliminador!: Usuario | null;
-
   // Datos del detalle
+
   @Column({ type: 'integer' })
   cantidad!: number;
-
-  @Column({ type: 'numeric', precision: 14, scale: 2 })
-  precio_unitario!: string;
 
   @Column({
     type: 'numeric',
     precision: 14,
     scale: 2,
-    nullable: true,
+  })
+  precio_unitario!: string;
+
+  /*
+   * Subtotal generado por PostgreSQL.
+   * No se envía en INSERT ni UPDATE.
+   */
+  @Column({
+    type: 'numeric',
+    precision: 14,
+    scale: 2,
     insert: false,
     update: false,
-    asExpression: 'cantidad * precio_unitario',
+    nullable: true,
+    asExpression: 'cantidad::numeric * precio_unitario',
     generatedType: 'STORED',
   })
   subtotal!: string | null;
@@ -112,16 +140,67 @@ export class LiquidacionDetalle {
   @Column({ type: 'text' })
   descripcion_aplicada!: string;
 
-  // Estado y auditoría
-  @Column({ type: 'varchar', length: 20, default: 'ACTIVO' })
+  // Estado del registro
+
+  @Column({
+    type: 'varchar',
+    length: 20,
+    default: 'ACTIVO',
+  })
   estado!: string;
 
-  @Column({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
+  // Auditoría
+
+  @Column({
+    type: 'timestamptz',
+    name: '_created_at',
+    default: () => 'clock_timestamp()',
+  })
   _created_at!: Date;
 
-  @Column({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
+  @Column({
+    type: 'timestamptz',
+    name: '_updated_at',
+    default: () => 'clock_timestamp()',
+  })
   _updated_at!: Date;
 
-  @Column({ type: 'timestamptz', nullable: true })
+  @Column({
+    type: 'timestamptz',
+    name: '_deleted_at',
+    nullable: true,
+  })
   _deleted_at!: Date | null;
+
+  // Relaciones de auditoría
+
+  @ManyToOne(() => Usuario, {
+    nullable: false,
+    onDelete: 'RESTRICT',
+  })
+  @JoinColumn({
+    name: '_user_created',
+    referencedColumnName: 'idUsuario',
+  })
+  usuarioCreador!: Usuario;
+
+  @ManyToOne(() => Usuario, {
+    nullable: true,
+    onDelete: 'RESTRICT',
+  })
+  @JoinColumn({
+    name: '_user_update',
+    referencedColumnName: 'idUsuario',
+  })
+  usuarioActualizador!: Usuario | null;
+
+  @ManyToOne(() => Usuario, {
+    nullable: true,
+    onDelete: 'RESTRICT',
+  })
+  @JoinColumn({
+    name: '_user_delete',
+    referencedColumnName: 'idUsuario',
+  })
+  usuarioEliminador!: Usuario | null;
 }

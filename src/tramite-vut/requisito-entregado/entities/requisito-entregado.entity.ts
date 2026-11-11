@@ -3,7 +3,7 @@
  * Archivo: requisito-entregado.entity.ts
  * Descripción:
  * Define la estructura y las relaciones de la entidad RequisitoEntregado,
- * correspondiente a la tabla requisito_entregado del esquema tramite.
+ * correspondiente a la tabla requisito_entregado del esquema tramite_vut.
  *
  * Desarrollado por: Missael Apaza - Fecha: 11/11/2026
  */
@@ -19,6 +19,7 @@ import {
   ManyToOne,
   JoinColumn,
   Unique,
+  Check,
 } from 'typeorm';
 
 /**
@@ -27,55 +28,53 @@ import {
  * asignado a un expediente.
  *
  * Las relaciones compuestas garantizan que el requisito
- * pertenezca al mismo tipo de trámite del expediente.
+ * corresponda al mismo tipo de trámite del expediente.
  *
  * Desarrollado por: Missael Apaza - Fecha: 11/11/2026
  */
 
-@Entity({ schema: 'tramite-vut', name: 'requisito_entregado' })
-@Unique('requisito_entregado_id_tramite_id_requisito_key', [
-  'id_tramite',
-  'id_requisito',
+@Entity({ schema: 'tramite_vut', name: 'requisito_entregado' })
+@Unique('requisito_entregado_tramite_id_requisito_id_key', [
+  'tramite_id',
+  'requisito_id',
 ])
+@Check(
+  'requisito_entregado_check',
+  '("verificado_por" IS NULL) = ("fecha_verificacion" IS NULL)',
+)
 export class RequisitoEntregado {
-  /*
-   * Identificador único del requisito entregado.
-   */
+  // Identificador único
+
   @PrimaryGeneratedColumn('uuid')
-  id_requisito_entregado!: string;
+  id!: string;
+
+  // Claves foráneas
+
+  @Column({ type: 'uuid', name: 'tramite_id' })
+  tramite_id!: string;
+
+  @Column({ type: 'uuid', name: 'requisito_id' })
+  requisito_id!: string;
+
+  @Column({ type: 'uuid', name: 'tipo_tramite_id' })
+  tipo_tramite_id!: string;
+
+  @Column({ type: 'uuid', name: 'verificado_por', nullable: true })
+  verificado_por!: string | null;
+
+  @Column({ type: 'uuid', name: '_user_created' })
+  usuarios_created_id!: string;
+
+  @Column({ type: 'uuid', name: '_user_update', nullable: true })
+  usuarios_update_id!: string | null;
+
+  @Column({ type: 'uuid', name: '_user_delete', nullable: true })
+  usuarios_delete_id!: string | null;
+
+  // Relaciones principales
 
   /*
-   * Identificador del trámite asociado.
-   */
-  @Column({
-    type: 'uuid',
-    name: 'tramite_id',
-  })
-  id_tramite!: string;
-
-  /*
-   * Identificador del requisito asignado al tipo de trámite.
-   */
-  @Column({
-    type: 'uuid',
-    name: 'requisito_id',
-  })
-  id_requisito!: string;
-
-  /*
-   * Identificador del tipo de trámite.
-   * Campo técnico utilizado para las FK compuestas.
-   */
-  @Column({
-    type: 'uuid',
-    name: 'tipo_tramite_id',
-  })
-  id_tipo_tramite!: string;
-
-  /*
-   * Relación con el expediente.
-   *
-   * FK compuesta:
+   * Relación con trámite mediante FK compuesta.
    * tramite_id + tipo_tramite_id.
    */
   @ManyToOne(() => Tramite, {
@@ -85,19 +84,17 @@ export class RequisitoEntregado {
   @JoinColumn([
     {
       name: 'tramite_id',
-      referencedColumnName: 'id_tramite',
+      referencedColumnName: 'id',
     },
     {
       name: 'tipo_tramite_id',
-      referencedColumnName: 'id_tipo_tramite',
+      referencedColumnName: 'tipo_tramite_id',
     },
   ])
   tramite!: Tramite;
 
   /*
-   * Relación con el requisito asignado.
-   *
-   * FK compuesta:
+   * Relación con requisito mediante FK compuesta.
    * requisito_id + tipo_tramite_id.
    */
   @ManyToOne(() => Requisito, {
@@ -107,42 +104,14 @@ export class RequisitoEntregado {
   @JoinColumn([
     {
       name: 'requisito_id',
-      referencedColumnName: 'id_requisito',
+      referencedColumnName: 'id',
     },
     {
       name: 'tipo_tramite_id',
-      referencedColumnName: 'id_tipo_tramite',
+      referencedColumnName: 'tipo_tramite_id',
     },
   ])
   requisito!: Requisito;
-
-  /*
-   * Indica si el requisito fue presentado.
-   */
-  @Column({
-    type: 'boolean',
-    default: false,
-  })
-  entregado!: boolean;
-
-  /*
-   * Observaciones del requisito entregado.
-   */
-  @Column({
-    type: 'text',
-    nullable: true,
-  })
-  observacion!: string | null;
-
-  /*
-   * Identificador del usuario que verificó el requisito.
-   */
-  @Column({
-    type: 'uuid',
-    name: 'verificado_por',
-    nullable: true,
-  })
-  verificado_por!: string | null;
 
   /*
    * Relación con el usuario verificador.
@@ -157,18 +126,28 @@ export class RequisitoEntregado {
   })
   usuarioVerificador!: Usuario | null;
 
-  /*
-   * Fecha y hora de verificación del requisito.
-   */
+  // Datos del requisito entregado
+
+  @Column({
+    type: 'boolean',
+    default: false,
+  })
+  entregado!: boolean;
+
+  @Column({
+    type: 'text',
+    nullable: true,
+  })
+  observacion!: string | null;
+
   @Column({
     type: 'timestamptz',
     nullable: true,
   })
   fecha_verificacion!: Date | null;
 
-  /*
-   * Estado del registro: ACTIVO o INACTIVO.
-   */
+  // Estado del registro
+
   @Column({
     type: 'varchar',
     length: 20,
@@ -176,9 +155,8 @@ export class RequisitoEntregado {
   })
   estado!: string;
 
-  /*
-   * Fecha y hora de creación.
-   */
+  // Auditoría
+
   @Column({
     type: 'timestamptz',
     name: '_created_at',
@@ -186,9 +164,6 @@ export class RequisitoEntregado {
   })
   _created_at!: Date;
 
-  /*
-   * Fecha y hora de última actualización.
-   */
   @Column({
     type: 'timestamptz',
     name: '_updated_at',
@@ -196,9 +171,6 @@ export class RequisitoEntregado {
   })
   _updated_at!: Date;
 
-  /*
-   * Fecha y hora de eliminación lógica.
-   */
   @Column({
     type: 'timestamptz',
     name: '_deleted_at',
@@ -206,18 +178,8 @@ export class RequisitoEntregado {
   })
   _deleted_at!: Date | null;
 
-  /*
-   * Identificador del usuario creador.
-   */
-  @Column({
-    type: 'uuid',
-    name: '_user_created',
-  })
-  _user_created!: string;
+  // Relaciones de auditoría
 
-  /*
-   * Relación con el usuario creador.
-   */
   @ManyToOne(() => Usuario, {
     nullable: false,
     onDelete: 'RESTRICT',
@@ -228,19 +190,6 @@ export class RequisitoEntregado {
   })
   usuarioCreador!: Usuario;
 
-  /*
-   * Identificador del usuario actualizador.
-   */
-  @Column({
-    type: 'uuid',
-    name: '_user_update',
-    nullable: true,
-  })
-  _user_update!: string | null;
-
-  /*
-   * Relación con el usuario actualizador.
-   */
   @ManyToOne(() => Usuario, {
     nullable: true,
     onDelete: 'RESTRICT',
@@ -251,19 +200,6 @@ export class RequisitoEntregado {
   })
   usuarioActualizador!: Usuario | null;
 
-  /*
-   * Identificador del usuario que realizó la baja lógica.
-   */
-  @Column({
-    type: 'uuid',
-    name: '_user_delete',
-    nullable: true,
-  })
-  _user_delete!: string | null;
-
-  /*
-   * Relación con el usuario que realizó la baja lógica.
-   */
   @ManyToOne(() => Usuario, {
     nullable: true,
     onDelete: 'RESTRICT',

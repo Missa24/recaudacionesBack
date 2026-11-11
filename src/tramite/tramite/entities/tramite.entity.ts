@@ -14,6 +14,9 @@ import { PersonaJuridica } from 'src/catalogo/persona-juridica/entities/persona-
 
 import { Liquidacion } from 'src/tramite-vut/liquidacion/entities/liquidacion.entity';
 
+import { ArancelDetalle } from 'src/arancel/arancel-detalle/entities/arancel-detalle.entity';
+import { TipoTramiteCatalogo } from 'src/arancel/tipo-tramite-catalogo/entities/tipo-tramite-catalogo.entity';
+
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -23,8 +26,6 @@ import {
   JoinColumn,
   Unique,
 } from 'typeorm';
-import { ArancelDetalle } from 'src/arancel/arancel-detalle/entities/arancel-detalle.entity';
-import { TipoTramiteCatalogo } from 'src/arancel/tipo-tramite-catalogo/entities/tipo-tramite-catalogo.entity';
 
 /**
  * Entidad Tramite.
@@ -39,14 +40,14 @@ import { TipoTramiteCatalogo } from 'src/arancel/tipo-tramite-catalogo/entities/
 @Entity({ schema: 'tramite', name: 'tramite' })
 @Unique('tramite_gestion_correlativo_key', ['gestion', 'correlativo'])
 @Unique('tramite_nro_tramite_key', ['nro_tramite'])
-@Unique('uq_tramite_id_tipo', ['id_tramite', 'id_tipo_tramite'])
+@Unique('uq_tramite_id_tipo', ['id', 'tipo_tramite_id'])
 export class Tramite {
   /*
    * Identificador único del trámite.
    * UUID generado automáticamente por PostgreSQL.
    */
   @PrimaryGeneratedColumn('uuid')
-  id_tramite!: string;
+  id!: string;
 
   /*
    * Número anual del trámite.
@@ -55,6 +56,7 @@ export class Tramite {
   @Column({
     type: 'varchar',
     length: 20,
+    name: 'nro_tramite',
   })
   nro_tramite!: string;
 
@@ -63,14 +65,17 @@ export class Tramite {
    */
   @Column({
     type: 'smallint',
+    name: 'gestion',
   })
   gestion!: number;
 
   /*
    * Número correlativo dentro de la gestión.
+   * Generado automáticamente mediante trigger.
    */
   @Column({
     type: 'integer',
+    name: 'correlativo',
   })
   correlativo!: number;
 
@@ -79,16 +84,18 @@ export class Tramite {
    */
   @Column({
     type: 'uuid',
-    name: 'tipo_tramite_id',
+    name: 'id_tipo_tramite',
   })
-  id_tipo_tramite!: string;
+  tipo_tramite_id!: string;
 
   /*
    * Relación con el catálogo de tipos de trámite.
    */
-  @ManyToOne(() => TipoTramiteCatalogo, { nullable: false })
+  @ManyToOne(() => TipoTramiteCatalogo, {
+    nullable: false,
+  })
   @JoinColumn({
-    name: 'tipo_tramite_id',
+    name: 'id_tipo_tramite',
     referencedColumnName: 'id_tipo_tramite',
   })
   tipo_tramite!: TipoTramiteCatalogo;
@@ -98,19 +105,30 @@ export class Tramite {
    */
   @Column({
     type: 'uuid',
-    name: 'arancel_det_id',
+    name: 'id_arancel_det',
     nullable: true,
   })
-  id_arancel_det!: string | null;
+  arancel_det_id!: string | null;
 
   /*
    * Relación con el detalle arancelario.
+   *
+   * FK compuesta:
+   * id_arancel_det + id_tipo_tramite.
    */
-  @ManyToOne(() => ArancelDetalle, { nullable: true })
-  @JoinColumn({
-    name: 'arancel_det_id',
-    referencedColumnName: 'id_arancel_det',
+  @ManyToOne(() => ArancelDetalle, {
+    nullable: true,
   })
+  @JoinColumn([
+    {
+      name: 'id_arancel_det',
+      referencedColumnName: 'id_arancel_det',
+    },
+    {
+      name: 'id_tipo_tramite',
+      referencedColumnName: 'id_tipo_tramite',
+    },
+  ])
   arancel_det!: ArancelDetalle | null;
 
   /*
@@ -118,10 +136,10 @@ export class Tramite {
    */
   @Column({
     type: 'uuid',
-    name: 'solicitante_natural_id',
+    name: 'id_solicitante_natural',
     nullable: true,
   })
-  id_solicitante_natural!: string | null;
+  solicitante_natural_id!: string | null;
 
   /*
    * Relación con la persona natural solicitante.
@@ -131,7 +149,7 @@ export class Tramite {
     onDelete: 'RESTRICT',
   })
   @JoinColumn({
-    name: 'solicitante_natural_id',
+    name: 'id_solicitante_natural',
     referencedColumnName: 'id_persona_natural',
   })
   solicitante_natural!: PersonaNatural | null;
@@ -141,10 +159,10 @@ export class Tramite {
    */
   @Column({
     type: 'uuid',
-    name: 'solicitante_juridica_id',
+    name: 'id_solicitante_juridica',
     nullable: true,
   })
-  id_solicitante_juridica!: string | null;
+  solicitante_juridica_id!: string | null;
 
   /*
    * Relación con la persona jurídica solicitante.
@@ -154,7 +172,7 @@ export class Tramite {
     onDelete: 'RESTRICT',
   })
   @JoinColumn({
-    name: 'solicitante_juridica_id',
+    name: 'id_solicitante_juridica',
     referencedColumnName: 'id_persona_juridica',
   })
   solicitante_juridica!: PersonaJuridica | null;
@@ -165,6 +183,7 @@ export class Tramite {
   @Column({
     type: 'varchar',
     length: 20,
+    name: 'cod_ci',
     nullable: true,
   })
   cod_ci!: string | null;
@@ -175,6 +194,7 @@ export class Tramite {
   @Column({
     type: 'varchar',
     length: 250,
+    name: 'nombre_solicitante',
   })
   nombre_solicitante!: string;
 
@@ -184,6 +204,7 @@ export class Tramite {
   @Column({
     type: 'varchar',
     length: 250,
+    name: 'direccion',
     nullable: true,
   })
   direccion!: string | null;
@@ -194,16 +215,20 @@ export class Tramite {
   @Column({
     type: 'varchar',
     length: 20,
+    name: 'telefono',
     nullable: true,
   })
   telefono!: string | null;
 
   /*
    * Estado funcional del trámite.
+   * Se conserva como string, sin enum de TypeScript.
    */
   @Column({
-    type: 'varchar',
-    length: 30,
+    type: 'enum',
+    enumName: 'estado_tramite',
+    name: 'estado_tramite',
+    default: 'REGISTRADO',
   })
   estado_tramite!: string;
 
@@ -212,6 +237,7 @@ export class Tramite {
    */
   @Column({
     type: 'timestamptz',
+    name: 'fecha_ingreso',
     default: () => 'now()',
   })
   fecha_ingreso!: Date;
@@ -221,6 +247,7 @@ export class Tramite {
    */
   @Column({
     type: 'timestamptz',
+    name: 'fecha_cierre',
     nullable: true,
   })
   fecha_cierre!: Date | null;
@@ -230,6 +257,7 @@ export class Tramite {
    */
   @Column({
     type: 'text',
+    name: 'observaciones',
     nullable: true,
   })
   observaciones!: string | null;
@@ -239,19 +267,19 @@ export class Tramite {
    */
   @Column({
     type: 'uuid',
-    name: 'tramite_padre_id',
+    name: 'id_tramite_padre',
     nullable: true,
   })
-  id_tramite_padre!: string | null;
+  tramite_padre_id!: string | null;
 
   /*
    * Relación con el trámite padre.
    */
-  @ManyToOne(() => Tramite, {
+  @ManyToOne(() => Tramite, (tramite) => tramite.tramites_derivados, {
     nullable: true,
   })
   @JoinColumn({
-    name: 'tramite_padre_id',
+    name: 'id_tramite_padre',
     referencedColumnName: 'id_tramite',
   })
   tramite_padre!: Tramite | null;
@@ -263,17 +291,18 @@ export class Tramite {
   tramites_derivados!: Tramite[];
 
   /*
-   * Estado del registro: ACTIVO o INACTIVO.
+   * Estado del registro: ACTIVO / INACTIVO.
    */
   @Column({
     type: 'varchar',
-    length: 20,
+    name: 'estado',
     default: 'ACTIVO',
   })
   estado!: string;
 
   /*
    * Fecha y hora de creación.
+   * Administrada por trigger.
    */
   @Column({
     type: 'timestamptz',
@@ -284,6 +313,7 @@ export class Tramite {
 
   /*
    * Fecha y hora de última actualización.
+   * Administrada por trigger.
    */
   @Column({
     type: 'timestamptz',
@@ -303,13 +333,13 @@ export class Tramite {
   _deleted_at!: Date | null;
 
   /*
-   * Identificador del usuario que creó el registro.
+   * Identificador del usuario creador.
    */
   @Column({
     type: 'uuid',
     name: '_user_created',
   })
-  _user_created!: string;
+  usuario_creador_id!: string;
 
   /*
    * Relación con el usuario creador.
@@ -325,14 +355,14 @@ export class Tramite {
   usuarioCreador!: Usuario;
 
   /*
-   * Identificador del usuario que actualizó el registro.
+   * Identificador del usuario actualizador.
    */
   @Column({
     type: 'uuid',
     name: '_user_update',
     nullable: true,
   })
-  _user_update!: string | null;
+  usuario_actualizador_id!: string | null;
 
   /*
    * Relación con el usuario actualizador.
@@ -355,7 +385,7 @@ export class Tramite {
     name: '_user_delete',
     nullable: true,
   })
-  _user_delete!: string | null;
+  usuario_eliminador_id!: string | null;
 
   /*
    * Relación con el usuario que realizó la baja lógica.
