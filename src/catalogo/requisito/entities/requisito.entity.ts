@@ -60,7 +60,7 @@ export class Requisito {
    * Estado actual del registro: ACTIVO o INACTIVO.
    */
   @Column({
-    type: 'text',
+    type: 'varchar',
     default: 'ACTIVO',
   })
   estado!: string;

@@ -44,7 +44,7 @@ export class Calendario {
    * Indica si la fecha corresponde a un día hábil.
    */
   @Column({ type: 'boolean', default: true })
-  habil!: boolean;
+  dia_habil!: boolean;
 
   /**
    * Descripción o motivo de la configuración del día.

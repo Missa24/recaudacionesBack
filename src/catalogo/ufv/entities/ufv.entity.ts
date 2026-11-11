@@ -45,7 +45,7 @@ export class Ufv {
 
   // Estado actual del registro.
   @Column({
-    type: 'text',
+    type: 'varchar',
     default: 'ACTIVO',
   })
   estado!: string;
