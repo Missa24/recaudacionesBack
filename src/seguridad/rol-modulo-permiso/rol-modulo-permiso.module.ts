@@ -1,13 +1,13 @@
-import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { Usuario } from '../usuario/entities/usuario.entity';
-import { Rol } from '../rol/entities/rol.entity';
-import { Modulo } from '../modulo/entities/modulo.entity';
-import { Permiso } from '../permiso/entities/permiso.entity';
-import { UsuarioRol } from '../usuario-rol/entities/usuario-rol.entity';
-import { RolModuloPermiso } from '../rol-modulo-permiso/entities/rol-modulo-permiso.entity';
-import { RolModuloPermisoController } from './rol-modulo-permiso.controller';
-import { RolModuloPermisoService } from './rol-modulo-permiso.service';
+import { Module } from "@nestjs/common";
+import { TypeOrmModule } from "@nestjs/typeorm";
+import { Usuario } from "../usuario/entities/usuario.entity";
+import { Rol } from "../rol/entities/rol.entity";
+import { Modulo } from "../modulo/entities/modulo.entity";
+import { Permiso } from "../permiso/entities/permiso.entity";
+import { UsuarioRol } from "../usuario-rol/entities/usuario-rol.entity";
+import { RolModuloPermiso } from "../rol-modulo-permiso/entities/rol-modulo-permiso.entity";
+import { RolModuloPermisoController } from "./rol-modulo-permiso.controller";
+import { RolModuloPermisoService } from "./rol-modulo-permiso.service";
 
 /**
  * Módulo: Seguridad / RolModuloPermiso

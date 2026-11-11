@@ -7,53 +7,41 @@ import {
   Patch,
   Post,
   Query,
-  UseGuards,
 } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
-
 import {
-  ApiBearerAuth,
   ApiBody,
   ApiOperation,
   ApiParam,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-
 import { PaginatedResponse } from '../../shared/interface/paginated-response.interface';
-
 import {
   MensajeIdResponse,
   MensajeIdsResponse,
   UsuarioAccesos,
   UsuarioConRoles,
-} from '../asignaciones-common/interfaces/asignaciones-response.interface';
-
+} from './interfaces/usuario-rol-response.interface';
 import { AsignarRolesDto } from './dto/asignar-roles.dto';
 import { ActualizarRolesDto } from './dto/actualizar-roles.dto';
 import { QueryUsuarioRolDto } from './dto/query-usuario-rol.dto';
 import { UsuarioRolService } from './usuario-rol.service';
 
-/** UUID temporal del responsable de las operaciones. */
+/** UUID temporal del responsable, igual que en Usuario. Debe existir si la auditoría tiene FK. */
 const userId = '8b461287-8416-412e-84e7-b5c77615ea2a';
 
 /**
- * Módulo: Seguridad / Usuario Rol
+ * Módulo: Seguridad / UsuarioRol
  * Archivo: usuario-rol.controller.ts
- *
  * Descripción:
- *   Gestiona las asignaciones de roles y las consultas
- *   de accesos de los usuarios.
- *
- *   El interceptor global agrega success, status y data.
- *
+ *   Rutas y documentación Swagger. La envoltura success/status/data la agrega el interceptor global.
  * Fecha de creación: 2026-11-11
  * Autor: Oscar Canchari
  */
 @ApiTags('Seguridad / Usuario Rol')
-// Integración JWT: importar y habilitar los decoradores correspondientes.
-@ApiBearerAuth('JWT')
-@UseGuards(AuthGuard('jwt'))
+// Integración JWT: importar ApiBearerAuth, UseGuards y AuthGuard y habilitar:
+// @ApiBearerAuth('JWT')
+// @UseGuards(AuthGuard('jwt'))
 @Controller('usuario-rol')
 export class UsuarioRolController {
   constructor(private readonly servicio: UsuarioRolService) {}
@@ -64,16 +52,16 @@ export class UsuarioRolController {
   Endpoint: /api/usuario-rol
 
   Descripción:
-    Asigna varios roles a un usuario sin duplicar asignaciones.
+    Asigna varios roles a un usuario, sin duplicar asignaciones.
 
   Parámetros:
     - dto: Usuario y roles a asignar.
 
   Respuestas posibles:
-    - 201: Roles asignados correctamente.
-    - 400: Datos inválidos.
-    - 401: No autorizado, cuando se habilita JWT.
-    - 404: Usuario o rol no encontrado.
+    - 201: Operación realizada correctamente.
+    - 400: Datos o parámetros inválidos.
+    - 401: No autorizado, cuando se habilita el guard JWT.
+    - 404: Registro relacionado no encontrado.
     - 409: Conflicto de asignación.
     - 500: Error interno del servidor.
 
@@ -81,8 +69,8 @@ export class UsuarioRolController {
   Autor: Oscar Canchari
 
   Notas adicionales:
-    Agrega roles sin retirar los actuales.
-    Registra al responsable de la operación.
+    Registra al responsable. Las operaciones múltiples son transaccionales.
+    El estado corresponde a la asignación, no a los catálogos.
   */
   @Post()
   @ApiOperation({
@@ -102,7 +90,7 @@ export class UsuarioRolController {
   })
   @ApiResponse({
     status: 201,
-    description: 'Roles asignados correctamente.',
+    description: 'Operación realizada correctamente.',
     schema: {
       example: {
         success: true,
@@ -114,26 +102,17 @@ export class UsuarioRolController {
       },
     },
   })
-  @ApiResponse({
-    status: 400,
-    description: 'Datos o parámetros inválidos.',
-  })
+  @ApiResponse({ status: 400, description: 'Datos o parámetros inválidos.' })
   @ApiResponse({
     status: 401,
     description: 'No autorizado; aplica al habilitar JWT.',
   })
   @ApiResponse({
     status: 404,
-    description: 'Usuario o rol no encontrado.',
+    description: 'Registro relacionado no encontrado.',
   })
-  @ApiResponse({
-    status: 409,
-    description: 'Conflicto de asignación.',
-  })
-  @ApiResponse({
-    status: 500,
-    description: 'Error interno del servidor.',
-  })
+  @ApiResponse({ status: 409, description: 'Conflicto de asignación.' })
+  @ApiResponse({ status: 500, description: 'Error interno del servidor.' })
   asignarRoles(@Body() dto: AsignarRolesDto): Promise<MensajeIdsResponse> {
     return this.servicio.asignarRoles(dto, userId);
   }
@@ -144,34 +123,35 @@ export class UsuarioRolController {
   Endpoint: /api/usuario-rol
 
   Descripción:
-    Lista usuarios con sus roles.
-    Permite búsqueda, filtros y paginación.
+    Lista usuarios con sus roles y permite búsqueda, filtros y paginación.
 
   Parámetros:
-    - query: Paginación y filtros de consulta.
+    - query: Paginación y filtros.
 
   Respuestas posibles:
-    - 200: Listado obtenido correctamente.
-    - 400: Parámetros inválidos.
-    - 401: No autorizado, cuando se habilita JWT.
+    - 200: Operación realizada correctamente.
+    - 400: Datos o parámetros inválidos.
+    - 401: No autorizado, cuando se habilita el guard JWT.
+    - 404: Registro relacionado no encontrado.
+    
     - 500: Error interno del servidor.
 
   Fecha de creación: 2026-11-11
   Autor: Oscar Canchari
 
   Notas adicionales:
-    Devuelve datos resumidos del usuario y sus roles.
-    Excluye las asignaciones eliminadas lógicamente.
+    Devuelve únicamente los campos definidos en las interfaces.
+    Excluye asignaciones eliminadas, salvo las reactivadas al asignar.
   */
   @Get()
   @ApiOperation({
     summary: 'Listar usuarios con roles',
     description:
-      'Lista usuarios con sus roles, búsqueda, filtros y paginación.',
+      'Lista usuarios con sus roles y permite búsqueda, filtros y paginación.',
   })
   @ApiResponse({
     status: 200,
-    description: 'Listado obtenido correctamente.',
+    description: 'Operación realizada correctamente.',
     schema: {
       example: {
         success: true,
@@ -203,18 +183,16 @@ export class UsuarioRolController {
       },
     },
   })
-  @ApiResponse({
-    status: 400,
-    description: 'Parámetros inválidos.',
-  })
+  @ApiResponse({ status: 400, description: 'Datos o parámetros inválidos.' })
   @ApiResponse({
     status: 401,
     description: 'No autorizado; aplica al habilitar JWT.',
   })
   @ApiResponse({
-    status: 500,
-    description: 'Error interno del servidor.',
+    status: 404,
+    description: 'Registro relacionado no encontrado.',
   })
+  @ApiResponse({ status: 500, description: 'Error interno del servidor.' })
   listarUsuariosConRoles(
     @Query() query: QueryUsuarioRolDto,
   ): Promise<PaginatedResponse<UsuarioConRoles>> {
@@ -227,31 +205,31 @@ export class UsuarioRolController {
   Endpoint: /api/usuario-rol/usuario/:valor/accesos
 
   Descripción:
-    Busca un usuario por ID, username o CI y devuelve
-    sus roles, módulos y permisos efectivos.
+    Consulta por ID, username o CI y devuelve roles, módulos y permisos activos.
 
   Parámetros:
-    - valor: UUID, username o CI del usuario.
+    - valor: UUID, username o CI.
 
   Respuestas posibles:
-    - 200: Accesos obtenidos correctamente.
-    - 400: Identificador inválido.
-    - 401: No autorizado, cuando se habilita JWT.
-    - 404: Usuario no encontrado.
+    - 200: Operación realizada correctamente.
+    - 400: Datos o parámetros inválidos.
+    - 401: No autorizado, cuando se habilita el guard JWT.
+    - 404: Registro relacionado no encontrado.
+    
     - 500: Error interno del servidor.
 
   Fecha de creación: 2026-11-11
   Autor: Oscar Canchari
 
   Notas adicionales:
-    Solo incluye accesos activos y no eliminados.
-    Devuelve una estructura agrupada sin auditoría.
+    Devuelve únicamente los campos definidos en las interfaces.
+    Excluye asignaciones eliminadas, salvo las reactivadas al asignar.
   */
   @Get('usuario/:valor/accesos')
   @ApiOperation({
     summary: 'Obtener accesos de usuario',
     description:
-      'Consulta por ID, username o CI los roles, módulos y permisos activos.',
+      'Consulta por ID, username o CI y devuelve roles, módulos y permisos activos.',
   })
   @ApiParam({
     name: 'valor',
@@ -260,7 +238,7 @@ export class UsuarioRolController {
   })
   @ApiResponse({
     status: 200,
-    description: 'Accesos obtenidos correctamente.',
+    description: 'Operación realizada correctamente.',
     schema: {
       example: {
         success: true,
@@ -290,22 +268,16 @@ export class UsuarioRolController {
       },
     },
   })
-  @ApiResponse({
-    status: 400,
-    description: 'Identificador inválido.',
-  })
+  @ApiResponse({ status: 400, description: 'Datos o parámetros inválidos.' })
   @ApiResponse({
     status: 401,
     description: 'No autorizado; aplica al habilitar JWT.',
   })
   @ApiResponse({
     status: 404,
-    description: 'Usuario no encontrado.',
+    description: 'Registro relacionado no encontrado.',
   })
-  @ApiResponse({
-    status: 500,
-    description: 'Error interno del servidor.',
-  })
+  @ApiResponse({ status: 500, description: 'Error interno del servidor.' })
   obtenerAccesosDeUsuario(
     @Param('valor') valor: string,
   ): Promise<UsuarioAccesos> {
@@ -318,26 +290,26 @@ export class UsuarioRolController {
   Endpoint: /api/usuario-rol/usuario/:valor
 
   Descripción:
-    Busca un usuario por ID, username o CI
-    y muestra sus roles administrativos.
+    Consulta por ID, username o CI y muestra sus roles administrativos.
 
   Parámetros:
-    - valor: UUID, username o CI.
-    - query: Filtros de las asignaciones.
+    - valor: Identificador.
+    - query: Filtros de asignación.
 
   Respuestas posibles:
-    - 200: Usuario y roles obtenidos correctamente.
-    - 400: Parámetros inválidos.
-    - 401: No autorizado, cuando se habilita JWT.
-    - 404: Usuario no encontrado.
+    - 200: Operación realizada correctamente.
+    - 400: Datos o parámetros inválidos.
+    - 401: No autorizado, cuando se habilita el guard JWT.
+    - 404: Registro relacionado no encontrado.
+    
     - 500: Error interno del servidor.
 
   Fecha de creación: 2026-11-11
   Autor: Oscar Canchari
 
   Notas adicionales:
-    Permite consultar asignaciones activas e inactivas.
-    Excluye asignaciones eliminadas lógicamente.
+    Devuelve únicamente los campos definidos en las interfaces.
+    Excluye asignaciones eliminadas, salvo las reactivadas al asignar.
   */
   @Get('usuario/:valor')
   @ApiOperation({
@@ -352,7 +324,7 @@ export class UsuarioRolController {
   })
   @ApiResponse({
     status: 200,
-    description: 'Usuario y roles obtenidos correctamente.',
+    description: 'Operación realizada correctamente.',
     schema: {
       example: {
         success: true,
@@ -372,22 +344,16 @@ export class UsuarioRolController {
       },
     },
   })
-  @ApiResponse({
-    status: 400,
-    description: 'Parámetros inválidos.',
-  })
+  @ApiResponse({ status: 400, description: 'Datos o parámetros inválidos.' })
   @ApiResponse({
     status: 401,
     description: 'No autorizado; aplica al habilitar JWT.',
   })
   @ApiResponse({
     status: 404,
-    description: 'Usuario no encontrado.',
+    description: 'Registro relacionado no encontrado.',
   })
-  @ApiResponse({
-    status: 500,
-    description: 'Error interno del servidor.',
-  })
+  @ApiResponse({ status: 500, description: 'Error interno del servidor.' })
   buscarUsuarioConRoles(
     @Param('valor') valor: string,
     @Query() query: QueryUsuarioRolDto,
@@ -401,26 +367,26 @@ export class UsuarioRolController {
   Endpoint: /api/usuario-rol/rol/:idRol/usuarios
 
   Descripción:
-    Lista con paginación los usuarios
-    que tienen el rol seleccionado.
+    Lista con paginación los usuarios que tienen el rol seleccionado.
 
   Parámetros:
     - idRol: UUID del rol.
     - query: Paginación y filtros.
 
   Respuestas posibles:
-    - 200: Listado obtenido correctamente.
-    - 400: Parámetros inválidos.
-    - 401: No autorizado, cuando se habilita JWT.
-    - 404: Rol no encontrado.
+    - 200: Operación realizada correctamente.
+    - 400: Datos o parámetros inválidos.
+    - 401: No autorizado, cuando se habilita el guard JWT.
+    - 404: Registro relacionado no encontrado.
+    
     - 500: Error interno del servidor.
 
   Fecha de creación: 2026-11-11
   Autor: Oscar Canchari
 
   Notas adicionales:
-    El estado filtra las asignaciones usuario-rol.
-    Excluye asignaciones eliminadas lógicamente.
+    Devuelve únicamente los campos definidos en las interfaces.
+    Excluye asignaciones eliminadas, salvo las reactivadas al asignar.
   */
   @Get('rol/:idRol/usuarios')
   @ApiOperation({
@@ -428,14 +394,10 @@ export class UsuarioRolController {
     description:
       'Lista con paginación los usuarios que tienen el rol seleccionado.',
   })
-  @ApiParam({
-    name: 'idRol',
-    type: String,
-    description: 'UUID del rol.',
-  })
+  @ApiParam({ name: 'idRol', type: String, description: 'UUID del registro.' })
   @ApiResponse({
     status: 200,
-    description: 'Listado obtenido correctamente.',
+    description: 'Operación realizada correctamente.',
     schema: {
       example: {
         success: true,
@@ -467,22 +429,16 @@ export class UsuarioRolController {
       },
     },
   })
-  @ApiResponse({
-    status: 400,
-    description: 'Parámetros inválidos.',
-  })
+  @ApiResponse({ status: 400, description: 'Datos o parámetros inválidos.' })
   @ApiResponse({
     status: 401,
     description: 'No autorizado; aplica al habilitar JWT.',
   })
   @ApiResponse({
     status: 404,
-    description: 'Rol no encontrado.',
+    description: 'Registro relacionado no encontrado.',
   })
-  @ApiResponse({
-    status: 500,
-    description: 'Error interno del servidor.',
-  })
+  @ApiResponse({ status: 500, description: 'Error interno del servidor.' })
   listarUsuariosPorRol(
     @Param('idRol', ParseUUIDPipe) idRol: string,
     @Query() query: QueryUsuarioRolDto,
@@ -496,18 +452,17 @@ export class UsuarioRolController {
   Endpoint: /api/usuario-rol/usuario/:idUsuario/roles
 
   Descripción:
-    Guarda la selección completa de roles del usuario.
-    Conserva o activa los incluidos y retira los omitidos.
+    Guarda la selección completa de roles del usuario, retirando los omitidos.
 
   Parámetros:
-    - idUsuario: UUID del usuario.
-    - dto: Selección final de roles.
+    - idUsuario: UUID.
+    - dto: Roles finales; [] quita todos.
 
   Respuestas posibles:
-    - 200: Roles actualizados correctamente.
-    - 400: Datos inválidos.
-    - 401: No autorizado, cuando se habilita JWT.
-    - 404: Usuario o rol no encontrado.
+    - 200: Operación realizada correctamente.
+    - 400: Datos o parámetros inválidos.
+    - 401: No autorizado, cuando se habilita el guard JWT.
+    - 404: Registro relacionado no encontrado.
     - 409: Conflicto de asignación.
     - 500: Error interno del servidor.
 
@@ -515,8 +470,8 @@ export class UsuarioRolController {
   Autor: Oscar Canchari
 
   Notas adicionales:
-    Una lista vacía retira todos los roles.
-    Registra al responsable y utiliza una transacción.
+    Registra al responsable. Las operaciones múltiples son transaccionales.
+    El estado corresponde a la asignación, no a los catálogos.
   */
   @Patch('usuario/:idUsuario/roles')
   @ApiOperation({
@@ -528,25 +483,18 @@ export class UsuarioRolController {
     type: ActualizarRolesDto,
     examples: {
       ejemplo: {
-        value: {
-          idsRoles: ['550e8400-e29b-41d4-a716-446655440001'],
-        },
-      },
-      quitarTodos: {
-        value: {
-          idsRoles: [],
-        },
+        value: { idsRoles: ['550e8400-e29b-41d4-a716-446655440001'] },
       },
     },
   })
   @ApiParam({
     name: 'idUsuario',
     type: String,
-    description: 'UUID del usuario.',
+    description: 'UUID del registro.',
   })
   @ApiResponse({
     status: 200,
-    description: 'Roles actualizados correctamente.',
+    description: 'Operación realizada correctamente.',
     schema: {
       example: {
         success: true,
@@ -558,26 +506,17 @@ export class UsuarioRolController {
       },
     },
   })
-  @ApiResponse({
-    status: 400,
-    description: 'Datos o parámetros inválidos.',
-  })
+  @ApiResponse({ status: 400, description: 'Datos o parámetros inválidos.' })
   @ApiResponse({
     status: 401,
     description: 'No autorizado; aplica al habilitar JWT.',
   })
   @ApiResponse({
     status: 404,
-    description: 'Usuario o rol no encontrado.',
+    description: 'Registro relacionado no encontrado.',
   })
-  @ApiResponse({
-    status: 409,
-    description: 'Conflicto de asignación.',
-  })
-  @ApiResponse({
-    status: 500,
-    description: 'Error interno del servidor.',
-  })
+  @ApiResponse({ status: 409, description: 'Conflicto de asignación.' })
+  @ApiResponse({ status: 500, description: 'Error interno del servidor.' })
   actualizarRolesDeUsuario(
     @Param('idUsuario', ParseUUIDPipe) idUsuario: string,
     @Body() dto: ActualizarRolesDto,
@@ -586,116 +525,40 @@ export class UsuarioRolController {
   }
 
   /*
-  Nombre del método: quitarRol
-  Método HTTP relacionado: PATCH
-  Endpoint: /api/usuario-rol/:id/quitar
-
-  Descripción:
-    Retira una asignación de rol mediante eliminación lógica.
-
-  Parámetros:
-    - id: UUID de la asignación usuario-rol.
-
-  Respuestas posibles:
-    - 200: Rol retirado correctamente.
-    - 400: UUID inválido.
-    - 401: No autorizado, cuando se habilita JWT.
-    - 404: Asignación no encontrada.
-    - 500: Error interno del servidor.
-
-  Fecha de creación: 2026-11-11
-  Autor: Oscar Canchari
-
-  Notas adicionales:
-    No recibe body.
-    Conserva el registro y registra al responsable del retiro.
-  */
-  @Patch(':id/quitar')
-  @ApiOperation({
-    summary: 'Quitar rol',
-    description:
-      'Retira una asignación mediante eliminación lógica, sin recibir body.',
-  })
-  @ApiParam({
-    name: 'id',
-    type: String,
-    description: 'UUID de la asignación usuario-rol.',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Rol retirado correctamente.',
-    schema: {
-      example: {
-        success: true,
-        status: 200,
-        data: {
-          message: 'Rol retirado del usuario correctamente.',
-          id: '550e8400-e29b-41d4-a716-446655440002',
-        },
-      },
-    },
-  })
-  @ApiResponse({
-    status: 400,
-    description: 'UUID inválido.',
-  })
-  @ApiResponse({
-    status: 401,
-    description: 'No autorizado; aplica al habilitar JWT.',
-  })
-  @ApiResponse({
-    status: 404,
-    description: 'Asignación no encontrada.',
-  })
-  @ApiResponse({
-    status: 500,
-    description: 'Error interno del servidor.',
-  })
-  quitarRol(
-    @Param('id', ParseUUIDPipe) id: string,
-  ): Promise<MensajeIdResponse> {
-    return this.servicio.quitarRol(id, userId);
-  }
-
-  /*
   Nombre del método: cambiarEstado
   Método HTTP relacionado: PATCH
   Endpoint: /api/usuario-rol/:id/estado
 
   Descripción:
-    Alterna el estado de la asignación entre ACTIVO e INACTIVO.
+    Alterna alta/baja de la asignación sin recibir body.
 
   Parámetros:
-    - id: UUID de la asignación usuario-rol.
+    - id: UUID de la asignación.
 
   Respuestas posibles:
-    - 200: Estado actualizado correctamente.
-    - 400: UUID, estado o condiciones de alta inválidos.
-    - 401: No autorizado, cuando se habilita JWT.
-    - 404: Asignación o registro relacionado no encontrado.
+    - 200: Operación realizada correctamente.
+    - 400: Datos o parámetros inválidos.
+    - 401: No autorizado, cuando se habilita el guard JWT.
+    - 404: Registro relacionado no encontrado.
+    - 409: Conflicto de asignación.
     - 500: Error interno del servidor.
 
   Fecha de creación: 2026-11-11
   Autor: Oscar Canchari
 
   Notas adicionales:
-    No recibe body.
-    No elimina la asignación.
-    Registra al responsable de la actualización.
+    Registra al responsable. Las operaciones múltiples son transaccionales.
+    El estado corresponde a la asignación, no a los catálogos.
   */
   @Patch(':id/estado')
   @ApiOperation({
     summary: 'Cambiar estado',
     description: 'Alterna alta/baja de la asignación sin recibir body.',
   })
-  @ApiParam({
-    name: 'id',
-    type: String,
-    description: 'UUID de la asignación usuario-rol.',
-  })
+  @ApiParam({ name: 'id', type: String, description: 'UUID de la asignación.' })
   @ApiResponse({
     status: 200,
-    description: 'Estado actualizado correctamente.',
+    description: 'Operación realizada correctamente.',
     schema: {
       example: {
         success: true,
@@ -707,22 +570,17 @@ export class UsuarioRolController {
       },
     },
   })
-  @ApiResponse({
-    status: 400,
-    description: 'UUID, estado o condiciones de alta inválidos.',
-  })
+  @ApiResponse({ status: 400, description: 'Datos o parámetros inválidos.' })
   @ApiResponse({
     status: 401,
     description: 'No autorizado; aplica al habilitar JWT.',
   })
   @ApiResponse({
     status: 404,
-    description: 'Asignación o registro relacionado no encontrado.',
+    description: 'Registro relacionado no encontrado.',
   })
-  @ApiResponse({
-    status: 500,
-    description: 'Error interno del servidor.',
-  })
+  @ApiResponse({ status: 409, description: 'Conflicto de asignación.' })
+  @ApiResponse({ status: 500, description: 'Error interno del servidor.' })
   cambiarEstado(
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<MensajeIdResponse> {

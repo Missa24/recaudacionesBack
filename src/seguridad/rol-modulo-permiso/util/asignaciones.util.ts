@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException } from '@nestjs/common';
+import { BadRequestException, ConflictException } from "@nestjs/common";
 import {
   And,
   FindOperator,
@@ -8,16 +8,16 @@ import {
   LessThan,
   LessThanOrEqual,
   MoreThanOrEqual,
-} from 'typeorm';
-import { QueryAsignacionDto } from '../dto/query-asignacion.dto';
-import { PaginatedResponse } from '../../../shared/interface/paginated-response.interface';
-import { esErrorDuplicado } from '../../../shared/util/errores-duplicados.util';
+} from "typeorm";
+import type { QueryRolModuloPermisoDto } from '../dto/query-rol-modulo-permiso.dto';
+import { PaginatedResponse } from "../../../shared/interface/paginated-response.interface";
+import { esErrorDuplicado } from "../../../shared/util/errores-duplicados.util";
 
 /**
- * Módulo: Seguridad / Asignaciones
+ * Módulo: Seguridad / rol-modulo-permiso
  * Archivo: asignaciones.util.ts
  * Descripción:
- *   Validaciones, fechas y paginación comunes. No ejecuta consultas ni modifica datos.
+ *   Validaciones, fechas y paginación del módulo. No ejecuta consultas ni modifica datos.
  * Fecha de creación: 2026-11-11
  * Autor: Oscar Canchari
  */
@@ -25,12 +25,12 @@ import { esErrorDuplicado } from '../../../shared/util/errores-duplicados.util';
 /** Valida UUID y normaliza su escritura; evita duplicados por mayúsculas en los DTOs. */
 export function uuid(valor: string): string {
   if (
-    typeof valor !== 'string' ||
+    typeof valor !== "string" ||
     !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
       valor,
     )
   ) {
-    throw new BadRequestException('Debe proporcionar un UUID válido.');
+    throw new BadRequestException("Debe proporcionar un UUID válido.");
   }
   return valor.toLowerCase();
 }
@@ -43,28 +43,28 @@ export function idsUnicos(valores: string[], permitirVacio = true): string[] {
     (!permitirVacio && !valores.length)
   ) {
     throw new BadRequestException(
-      'Debe enviar una lista válida de hasta 100 UUID.',
+      "Debe enviar una lista válida de hasta 100 UUID.",
     );
   }
   const ids = valores.map(uuid);
   if (new Set(ids).size !== ids.length)
-    throw new BadRequestException('La lista contiene UUID repetidos.');
+    throw new BadRequestException("La lista contiene UUID repetidos.");
   return ids;
 }
 
 /** Escapa comodines; la búsqueda coincide con texto literal. */
 export function escaparLike(valor: string): string {
-  return valor.replace(/[\\%_]/g, '\\$&');
+  return valor.replace(/[\\%_]/g, "\\$&");
 }
 
 /** Configuración validada; los servicios deciden si las fechas pertenecen al padre o a la asignación. */
-export function prepararQuery(query: QueryAsignacionDto) {
+export function prepararQuery(query: QueryRolModuloPermisoDto) {
   const page = Number(query.page ?? 1);
   const limit = Number(query.limit ?? 10);
-  const status = query.status ?? 'ACTIVO';
-  const sortBy = query.sortBy ?? 'createdAt';
-  const sortOrder = query.sortOrder ?? 'DESC';
-  const dateField = query.dateField ?? 'createdAt';
+  const status = query.status ?? "ACTIVO";
+  const sortBy = query.sortBy ?? "createdAt";
+  const sortOrder = query.sortOrder ?? "DESC";
+  const dateField = query.dateField ?? "createdAt";
   if (
     !Number.isSafeInteger(page) ||
     page < 1 ||
@@ -74,21 +74,21 @@ export function prepararQuery(query: QueryAsignacionDto) {
     limit > 100
   )
     throw new BadRequestException(
-      'Paginación inválida: page >= 1 y limit entre 1 y 100.',
+      "Paginación inválida: page >= 1 y limit entre 1 y 100.",
     );
-  if (!['ACTIVO', 'INACTIVO', 'TODOS'].includes(status))
-    throw new BadRequestException('status debe ser ACTIVO, INACTIVO o TODOS.');
-  if (sortBy !== 'createdAt' && sortBy !== 'updatedAt')
-    throw new BadRequestException('sortBy debe ser createdAt o updatedAt.');
-  if (sortOrder !== 'ASC' && sortOrder !== 'DESC')
-    throw new BadRequestException('sortOrder debe ser ASC o DESC.');
-  if (dateField !== 'createdAt' && dateField !== 'updatedAt')
-    throw new BadRequestException('dateField debe ser createdAt o updatedAt.');
-  if (query.search !== undefined && typeof query.search !== 'string')
-    throw new BadRequestException('search debe ser un texto.');
-  const search = (query.search ?? '').trim();
+  if (!["ACTIVO", "INACTIVO", "TODOS"].includes(status))
+    throw new BadRequestException("status debe ser ACTIVO, INACTIVO o TODOS.");
+  if (sortBy !== "createdAt" && sortBy !== "updatedAt")
+    throw new BadRequestException("sortBy debe ser createdAt o updatedAt.");
+  if (sortOrder !== "ASC" && sortOrder !== "DESC")
+    throw new BadRequestException("sortOrder debe ser ASC o DESC.");
+  if (dateField !== "createdAt" && dateField !== "updatedAt")
+    throw new BadRequestException("dateField debe ser createdAt o updatedAt.");
+  if (query.search !== undefined && typeof query.search !== "string")
+    throw new BadRequestException("search debe ser un texto.");
+  const search = (query.search ?? "").trim();
   if (search.length > 100)
-    throw new BadRequestException('search admite hasta 100 caracteres.');
+    throw new BadRequestException("search admite hasta 100 caracteres.");
   const inicio = query.startDate
     ? convertirFechaFiltro(query.startDate, false)
     : null;
@@ -99,7 +99,7 @@ export function prepararQuery(query: QueryAsignacionDto) {
     (fin.exclusivo ? inicio.valor >= fin.valor : inicio.valor > fin.valor)
   )
     throw new BadRequestException(
-      'startDate no puede ser posterior a endDate.',
+      "startDate no puede ser posterior a endDate.",
     );
   const fecha =
     inicio && fin
@@ -123,8 +123,8 @@ export function filtroIdentificadorUsuario(valor: string): {
   username?: FindOperator<string>;
   ci?: string;
 } {
-  if (typeof valor !== 'string')
-    throw new BadRequestException('Identificador inválido.');
+  if (typeof valor !== "string")
+    throw new BadRequestException("Identificador inválido.");
   const texto = valor.trim();
   if (
     /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
@@ -140,7 +140,7 @@ export function filtroIdentificadorUsuario(valor: string): {
   )
     return { username: ILike(escaparLike(texto)) };
   throw new BadRequestException(
-    'Debe proporcionar un UUID, username o CI válido.',
+    "Debe proporcionar un UUID, username o CI válido.",
   );
 }
 
@@ -148,7 +148,7 @@ export function filtroIdentificadorUsuario(valor: string): {
 export function filtroAsignacion<T>(status: string): FindOptionsWhere<T> {
   return {
     deletedAt: IsNull(),
-    ...(status === 'TODOS' ? {} : { estado: status }),
+    ...(status === "TODOS" ? {} : { estado: status }),
   } as FindOptionsWhere<T>;
 }
 
@@ -177,7 +177,7 @@ export function paginar<T>(
 export function relanzarError(error: unknown): never {
   if (esErrorDuplicado(error))
     throw new ConflictException(
-      'La asignación ya existe. Vuelva a consultar sus datos.',
+      "La asignación ya existe. Vuelva a consultar sus datos.",
     );
   throw error;
 }
@@ -201,7 +201,7 @@ export function convertirFechaFiltro(
       Number.isNaN(comprobacion.getTime()) ||
       comprobacion.toISOString().slice(0, 10) !== fecha
     ) {
-      throw new BadRequestException('La fecha enviada no es válida.');
+      throw new BadRequestException("La fecha enviada no es válida.");
     }
 
     // Inicio del día en Bolivia, UTC-04:00.
@@ -228,14 +228,14 @@ export function convertirFechaFiltro(
    */
   if (!/(Z|[+-]\d{2}:\d{2})$/i.test(fecha)) {
     throw new BadRequestException(
-      'La fecha debe ser AAAA-MM-DD o una fecha ISO con zona horaria.',
+      "La fecha debe ser AAAA-MM-DD o una fecha ISO con zona horaria.",
     );
   }
 
   const valor = new Date(fecha);
 
   if (Number.isNaN(valor.getTime())) {
-    throw new BadRequestException('La fecha enviada no es válida.');
+    throw new BadRequestException("La fecha enviada no es válida.");
   }
 
   return {

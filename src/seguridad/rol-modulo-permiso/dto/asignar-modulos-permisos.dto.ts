@@ -1,5 +1,5 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
+import { ApiProperty } from "@nestjs/swagger";
+import { Type } from "class-transformer";
 import {
   ArrayMaxSize,
   ArrayMinSize,
@@ -7,7 +7,7 @@ import {
   IsArray,
   IsUUID,
   ValidateNested,
-} from 'class-validator';
+} from "class-validator";
 
 /**
  * Módulo: Seguridad / Rol Módulo Permiso
@@ -20,8 +20,8 @@ import {
 
 /** Un módulo con una selección de acciones. La asignación requiere al menos una. */
 export class ModuloPermisosDto {
-  @ApiProperty({ format: 'uuid' })
-  @IsUUID('all')
+  @ApiProperty({ format: "uuid" })
+  @IsUUID("all")
   idModulo!: string;
 
   /** No admite permisos repetidos dentro del módulo. */
@@ -30,14 +30,14 @@ export class ModuloPermisosDto {
   @ArrayMinSize(1)
   @ArrayMaxSize(100)
   @ArrayUnique()
-  @IsUUID('all', { each: true })
+  @IsUUID("all", { each: true })
   idsPermisos!: string[];
 }
 
 export class AsignarModulosPermisosDto {
   /** Rol que recibirá los accesos. */
-  @ApiProperty({ format: 'uuid' })
-  @IsUUID('all')
+  @ApiProperty({ format: "uuid" })
+  @IsUUID("all")
   idRol!: string;
   /** Módulos cuyos permisos se agregarán sin retirar asignaciones existentes. */
   @ApiProperty({ type: () => [ModuloPermisosDto], minItems: 1, maxItems: 100 })
