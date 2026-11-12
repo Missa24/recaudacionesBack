@@ -1,42 +1,54 @@
+import { IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsOptional, Matches, MaxLength } from 'class-validator';
 
 /**
- * Datos para crear modulo. Estado y auditoría son asignados por el servicio.
- * Desarrollado por: Oscar Canchari.
+ * Módulo: Seguridad - Módulo
+ * Archivo: create-modulo.dto.ts
+ * Descripción:
+ * Define los datos necesarios para registrar un módulo funcional.
  */
 export class CreateModuloDto {
-  /** Obligatorio; no admite texto vacío. */
-  @ApiProperty({ example: 'Gestión de usuarios', maxLength: 150 })
-  @IsString({ message: 'nombres debe ser un texto.' })
-  @MaxLength(150, { message: 'nombres admite hasta 150 caracteres.' })
-  @Matches(/\S/, { message: 'nombres no puede estar vacío.' })
-  nombres!: string;
+  @ApiProperty({
+    description: 'Nombre visible del módulo.',
+    example: 'Gestión de usuarios',
+    maxLength: 150,
+  })
+  @IsNotEmpty({ message: 'El nombre no puede estar vacío' })
+  @IsString({ message: 'El nombre debe ser un texto' })
+  @MaxLength(150, {
+    message: 'El nombre no debe superar los 150 caracteres',
+  })
+  nombre!: string;
 
-  /** Obligatorio; no admite texto vacío. */
-  @ApiProperty({ example: 'USUARIOS', maxLength: 40 })
-  @IsString({ message: 'codigo debe ser un texto.' })
-  @MaxLength(40, { message: 'codigo admite hasta 40 caracteres.' })
-  @Matches(/^[A-Za-z0-9_]+$/, {
-    message: 'codigo solo permite letras, números y guiones bajos.',
+  @ApiProperty({
+    description: 'Código funcional único del módulo.',
+    example: 'USUARIOS',
+    maxLength: 50,
+  })
+  @IsNotEmpty({ message: 'El código no puede estar vacío' })
+  @IsString({ message: 'El código debe ser un texto' })
+  @MaxLength(50, {
+    message: 'El código no debe superar los 50 caracteres',
   })
   codigo!: string;
 
-  /** Opcional; permite null para limpiar el valor. */
   @ApiPropertyOptional({
-    example: 'Descripción de las funciones.',
-    maxLength: 5000,
-    nullable: true,
+    description: 'Descripción funcional del módulo.',
+    example: 'Administración de usuarios del sistema.',
   })
   @IsOptional()
-  @IsString({ message: 'descripcion debe ser un texto.' })
-  @MaxLength(5000, { message: 'descripcion admite hasta 5000 caracteres.' })
+  @IsString({ message: 'La descripción debe ser un texto' })
   descripcion?: string | null;
 
-  /** Obligatorio; no admite texto vacío. */
-  @ApiProperty({ example: '/usuarios', maxLength: 200 })
-  @IsString({ message: 'ruta debe ser un texto.' })
-  @MaxLength(200, { message: 'ruta admite hasta 200 caracteres.' })
-  @Matches(/\S/, { message: 'ruta no puede estar vacío.' })
+  @ApiProperty({
+    description: 'Ruta interna de navegación del módulo.',
+    example: '/seguridad/usuarios',
+    maxLength: 250,
+  })
+  @IsNotEmpty({ message: 'La ruta no puede estar vacía' })
+  @IsString({ message: 'La ruta debe ser un texto' })
+  @MaxLength(250, {
+    message: 'La ruta no debe superar los 250 caracteres',
+  })
   ruta!: string;
 }

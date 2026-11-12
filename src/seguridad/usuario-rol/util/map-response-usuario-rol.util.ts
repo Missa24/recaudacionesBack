@@ -1,29 +1,39 @@
+/**
+ * Módulo: Seguridad - UsuarioRol
+ * Archivo: map-response-usuario-rol.util.ts
+ * Descripción:
+ * Transforma una entidad UsuarioRol en su estructura de respuesta,
+ * incluyendo información del usuario, rol y responsables de auditoría.
+ *
+ * Desarrollado por: Missael Apaza - Fecha: 11/11/2026
+ */
+
 import { UsuarioRol } from '../entities/usuario-rol.entity';
 import { UsuarioRolResponse } from '../interface/usuario-rol-response.interface';
 
-export function mapearRespuestaUsuarioRol(
-  asignacion: UsuarioRol,
-): UsuarioRolResponse {
+/**
+ * Función: mapearRespuesta
+ * Descripción:
+ * Transforma una entidad UsuarioRol en su estructura de respuesta.
+ */
+export function mapearRespuesta(usuarioRol: UsuarioRol): UsuarioRolResponse {
   return {
-    id: asignacion.id,
-    id_usuario: asignacion.idUsuario,
-    usuario: {
-      id_usuario: asignacion.usuario.idUsuario,
-      username: asignacion.usuario.username,
-      nombres: asignacion.usuario.nombres,
-      ci: asignacion.usuario.ci,
-    },
-    id_rol: asignacion.idRol,
-    rol: {
-      id: asignacion.rol.id,
-      nombre: asignacion.rol.nombre,
-      codigo: asignacion.rol.codigo,
-    },
-    estado: asignacion.estado,
-    created_at: asignacion.createdAt,
-    updated_at: asignacion.updatedAt,
-    deleted_at: asignacion.deletedAt,
-    responsable_creacion: asignacion.usuarioCreador?.username ?? null,
-    responsable_actualizacion: asignacion.usuarioActualizador?.username ?? null,
+    id: usuarioRol.id,
+
+    usuario_id: usuarioRol.usuario_id,
+    usuario: usuarioRol.usuario?.username ?? null,
+
+    rol_id: usuarioRol.rol_id,
+    rol: usuarioRol.rol?.codigo ?? null,
+    descripcion_rol: usuarioRol.rol?.descripcion ?? null,
+
+    estado: usuarioRol.estado,
+
+    responsable_creacion: usuarioRol.usuario_creador?.username ?? null,
+
+    responsable_actualizacion:
+      usuarioRol.usuario_actualizador?.username ?? null,
+
+    responsable_eliminacion: usuarioRol.usuario_eliminador?.username ?? null,
   };
 }

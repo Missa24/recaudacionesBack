@@ -2,19 +2,37 @@ import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IsOptional, IsUUID } from 'class-validator';
 import { QueryPaginatedDto } from 'src/shared/dto/query-paginated.dto';
 
+/**
+ * Módulo: Seguridad - RolModuloPermiso
+ * Archivo: query-rol-modulo-permiso.dto.ts
+ *
+ * Define los parámetros de consulta de las asignaciones.
+ */
 export class QueryRolModuloPermisoDto extends QueryPaginatedDto {
-  @ApiPropertyOptional({ example: '20000000-0000-4000-8000-000000000004' })
+  @ApiPropertyOptional({
+    description: 'Filtrar asignaciones por identificador de rol.',
+  })
   @IsOptional()
-  @IsUUID()
-  id_rol?: string;
+  @IsUUID('4', {
+    message: 'El identificador del rol no es válido',
+  })
+  rol_id?: string;
 
-  @ApiPropertyOptional({ example: '30000000-0000-4000-8000-000000000004' })
+  @ApiPropertyOptional({
+    description: 'Filtrar asignaciones por identificador de módulo.',
+  })
   @IsOptional()
-  @IsUUID()
-  id_modulo?: string;
+  @IsUUID('4', {
+    message: 'El identificador del módulo no es válido',
+  })
+  modulo_id?: string;
 
-  @ApiPropertyOptional({ example: '40000000-0000-4000-8000-000000000003' })
+  @ApiPropertyOptional({
+    description: 'Filtrar asignaciones por identificador de permiso.',
+  })
   @IsOptional()
-  @IsUUID()
-  id_permiso?: string;
+  @IsUUID('4', {
+    message: 'El identificador del permiso no es válido',
+  })
+  permiso_id?: string;
 }

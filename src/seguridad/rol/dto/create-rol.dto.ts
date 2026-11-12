@@ -1,35 +1,54 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsOptional, Matches, MaxLength } from 'class-validator';
+/**
+ * Módulo: Seguridad - Rol
+ * Archivo: create-rol.dto.ts
+ * Descripción:
+ * Define los datos y validaciones necesarios para registrar
+ * un nuevo rol dentro del sistema.
+ *
+ * Desarrollado por: Missael Apaza - Fecha: 11/11/2026
+ */
+
+import { ApiProperty } from '@nestjs/swagger';
+import { IsNotEmpty, IsString, Matches, MaxLength } from 'class-validator';
 
 /**
- * Datos para crear rol. Estado y auditoría son asignados por el servicio.
- * Desarrollado por: Oscar Canchari.
+ * DTO: CreateRolDto
+ * Descripción:
+ * Define los campos permitidos para crear un rol.
+ *
+ * Desarrollado por: Missael Apaza - Fecha: 11/11/2026
  */
 export class CreateRolDto {
-  /** Obligatorio; no admite texto vacío. */
-  @ApiProperty({ example: 'Administrador', maxLength: 150 })
-  @IsString({ message: 'nombre debe ser un texto.' })
-  @MaxLength(150, { message: 'nombre admite hasta 150 caracteres.' })
-  @Matches(/\S/, { message: 'nombre no puede estar vacío.' })
-  nombre!: string;
-
-  /** Obligatorio; no admite texto vacío. */
-  @ApiProperty({ example: 'ADMINISTRADOR', maxLength: 40 })
-  @IsString({ message: 'codigo debe ser un texto.' })
-  @MaxLength(40, { message: 'codigo admite hasta 40 caracteres.' })
-  @Matches(/^[A-Za-z0-9_]+$/, {
-    message: 'codigo solo permite letras, números y guiones bajos.',
+  /**
+   * Código funcional único del rol.
+   */
+  @ApiProperty({
+    description: 'Código funcional único que identifica al rol.',
+    example: 'ADMINISTRADOR',
+    maxLength: 40,
+  })
+  @IsNotEmpty({ message: 'El código no puede estar vacío' })
+  @IsString({ message: 'El código debe ser un texto' })
+  @MaxLength(40, {
+    message: 'El código no debe superar los 40 caracteres',
+  })
+  @Matches(/^[A-Z0-9_]+$/, {
+    message: 'El código solo permite letras mayúsculas, números y guion bajo',
   })
   codigo!: string;
 
-  /** Opcional; permite null para limpiar el valor. */
-  @ApiPropertyOptional({
-    example: 'Descripción de las funciones.',
-    maxLength: 5000,
-    nullable: true,
+  /**
+   * Descripción funcional del rol.
+   */
+  @ApiProperty({
+    description: 'Descripción funcional del rol.',
+    example: 'Rol con acceso administrativo al sistema',
+    maxLength: 150,
   })
-  @IsOptional()
-  @IsString({ message: 'descripcion debe ser un texto.' })
-  @MaxLength(5000, { message: 'descripcion admite hasta 5000 caracteres.' })
-  descripcion?: string | null;
+  @IsNotEmpty({ message: 'La descripción no puede estar vacía' })
+  @IsString({ message: 'La descripción debe ser un texto' })
+  @MaxLength(150, {
+    message: 'La descripción no debe superar los 150 caracteres',
+  })
+  descripcion!: string;
 }

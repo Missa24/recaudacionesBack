@@ -1,17 +1,7 @@
-import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsIn, IsOptional } from 'class-validator';
-import { QueryPaginatedDto } from '../../../shared/dto/query-paginated.dto';
+import { QueryPaginatedDto } from 'src/shared/dto/query-paginated.dto';
 
 /**
- * Reutiliza la paginación compartida y selecciona la fecha que se filtrará.
- * Desarrollado por: Oscar Canchari.
+ * Define los parámetros de búsqueda, filtrado,
+ * ordenamiento y paginación de permisos.
  */
-export class QueryPermisoDto extends QueryPaginatedDto {
-  @ApiPropertyOptional({
-    enum: ['createdAt', 'updatedAt'],
-    default: 'createdAt',
-  })
-  @IsOptional()
-  @IsIn(['createdAt', 'updatedAt'])
-  dateField: 'createdAt' | 'updatedAt' = 'createdAt';
-}
+export class QueryPermisoDto extends QueryPaginatedDto {}

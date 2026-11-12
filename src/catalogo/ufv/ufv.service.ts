@@ -91,7 +91,7 @@ export class UfvService {
     // Prepara la entidad asociando los datos del usuario creador.
     const ufv = this.ufvRepository.create({
       ...dto,
-      usuario_creador: { idUsuario },
+      usuario_creador: { id: idUsuario },
     });
 
     try {
@@ -149,7 +149,7 @@ export class UfvService {
     const ufv = this.ufvRepository.create({
       fecha,
       valor,
-      usuario_creador: { idUsuario: userId },
+      usuario_creador: { id: userId },
     });
 
     try {
@@ -331,7 +331,7 @@ export class UfvService {
 */
   async buscarPorFecha(fecha: string): Promise<UfvResponse> {
     const ufv = await this.ufvRepository.findOne({
-      where: { fecha, estado: 'ACTIVO', _deleted_at: IsNull() },
+      where: { fecha, estado: 'ACTIVO', deletedAt: IsNull() },
       relations: { usuario_creador: true, usuario_actualizador: true },
     });
     if (!ufv) {
@@ -374,7 +374,7 @@ export class UfvService {
     }
 
     // Impide modificar registros inactivos o eliminados.
-    if (ufv.estado !== 'ACTIVO' || ufv._deleted_at) {
+    if (ufv.estado !== 'ACTIVO' || ufv.deletedAt) {
       throw new ConflictException('No se puede actualizar una UFV inactiva');
     }
 
@@ -396,7 +396,7 @@ export class UfvService {
 
     // Actualiza la información de auditoría.
     ufv._user_update = idUsuario;
-    ufv._updated_at = new Date();
+    ufv.deletedAt = new Date();
 
     try {
       await this.ufvRepository.save(ufv);
@@ -458,15 +458,15 @@ export class UfvService {
     if (nuevoEstado === 'INACTIVO') {
       // Registra quién y cuándo realizó la desactivación.
       ufv._user_delete = idUsuario;
-      ufv._deleted_at = new Date();
+      ufv.deletedAt = new Date();
       ufv._user_update = null;
-      ufv._updated_at = null;
+      ufv.updatedAt = null;
     } else {
       // Al reactivar, limpia los datos de eliminación lógica.
       ufv._user_update = idUsuario;
-      ufv._updated_at = new Date();
+      ufv.updatedAt = new Date();
       ufv._user_delete = null;
-      ufv._deleted_at = null;
+      ufv.deletedAt = null;
     }
 
     try {

@@ -1,17 +1,22 @@
-import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsIn, IsOptional } from 'class-validator';
-import { QueryPaginatedDto } from '../../../shared/dto/query-paginated.dto';
+/**
+ * Módulo: Seguridad - Rol
+ * Archivo: query-rol.dto.ts
+ * Descripción:
+ * Define los parámetros de consulta específicos para los roles,
+ * heredando los parámetros generales de búsqueda,
+ * filtrado, ordenamiento y paginación.
+ *
+ * Desarrollado por: Missael Apaza - Fecha: 11/11/2026
+ */
+
+import { QueryPaginatedDto } from 'src/shared/dto/query-paginated.dto';
 
 /**
- * Reutiliza la paginación compartida y selecciona la fecha que se filtrará.
- * Desarrollado por: Oscar Canchari.
+ * DTO: QueryRolDto
+ * Descripción:
+ * Permite consultar los roles utilizando los parámetros
+ * generales de paginación y búsqueda del sistema.
+ *
+ * Desarrollado por: Missael Apaza - Fecha: 11/11/2026
  */
-export class QueryRolDto extends QueryPaginatedDto {
-  @ApiPropertyOptional({
-    enum: ['createdAt', 'updatedAt'],
-    default: 'createdAt',
-  })
-  @IsOptional()
-  @IsIn(['createdAt', 'updatedAt'])
-  dateField: 'createdAt' | 'updatedAt' = 'createdAt';
-}
+export class QueryRolDto extends QueryPaginatedDto {}

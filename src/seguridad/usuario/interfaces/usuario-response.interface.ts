@@ -1,86 +1,48 @@
 /**
- * Módulo: Seguridad / Usuario
+ * Módulo: Seguridad - Usuario
  * Archivo: usuario-response.interface.ts
  *
  * Descripción:
- * Define las estructuras de respuesta del módulo Usuario.
- * Los nombres de auditoría son claros para el frontend.
+ * Define las interfaces utilizadas para estructurar
+ * las respuestas del módulo Usuario.
  *
- * Fecha de creación: 2026-11-10
- * Autor: Oscar Canchari
+ * Desarrollado por: Missael Apaza - Fecha: 11/11/2026
  */
 
 /**
- * Respuesta resumida para el listado de usuarios.
- * Solo incluye datos importantes y auditoría de creación.
+ * Interfaz: UsuarioResponse
+ *
+ * Descripción:
+ * Define la estructura de los datos de un usuario
+ * que se entregan en las consultas.
+ *
+ * Incluye los responsables de creación, actualización
+ * y eliminación cuando sus relaciones están disponibles.
  */
-export interface UsuarioListadoResponse {
-  /** UUID del usuario. */
-  idUsuario: string;
-
-  /** Nombre de usuario. */
-  username: string;
-
-  /** Nombres de la persona. */
-  nombres: string;
-
-  /** Apellido paterno. */
-  apellido_paterno: string;
-
-  /** Apellido materno. */
-  apellido_materno: string | null;
-
-  /** Carnet de identidad. */
-  ci: string;
-
-  /** Correo electrónico. */
+export interface UsuarioResponse {
+  id: string;
+  username: string | null;
   email: string;
-
-  /** Estado ACTIVO o INACTIVO. */
-  estado: string;
-
-  /** UUID del responsable de registrar al usuario. */
-  responsable_creacion: string | null;
-
-  /** Fecha y hora de creación. */
-  fecha_creacion: Date | null;
-}
-
-/**
- * Respuesta completa de un usuario.
- * Incluye datos personales y auditoría.
- */
-export interface UsuarioDetalleResponse extends UsuarioListadoResponse {
-  /** Número de celular. */
+  ci: string;
+  nombres: string | null;
+  apellido_paterno: string | null;
+  apellido_materno: string | null;
   celular: string | null;
-
-  /** Último acceso registrado. */
+  estado: string;
   ultimo_acceso: Date | null;
 
-  /** UUID del responsable de la última modificación. */
+  responsable_creacion: string | null;
   responsable_actualizacion: string | null;
-
-  /** Fecha y hora de la última modificación. */
-  fecha_actualizacion: Date | null;
+  responsable_eliminacion: string | null;
 }
 
 /**
- * Respuesta después de crear un usuario.
+ * Interfaz: UsuarioMessageResponse
+ *
+ * Descripción:
+ * Define una respuesta general para las operaciones
+ * de creación, actualización y cambio de estado.
  */
-export interface UsuarioCreateResponse {
-  /** Mensaje de confirmación. */
+export interface UsuarioMessageResponse {
   message: string;
-
-  /** UUID del usuario creado. */
-}
-
-/**
- * Respuesta después de dar de alta o baja.
- */
-export interface UsuarioEstadoResponse {
-  /** Mensaje de confirmación. */
-  message: string;
-
-  /** UUID del usuario actualizado. */
-  idUsuario: string;
 }

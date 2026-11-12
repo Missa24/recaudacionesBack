@@ -1,63 +1,131 @@
 import {
   Column,
   CreateDateColumn,
-  DeleteDateColumn,
   Entity,
+  JoinColumn,
+  ManyToOne,
   PrimaryGeneratedColumn,
+  Unique,
   UpdateDateColumn,
 } from 'typeorm';
 
+import { Usuario } from '../../usuario/entities/usuario.entity';
+
 /**
+ * Módulo: Seguridad / Permiso
+ * Archivo: permiso.entity.ts
+ *
+ * Descripción:
  * Representa la tabla seguridad.permiso.
- * Desarrollado por: Oscar Canchari.
+ * Administra el catálogo de acciones autorizables
+ * dentro del sistema.
  */
 @Entity({ schema: 'seguridad', name: 'permiso' })
+@Unique('UQ_permiso_codigo', ['codigo'])
 export class Permiso {
-  /** Llave primaria del permiso. */
-  @PrimaryGeneratedColumn('uuid')
+  /** Identificador UUID del permiso. */
+  @PrimaryGeneratedColumn('uuid', { name: 'id' })
   id!: string;
 
-  /** Nombre del permiso. */
-  @Column({ type: 'varchar', length: 150 })
-  nombre!: string;
-
-  /** Código del permiso. */
-  @Column({ type: 'varchar', length: 40 })
+  /** Código funcional único del permiso. */
+  @Column({
+    name: 'codigo',
+    type: 'varchar',
+    length: 100,
+    nullable: false,
+  })
   codigo!: string;
 
-  /** Descripción opcional. */
-  @Column({ type: 'varchar', length: 500, nullable: true })
-  descripcion!: string | null;
-
-  /** Estado gestionado por el servicio; no se recibe en el DTO. */
+  /** Descripción funcional del permiso. */
   @Column({
+    name: 'descripcion',
+    type: 'text',
+    nullable: false,
+  })
+  descripcion!: string;
+
+  /** Estado del registro: ACTIVO o INACTIVO. */
+  @Column({
+    name: 'estado',
     type: 'varchar',
-    length: 10,
+    length: 50,
     default: 'ACTIVO',
+    nullable: false,
   })
   estado!: string;
 
   /** Fecha de creación. */
-  @CreateDateColumn({ type: 'timestamptz' })
-  created_at!: Date;
+  @CreateDateColumn({
+    name: 'created_at',
+    type: 'timestamptz',
+  })
+  createdAt!: Date;
 
-  /** Fecha de actualización. */
-  @UpdateDateColumn({ type: 'timestamptz' })
-  updated_at!: Date;
+  /** Fecha de última actualización. */
+  @UpdateDateColumn({
+    name: 'updated_at',
+    type: 'timestamptz',
+  })
+  updatedAt!: Date;
 
   /** Fecha de eliminación lógica. */
-  @DeleteDateColumn({ type: 'timestamptz', nullable: true })
-  deleted_at!: Date | null;
+  @Column({
+    name: 'deleted_at',
+    type: 'timestamptz',
+    nullable: true,
+  })
+  deletedAt!: Date | null;
+  // Identificador del usuario que creó el registro.
+  @Column({
+    type: 'uuid',
+    name: '_user_created',
+  })
+  _user_created!: string;
 
-  /** Usuario que creó el registro. */
-  @Column({ type: 'uuid' })
-  user_created!: string;
+  /**
+   * Relación con el usuario responsable de la creación.
+   * No permite eliminar usuarios que tengan registros asociados.
+   */
+  @ManyToOne(() => Usuario, { nullable: false, onDelete: 'RESTRICT' })
+  @JoinColumn({
+    name: '_user_created',
+    referencedColumnName: 'id',
+  })
+  usuario_creador!: Usuario;
 
-  /** Usuario que actualizó el registro. */
-  @Column({ type: 'uuid', nullable: true })
-  user_update!: string | null;
+  // Identificador del usuario que realizó la última actualización.
+  @Column({
+    type: 'uuid',
+    name: '_user_update',
+    nullable: true,
+  })
+  _user_update!: string | null;
 
-  /** Usuario que eliminó el registro. */
-  @Column({ type: 'uuid', nullable: true })
-  user_deleted!: string | null;
+  /**
+   * Relación con el usuario responsable de la actualización.
+   */
+  @ManyToOne(() => Usuario, { nullable: true, onDelete: 'RESTRICT' })
+  @JoinColumn({
+    name: '_user_update',
+    referencedColumnName: 'id',
+  })
+  usuario_actualizador!: Usuario | null;
+
+  // Identificador del usuario que realizó la eliminación lógica.
+  @Column({
+    type: 'uuid',
+    name: '_user_delete',
+    nullable: true,
+  })
+  _user_delete!: string | null;
+
+  /**
+   * Relación con el usuario responsable de la eliminación lógica.
+   */
+  @ManyToOne(() => Usuario, { nullable: true, onDelete: 'RESTRICT' })
+  @JoinColumn({
+    name: '_user_delete',
+    referencedColumnName: 'id',
+  })
+  usuario_eliminador!: Usuario | null;
 }
