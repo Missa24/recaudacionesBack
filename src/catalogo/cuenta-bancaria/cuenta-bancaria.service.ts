@@ -510,4 +510,25 @@ export class CuentaBancariaService {
       );
     }
   }
+
+  // Funcion para validar si una cuenta vancair existe
+  // Desarrollado por: Missael Apaza
+  // Fecha: 11/11/2026
+  async validarCuentaBancaria(id: string): Promise<void> {
+    const cuenta = await this.cuentaBancariaRepository.findOne({
+      where: { id: id },
+    });
+
+    if (!cuenta) {
+      throw new NotFoundException(
+        'No se encontró la cuenta bancaria solicitada.',
+      );
+    }
+
+    if (cuenta.estado !== 'ACTIVO') {
+      throw new BadRequestException(
+        'La cuenta bancaria seleccionada se encuentra inactiva.',
+      );
+    }
+  }
 }

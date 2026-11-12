@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   InternalServerErrorException,
   Logger,
@@ -25,6 +26,9 @@ import {
   ArancelDetalleResponse,
 } from './interface/arancel-detalle-response.interface';
 import { mapearRespuestaArancelDetalle } from './util/map-response-arancel-detalle.util';
+import { esErrorDuplicado } from 'src/shared/util/errores-duplicados.util';
+import { ArancelGeneralService } from '../arancel-general/arancel-general.service';
+import { TipoTramiteCatalogoService } from '../tipo-tramite-catalogo/tipo-tramite-catalogo.service';
 
 @Injectable()
 export class ArancelDetalleService {
@@ -33,25 +37,64 @@ export class ArancelDetalleService {
   constructor(
     @InjectRepository(ArancelDetalle)
     private readonly arancelDetalleRepository: Repository<ArancelDetalle>,
+    private readonly arancelGeneralService: ArancelGeneralService,
+    private readonly tipoTramiteCatalogoService: TipoTramiteCatalogoService,
   ) {}
 
   async crear(
     dto: CreateArancelDetalleDto,
     idUsuario: string,
   ): Promise<ArancelDetalleMessageResponse> {
-    const detalle = this.arancelDetalleRepository.create({
-      ...dto,
-      usuario_creador: { idUsuario } as Usuario,
-    });
     try {
+      // Validar que el arancel general exista y esté activo.
+      await this.arancelGeneralService.validarArancelGeneral(
+        dto.arancel_general_id,
+      );
+
+      // Validar que el tipo de trámite exista y esté activo.
+      await this.tipoTramiteCatalogoService.validarTipoTramiteActivo(
+        dto.tipo_tramite_id,
+      );
+
+      // Verificar que el número de arancel no esté registrado.
+      const existe = await this.arancelDetalleRepository.findOne({
+        where: {
+          nro_arancel_det: dto.nro_arancel_det,
+        },
+      });
+
+      if (existe) {
+        throw new ConflictException(
+          'El número de arancel ya se encuentra registrado.',
+        );
+      }
+
+      const detalle = this.arancelDetalleRepository.create({
+        ...dto,
+        monto_variable: dto.monto_variable ?? false,
+        usuario_creador: { idUsuario } as Usuario,
+      });
+
       await this.arancelDetalleRepository.save(detalle);
-      return { message: 'Arancel detalle registrado correctamente.' };
+
+      return {
+        message: 'Arancel detalle registrado correctamente.',
+      };
     } catch (error: unknown) {
+      if (esErrorDuplicado(error)) {
+        throw new ConflictException(
+          'El número de arancel ya se encuentra registrado.',
+        );
+      }
+
       this.logger.error(
         'Error al crear el arancel detalle.',
         error instanceof Error ? error.stack : String(error),
       );
-      throw new InternalServerErrorException('No se pudo guardar el registro.');
+
+      throw new InternalServerErrorException(
+        'No se pudo registrar el arancel detalle.',
+      );
     }
   }
 
@@ -148,24 +191,92 @@ export class ArancelDetalleService {
     dto: UpdateArancelDetalleDto,
     idUsuario: string,
   ): Promise<ArancelDetalleMessageResponse> {
-    const detalle = await this.arancelDetalleRepository.findOne({
-      where: { id },
-    });
-    if (!detalle) {
-      throw new NotFoundException('No existe un arancel detalle con ese ID.');
-    }
-    if (detalle.estado !== 'ACTIVO') {
-      throw new BadRequestException(
-        'No se puede actualizar un arancel detalle inactivo.',
+    try {
+      const detalle = await this.arancelDetalleRepository.findOne({
+        where: { id },
+      });
+
+      if (!detalle) {
+        throw new NotFoundException(
+          'No existe un arancel detalle con el ID proporcionado.',
+        );
+      }
+
+      if (detalle.estado !== 'ACTIVO') {
+        throw new BadRequestException(
+          'No se puede actualizar un arancel detalle inactivo.',
+        );
+      }
+
+      // Evitar valores nulos en campos obligatorios.
+      if (
+        ('arancel_general_id' in dto && dto.arancel_general_id == null) ||
+        ('tipo_tramite_id' in dto && dto.tipo_tramite_id == null) ||
+        ('nro_arancel_det' in dto && dto.nro_arancel_det == null) ||
+        ('descripcion' in dto && dto.descripcion == null) ||
+        ('monto_variable' in dto && dto.monto_variable == null)
+      ) {
+        throw new BadRequestException(
+          'Los campos obligatorios no pueden contener valores nulos.',
+        );
+      }
+
+      // Validar el arancel general si fue enviado.
+      if (dto.arancel_general_id !== undefined) {
+        await this.arancelGeneralService.validarArancelGeneral(
+          dto.arancel_general_id,
+        );
+      }
+
+      // Validar el tipo de trámite si fue enviado.
+      if (dto.tipo_tramite_id !== undefined) {
+        await this.tipoTramiteCatalogoService.validarTipoTramiteActivo(
+          dto.tipo_tramite_id,
+        );
+      }
+
+      // Verificar que el número no pertenezca a otro detalle.
+      if (dto.nro_arancel_det !== undefined) {
+        const existe = await this.arancelDetalleRepository.findOne({
+          where: {
+            nro_arancel_det: dto.nro_arancel_det,
+          },
+        });
+
+        if (existe && existe.id !== id) {
+          throw new ConflictException(
+            'El número de arancel ya está registrado en otro detalle.',
+          );
+        }
+      }
+
+      Object.assign(detalle, dto);
+
+      detalle._updated_at = new Date();
+      detalle._user_update = idUsuario;
+      detalle.usuario_actualizador = { idUsuario } as Usuario;
+
+      await this.arancelDetalleRepository.save(detalle);
+
+      return {
+        message: 'Arancel detalle actualizado correctamente.',
+      };
+    } catch (error: unknown) {
+      if (esErrorDuplicado(error)) {
+        throw new ConflictException(
+          'El número de arancel ya se encuentra registrado.',
+        );
+      }
+
+      this.logger.error(
+        'Error al actualizar el arancel detalle.',
+        error instanceof Error ? error.stack : String(error),
+      );
+
+      throw new InternalServerErrorException(
+        'No se pudo actualizar el arancel detalle.',
       );
     }
-
-    Object.assign(detalle, dto);
-    detalle._updated_at = new Date();
-    detalle._user_update = idUsuario;
-    detalle.usuario_actualizador = { idUsuario } as Usuario;
-    await this.arancelDetalleRepository.save(detalle);
-    return { message: 'Arancel detalle actualizado correctamente.' };
   }
 
   async cambiarEstado(
@@ -192,5 +303,23 @@ export class ArancelDetalleService {
     }
     await this.arancelDetalleRepository.save(detalle);
     return { message: 'Estado del arancel detalle cambiado correctamente.' };
+  }
+
+  async validarArancelDetalleActivo(id: string): Promise<void> {
+    const detalle = await this.arancelDetalleRepository.findOne({
+      where: { id },
+    });
+
+    if (!detalle) {
+      throw new NotFoundException(
+        'No se encontró el arancel detalle solicitado.',
+      );
+    }
+
+    if (detalle.estado !== 'ACTIVO') {
+      throw new BadRequestException(
+        'El arancel detalle seleccionado se encuentra inactivo.',
+      );
+    }
   }
 }

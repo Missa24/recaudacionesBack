@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   InternalServerErrorException,
   Logger,
@@ -24,6 +25,9 @@ import {
   RequisitoResponse,
 } from './interface/requisito-response.interface';
 import { mapearRespuestaRequisito } from './util/map-response-requisito.util';
+import { esErrorDuplicado } from 'src/shared/util/errores-duplicados.util';
+import { TipoTramiteCatalogoService } from '../tipo-tramite-catalogo/tipo-tramite-catalogo.service';
+import { RequisitoService as RequisitoServiceCatalogo } from 'src/catalogo/requisito/requisito.service';
 
 @Injectable()
 export class RequisitoService {
@@ -32,24 +36,68 @@ export class RequisitoService {
   constructor(
     @InjectRepository(ArancelRequisito)
     private readonly requisitoRepository: Repository<ArancelRequisito>,
+    private readonly tipoTramiteCatalogoService: TipoTramiteCatalogoService,
+    private readonly requisitoCatalogoService: RequisitoServiceCatalogo,
   ) {}
 
   async crear(
     dto: CreateRequisitoDto,
     idUsuario: string,
   ): Promise<RequisitoMessageResponse> {
-    const requisito = this.requisitoRepository.create({
-      ...dto,
-      usuario_creador: { idUsuario } as Usuario,
-    });
     try {
+      await this.tipoTramiteCatalogoService.validarTipoTramiteActivo(
+        dto.tipo_tramite_id,
+      );
+
+      await this.requisitoCatalogoService.validarRequisitoActivo(
+        dto.requisito_catalogo_id,
+      );
+
+      const existe = await this.requisitoRepository.findOne({
+        where: {
+          tipo_tramite_id: dto.tipo_tramite_id,
+          requisito_catalogo_id: dto.requisito_catalogo_id,
+        },
+      });
+
+      if (existe) {
+        throw new ConflictException(
+          'Este requisito ya está asignado al tipo de trámite seleccionado.',
+        );
+      }
+
+      const requisito = this.requisitoRepository.create({
+        ...dto,
+        obligatorio: dto.obligatorio ?? true,
+        orden: dto.orden ?? 1,
+        usuario_creador: { idUsuario } as Usuario,
+      });
+
       await this.requisitoRepository.save(requisito);
-      return { message: 'Requisito de arancel registrado correctamente.' };
+
+      return {
+        message: 'Requisito de arancel registrado correctamente.',
+      };
     } catch (error: unknown) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException ||
+        error instanceof ConflictException
+      ) {
+        throw error;
+      }
+
+      if (esErrorDuplicado(error)) {
+        throw new ConflictException(
+          'Este requisito ya está asignado al tipo de trámite seleccionado.',
+        );
+      }
+
       this.logger.error(
         'Error al crear el requisito de arancel.',
         error instanceof Error ? error.stack : String(error),
       );
+
       throw new InternalServerErrorException('No se pudo guardar el registro.');
     }
   }
@@ -142,23 +190,89 @@ export class RequisitoService {
     dto: UpdateRequisitoDto,
     idUsuario: string,
   ): Promise<RequisitoMessageResponse> {
-    const requisito = await this.requisitoRepository.findOne({ where: { id } });
-    if (!requisito) {
-      throw new NotFoundException(
-        'No existe un requisito de arancel con ese ID.',
+    try {
+      const requisito = await this.requisitoRepository.findOne({
+        where: { id },
+      });
+
+      if (!requisito) {
+        throw new NotFoundException(
+          'No existe un requisito de arancel con ese ID.',
+        );
+      }
+
+      if (requisito.estado !== 'ACTIVO') {
+        throw new BadRequestException(
+          'No se puede actualizar un requisito de arancel inactivo.',
+        );
+      }
+
+      if (
+        ('tipo_tramite_id' in dto && dto.tipo_tramite_id == null) ||
+        ('requisito_catalogo_id' in dto && dto.requisito_catalogo_id == null)
+      ) {
+        throw new BadRequestException(
+          'El tipo de trámite y el requisito del catálogo son obligatorios.',
+        );
+      }
+
+      const tipoTramiteId = dto.tipo_tramite_id ?? requisito.tipo_tramite_id;
+
+      const requisitoCatalogoId =
+        dto.requisito_catalogo_id ?? requisito.requisito_catalogo_id;
+
+      if (dto.tipo_tramite_id !== undefined) {
+        await this.tipoTramiteCatalogoService.validarTipoTramiteActivo(
+          dto.tipo_tramite_id,
+        );
+      }
+
+      if (dto.requisito_catalogo_id !== undefined) {
+        await this.requisitoCatalogoService.validarRequisitoActivo(
+          dto.requisito_catalogo_id,
+        );
+      }
+
+      const existe = await this.requisitoRepository.findOne({
+        where: {
+          tipo_tramite_id: tipoTramiteId,
+          requisito_catalogo_id: requisitoCatalogoId,
+        },
+      });
+
+      if (existe && existe.id !== id) {
+        throw new ConflictException(
+          'Este requisito ya está asignado al tipo de trámite seleccionado.',
+        );
+      }
+
+      Object.assign(requisito, dto);
+
+      requisito._updated_at = new Date();
+      requisito._user_update = idUsuario;
+      requisito.usuario_actualizador = { idUsuario } as Usuario;
+
+      await this.requisitoRepository.save(requisito);
+
+      return {
+        message: 'Requisito de arancel actualizado correctamente.',
+      };
+    } catch (error: unknown) {
+      if (esErrorDuplicado(error)) {
+        throw new ConflictException(
+          'Este requisito ya está asignado al tipo de trámite seleccionado.',
+        );
+      }
+
+      this.logger.error(
+        'Error al actualizar el requisito de arancel.',
+        error instanceof Error ? error.stack : String(error),
+      );
+
+      throw new InternalServerErrorException(
+        'No se pudo actualizar el registro.',
       );
     }
-    if (requisito.estado !== 'ACTIVO') {
-      throw new BadRequestException(
-        'No se puede actualizar un requisito de arancel inactivo.',
-      );
-    }
-    Object.assign(requisito, dto);
-    requisito._updated_at = new Date();
-    requisito._user_update = idUsuario;
-    requisito.usuario_actualizador = { idUsuario } as Usuario;
-    await this.requisitoRepository.save(requisito);
-    return { message: 'Requisito de arancel actualizado correctamente.' };
   }
 
   async cambiarEstado(
@@ -185,7 +299,7 @@ export class RequisitoService {
     }
     await this.requisitoRepository.save(requisito);
     return {
-      message: 'Estado del requisito de arancel cambiado correctamente.',
+      message: `Registro del requisito de arancel ${requisito.estado === 'ACTIVO' ? 'activado' : 'inactivado'} correctamente.`,
     };
   }
 }

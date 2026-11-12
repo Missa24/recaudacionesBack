@@ -456,4 +456,25 @@ export class RequisitoService {
       );
     }
   }
+
+  // Funcion para validar que existe un Requisito - Catalogo
+  // Desarrollado por: Missael Apaza
+  // Fecha: 11/11/2026
+  async validarRequisitoActivo(id: string): Promise<void> {
+    const requisito = await this.requisitoRepository.findOne({
+      where: { id },
+    });
+
+    if (!requisito) {
+      throw new NotFoundException(
+        'No se encontró el requisito del catálogo solicitado.',
+      );
+    }
+
+    if (requisito.estado !== 'ACTIVO') {
+      throw new BadRequestException(
+        'El requisito del catálogo seleccionado se encuentra inactivo.',
+      );
+    }
+  }
 }

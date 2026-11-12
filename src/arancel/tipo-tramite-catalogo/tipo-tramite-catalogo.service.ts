@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   InternalServerErrorException,
   Logger,
@@ -25,6 +26,8 @@ import {
   TipoTramiteCatalogoResponse,
 } from './interface/tipo-tramite-catalogo-response.interface';
 import { mapearRespuestaTipoTramiteCatalogo } from './util/map-response-tipo-tramite-catalogo.util';
+import { esErrorDuplicado } from 'src/shared/util/errores-duplicados.util';
+import { DependenciaService } from 'src/catalogo/dependencia/dependencia.service';
 
 @Injectable()
 export class TipoTramiteCatalogoService {
@@ -33,24 +36,52 @@ export class TipoTramiteCatalogoService {
   constructor(
     @InjectRepository(TipoTramiteCatalogo)
     private readonly tipoTramiteRepository: Repository<TipoTramiteCatalogo>,
+    private readonly dependenciaService: DependenciaService,
   ) {}
 
   async crear(
     dto: CreateTipoTramiteCatalogoDto,
     idUsuario: string,
   ): Promise<TipoTramiteCatalogoMessageResponse> {
-    const tipo = this.tipoTramiteRepository.create({
-      ...dto,
-      usuario_creador: { idUsuario } as Usuario,
-    });
     try {
+      if (dto.dependencia_ejecutora_id) {
+        await this.dependenciaService.validarDependencia(
+          dto.dependencia_ejecutora_id,
+        );
+      }
+
+      const existe = await this.tipoTramiteRepository.findOne({
+        where: { codigo: dto.codigo },
+      });
+
+      if (existe) {
+        throw new ConflictException(
+          'Ya existe un tipo de trámite con ese código.',
+        );
+      }
+
+      const tipo = this.tipoTramiteRepository.create({
+        ...dto,
+        usuario_creador: { idUsuario } as Usuario,
+      });
+
       await this.tipoTramiteRepository.save(tipo);
-      return { message: 'Tipo de trámite registrado correctamente.' };
+
+      return {
+        message: 'Tipo de trámite registrado correctamente.',
+      };
     } catch (error: unknown) {
+      if (esErrorDuplicado(error)) {
+        throw new ConflictException(
+          'Ya existe un tipo de trámite con ese código.',
+        );
+      }
+
       this.logger.error(
         'Error al crear el tipo de trámite.',
         error instanceof Error ? error.stack : String(error),
       );
+
       throw new InternalServerErrorException('No se pudo guardar el registro.');
     }
   }
@@ -153,21 +184,66 @@ export class TipoTramiteCatalogoService {
     dto: UpdateTipoTramiteCatalogoDto,
     idUsuario: string,
   ): Promise<TipoTramiteCatalogoMessageResponse> {
-    const tipo = await this.tipoTramiteRepository.findOne({ where: { id } });
-    if (!tipo) {
-      throw new NotFoundException('No existe un tipo de trámite con ese ID.');
-    }
-    if (tipo.estado !== 'ACTIVO') {
-      throw new BadRequestException(
-        'No se puede actualizar un tipo de trámite inactivo.',
+    try {
+      const tipo = await this.tipoTramiteRepository.findOne({
+        where: { id },
+      });
+
+      if (!tipo) {
+        throw new NotFoundException('No existe un tipo de trámite con ese ID.');
+      }
+
+      if (tipo.estado !== 'ACTIVO') {
+        throw new BadRequestException(
+          'No se puede actualizar un tipo de trámite inactivo.',
+        );
+      }
+
+      if (dto.dependencia_ejecutora_id) {
+        await this.dependenciaService.validarDependencia(
+          dto.dependencia_ejecutora_id,
+        );
+      }
+
+      if (dto.codigo !== undefined) {
+        const existe = await this.tipoTramiteRepository.findOne({
+          where: { codigo: dto.codigo },
+        });
+
+        if (existe && existe.id !== id) {
+          throw new ConflictException(
+            'Ya existe otro tipo de trámite con ese código.',
+          );
+        }
+      }
+
+      Object.assign(tipo, dto);
+
+      tipo._updated_at = new Date();
+      tipo._user_update = idUsuario;
+      tipo.usuario_actualizador = { idUsuario } as Usuario;
+
+      await this.tipoTramiteRepository.save(tipo);
+
+      return {
+        message: 'Tipo de trámite actualizado correctamente.',
+      };
+    } catch (error: unknown) {
+      if (esErrorDuplicado(error)) {
+        throw new ConflictException(
+          'Ya existe otro tipo de trámite con ese código.',
+        );
+      }
+
+      this.logger.error(
+        'Error al actualizar el tipo de trámite.',
+        error instanceof Error ? error.stack : String(error),
+      );
+
+      throw new InternalServerErrorException(
+        'No se pudo actualizar el registro.',
       );
     }
-    Object.assign(tipo, dto);
-    tipo._updated_at = new Date();
-    tipo._user_update = idUsuario;
-    tipo.usuario_actualizador = { idUsuario } as Usuario;
-    await this.tipoTramiteRepository.save(tipo);
-    return { message: 'Tipo de trámite actualizado correctamente.' };
   }
 
   async cambiarEstado(
@@ -191,6 +267,29 @@ export class TipoTramiteCatalogoService {
       tipo._user_update = idUsuario;
     }
     await this.tipoTramiteRepository.save(tipo);
-    return { message: 'Estado del tipo de trámite cambiado correctamente.' };
+    return {
+      message: `Registro del tipo de tramite de catalogo ${tipo.estado === 'ACTIVO' ? 'activado' : 'inactivado'} correctamente.`,
+    };
+  }
+
+  // Funcion para validar que existe un TipoTramiteActivo
+  // Desarrollado por: Missael Apaza
+  // Fecha: 11/11/2026
+  async validarTipoTramiteActivo(id: string): Promise<void> {
+    const tipo = await this.tipoTramiteRepository.findOne({
+      where: { id },
+    });
+
+    if (!tipo) {
+      throw new NotFoundException(
+        'No se encontró el tipo de trámite solicitado.',
+      );
+    }
+
+    if (tipo.estado !== 'ACTIVO') {
+      throw new BadRequestException(
+        'El tipo de trámite seleccionado se encuentra inactivo.',
+      );
+    }
   }
 }

@@ -5,7 +5,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Tarifa } from './entities/tarifa.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Tarifa])],
+  imports: [TypeOrmModule.forFeature([Tarifa]), TarifaModule],
   controllers: [TarifaController],
   providers: [TarifaService],
 })

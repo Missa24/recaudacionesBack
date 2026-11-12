@@ -6,9 +6,11 @@ import {
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
+  Unique,
 } from 'typeorm';
 
 @Entity({ schema: 'arancel', name: 'tipo_tramite_catalogo' })
+@Unique('tipo_tramite_catalogo_codigo_key', ['codigo'])
 export class TipoTramiteCatalogo {
   @PrimaryGeneratedColumn('uuid')
   id!: string;

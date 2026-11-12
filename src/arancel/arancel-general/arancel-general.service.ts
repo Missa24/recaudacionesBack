@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   InternalServerErrorException,
   Logger,
@@ -25,6 +26,9 @@ import {
   ArancelGeneralResponse,
 } from './interface/arancel-general-response.interface';
 import { mapearRespuestaArancelGeneral } from './util/map-response-arancel-general.util';
+import { DependenciaService } from 'src/catalogo/dependencia/dependencia.service';
+import { esErrorDuplicado } from 'src/shared/util/errores-duplicados.util';
+import { CuentaBancariaService } from 'src/catalogo/cuenta-bancaria/cuenta-bancaria.service';
 
 @Injectable()
 export class ArancelGeneralService {
@@ -33,26 +37,62 @@ export class ArancelGeneralService {
   constructor(
     @InjectRepository(ArancelGeneral)
     private readonly arancelRepository: Repository<ArancelGeneral>,
+    private readonly dependenciaService: DependenciaService,
+    private readonly cuentaBancariaService: CuentaBancariaService,
   ) {}
 
   async crear(
     dto: CreateArancelGeneralDto,
     idUsuario: string,
   ): Promise<ArancelGeneralMessageResponse> {
-    const arancel = this.arancelRepository.create({
-      ...dto,
-      usuario_creador: { idUsuario } as Usuario,
-    });
-
     try {
+      // Validar dependencia.
+      await this.dependenciaService.validarDependencia(dto.dependencia_id);
+
+      // Validar cuenta bancaria, si fue proporcionada.
+      if (dto.cuenta_destino_id) {
+        await this.cuentaBancariaService.validarCuentaBancaria(
+          dto.cuenta_destino_id,
+        );
+      }
+
+      // Verificar número de arancel duplicado.
+      const existe = await this.arancelRepository.findOne({
+        where: { nro_arancel_gral: dto.nro_arancel_gral },
+      });
+
+      if (existe) {
+        throw new ConflictException(
+          'Ya existe un Arancel General con ese número de arancel.',
+        );
+      }
+
+      // Crear registro.
+      const arancel = this.arancelRepository.create({
+        ...dto,
+        usuario_creador: { idUsuario } as Usuario,
+      });
+
       await this.arancelRepository.save(arancel);
-      return { message: 'Arancel general registrado correctamente.' };
+
+      return {
+        message: 'Arancel general registrado correctamente.',
+      };
     } catch (error: unknown) {
+      if (esErrorDuplicado(error)) {
+        throw new ConflictException(
+          'Ya existe un Arancel General con ese número de arancel.',
+        );
+      }
+
       this.logger.error(
         'Error al crear el arancel general.',
         error instanceof Error ? error.stack : String(error),
       );
-      throw new InternalServerErrorException('No se pudo guardar el registro.');
+
+      throw new InternalServerErrorException(
+        'No se pudo guardar el Arancel General.',
+      );
     }
   }
 
@@ -153,22 +193,75 @@ export class ArancelGeneralService {
     dto: UpdateArancelGeneralDto,
     idUsuario: string,
   ): Promise<ArancelGeneralMessageResponse> {
-    const arancel = await this.arancelRepository.findOne({ where: { id } });
-    if (!arancel) {
-      throw new NotFoundException('No existe un arancel general con ese ID.');
-    }
-    if (arancel.estado !== 'ACTIVO') {
-      throw new BadRequestException(
-        'No se puede actualizar un arancel general inactivo.',
+    try {
+      // Buscar el arancel general.
+      const arancel = await this.arancelRepository.findOne({
+        where: { id },
+      });
+
+      if (!arancel) {
+        throw new NotFoundException('No existe un arancel general con ese ID.');
+      }
+
+      if (arancel.estado !== 'ACTIVO') {
+        throw new BadRequestException(
+          'No se puede actualizar un arancel general inactivo.',
+        );
+      }
+
+      // Validar dependencia si se proporciona.
+      if (dto.dependencia_id) {
+        await this.dependenciaService.validarDependencia(dto.dependencia_id);
+      }
+
+      // Validar cuenta bancaria si se proporciona.
+      if (dto.cuenta_destino_id) {
+        await this.cuentaBancariaService.validarCuentaBancaria(
+          dto.cuenta_destino_id,
+        );
+      }
+
+      // Verificar número de arancel duplicado.
+      if (dto.nro_arancel_gral) {
+        const existe = await this.arancelRepository.findOne({
+          where: { nro_arancel_gral: dto.nro_arancel_gral },
+        });
+
+        if (existe && existe.id !== id) {
+          throw new ConflictException(
+            'Ya existe otro Arancel General con ese número de arancel.',
+          );
+        }
+      }
+
+      // Actualizar datos.
+      Object.assign(arancel, dto);
+
+      arancel._updated_at = new Date();
+      arancel._user_update = idUsuario;
+      arancel.usuario_actualizador = { idUsuario } as Usuario;
+
+      await this.arancelRepository.save(arancel);
+
+      return {
+        message: 'Arancel general actualizado correctamente.',
+      };
+    } catch (error: unknown) {
+      if (esErrorDuplicado(error)) {
+        throw new ConflictException(
+          'Ya existe otro Arancel General con ese número de arancel.',
+        );
+      }
+
+      this.logger.error(
+        'Error al actualizar el arancel general.',
+        error instanceof Error ? error.stack : String(error),
+      );
+
+      throw new InternalServerErrorException(
+        'No se pudo actualizar el Arancel General.',
       );
     }
-
-    Object.assign(arancel, dto);
-    arancel._updated_at = new Date();
-    arancel._user_update = idUsuario;
-    arancel.usuario_actualizador = { idUsuario } as Usuario;
-    await this.arancelRepository.save(arancel);
-    return { message: 'Arancel general actualizado correctamente.' };
   }
 
   async cambiarEstado(
@@ -194,6 +287,29 @@ export class ArancelGeneralService {
     }
 
     await this.arancelRepository.save(arancel);
-    return { message: 'Estado del arancel general cambiado correctamente.' };
+    return {
+      message: `Registro del arancel general ${arancel.estado === 'ACTIVO' ? 'activado' : 'inactivado'} correctamente.`,
+    };
+  }
+
+  // Funcion para validar la existencia de un ArancelGeneral
+  // Desarrollado por: Missael Apaza
+  // Fecha: 11/11/2026
+  async validarArancelGeneral(id: string): Promise<void> {
+    const arancel = await this.arancelRepository.findOne({
+      where: { id },
+    });
+
+    if (!arancel) {
+      throw new NotFoundException(
+        'No se encontró el arancel general solicitado.',
+      );
+    }
+
+    if (arancel.estado !== 'ACTIVO') {
+      throw new BadRequestException(
+        'El arancel general seleccionado se encuentra inactivo.',
+      );
+    }
   }
 }

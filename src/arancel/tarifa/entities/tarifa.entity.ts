@@ -5,20 +5,25 @@ import {
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
+  Unique,
 } from 'typeorm';
 import { ArancelDetalle } from '../../arancel-detalle/entities/arancel-detalle.entity';
 
 @Entity({ schema: 'arancel', name: 'tarifa' })
+@Unique('tarifa_id_tarifa_id_arancel_det_key', ['id', 'arancel_det_id'])
 export class Tarifa {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ type: 'uuid', name: 'arancel_det_id' })
+  @Column({ type: 'uuid', name: 'id_arancel_det' })
   arancel_det_id!: string;
 
-  @ManyToOne(() => ArancelDetalle, { nullable: false, onDelete: 'RESTRICT' })
-  @JoinColumn({ name: 'arancel_det_id', referencedColumnName: 'id' })
-  arancel_detalle!: ArancelDetalle;
+  @ManyToOne(() => ArancelDetalle, {
+    nullable: false,
+    onDelete: 'RESTRICT',
+  })
+  @JoinColumn({ name: 'id_arancel_det', referencedColumnName: 'id' })
+  arancel_det!: ArancelDetalle;
 
   @Column({ type: 'date' })
   vigente_desde!: string;
@@ -29,8 +34,8 @@ export class Tarifa {
   @Column({ type: 'numeric', precision: 14, scale: 2 })
   monto!: number;
 
-  @Column({ type: 'text', nullable: true })
-  referencia_aprobacion!: string | null;
+  @Column({ type: 'text' })
+  referencia_aprobacion!: string;
 
   @Column({ type: 'varchar', length: 50, default: 'ACTIVO' })
   estado!: string;
@@ -38,12 +43,17 @@ export class Tarifa {
   @Column({
     name: '_created_at',
     type: 'timestamptz',
-    default: () => 'CURRENT_TIMESTAMP',
+    default: () => 'clock_timestamp()',
   })
   _created_at!: Date;
 
-  @Column({ name: '_updated_at', type: 'timestamptz', nullable: true })
-  _updated_at!: Date | null;
+  @Column({
+    name: '_updated_at',
+    type: 'timestamptz',
+    default: () => 'clock_timestamp()',
+    nullable: true,
+  })
+  _updated_at!: Date;
 
   @Column({ name: '_deleted_at', type: 'timestamptz', nullable: true })
   _deleted_at!: Date | null;

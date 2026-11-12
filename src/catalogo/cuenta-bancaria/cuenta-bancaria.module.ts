@@ -16,5 +16,6 @@ import { DependenciaModule } from '../dependencia/dependencia.module';
   ],
   controllers: [CuentaBancariaController],
   providers: [CuentaBancariaService],
+  exports: [CuentaBancariaService],
 })
 export class CuentaBancariaModule {}
