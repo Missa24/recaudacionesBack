@@ -114,7 +114,7 @@ export class Usuario {
     name: 'created_at',
     type: 'timestamptz',
   })
-  _created_at!: Date;
+  createdAt!: Date;
 
   /** Fecha y hora de la última modificación. */
   @UpdateDateColumn({
@@ -122,7 +122,7 @@ export class Usuario {
     type: 'timestamptz',
     nullable: true,
   })
-  _updated_at!: Date | null;
+  updatedAt!: Date | null;
 
   /** Fecha de eliminación lógica, si corresponde. */
   @Column({
@@ -130,7 +130,7 @@ export class Usuario {
     type: 'timestamptz',
     nullable: true,
   })
-  _deleted_at!: Date | null;
+  deletedAt!: Date | null;
 
   // Identificador del usuario que creó el registro.
   @Column({

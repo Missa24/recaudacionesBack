@@ -107,7 +107,7 @@ export class UsuarioService {
     } = query;
 
     const camposOrdenamiento: Record<string, keyof Usuario> = {
-      _created_at: '_created_at',
+      createdAt: 'createdAt',
       username: 'username',
       email: 'email',
       nombres: 'nombres',
@@ -123,7 +123,7 @@ export class UsuarioService {
 
     // Filtros base
     const where: FindOptionsWhere<Usuario> = {
-      _deleted_at: IsNull(),
+      deletedAt: IsNull(),
     };
 
     // Filtro por estado
@@ -194,7 +194,7 @@ export class UsuarioService {
     const usuario = await this.usuarioRepository.findOne({
       where: {
         id,
-        _deleted_at: IsNull(),
+        deletedAt: IsNull(),
       },
       relations: {
         usuario_creador: true,
@@ -217,7 +217,7 @@ export class UsuarioService {
       where: {
         username,
         estado: 'ACTIVO',
-        _deleted_at: IsNull(),
+        deletedAt: IsNull(),
       },
       relations: {
         usuario_creador: true,
@@ -245,7 +245,7 @@ export class UsuarioService {
     const usuario = await this.usuarioRepository.findOne({
       where: {
         id,
-        _deleted_at: IsNull(),
+        deletedAt: IsNull(),
       },
     });
 
@@ -319,7 +319,7 @@ export class UsuarioService {
     const usuario = await this.usuarioRepository.findOne({
       where: {
         id,
-        _deleted_at: IsNull(),
+        deletedAt: IsNull(),
       },
     });
 
@@ -333,11 +333,11 @@ export class UsuarioService {
 
     if (nuevoEstado === 'INACTIVO') {
       usuario._user_delete = idUsuario;
-      usuario._deleted_at = new Date();
+      usuario.deletedAt = new Date();
       usuario._user_update = null;
     } else {
       usuario._user_delete = null;
-      usuario._deleted_at = null;
+      usuario.deletedAt = null;
       usuario._user_update = idUsuario;
     }
 
@@ -368,7 +368,7 @@ export class UsuarioService {
       throw new NotFoundException('No existe un usuario con ese identificador');
     }
 
-    if (usuario.estado !== 'ACTIVO' || usuario._deleted_at) {
+    if (usuario.estado !== 'ACTIVO' || usuario.deletedAt) {
       throw new ConflictException(
         'No se puede asignar un rol a un usuario inactivo',
       );
