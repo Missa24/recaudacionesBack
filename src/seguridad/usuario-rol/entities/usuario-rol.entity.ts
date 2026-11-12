@@ -4,61 +4,150 @@ import {
   Entity,
   JoinColumn,
   ManyToOne,
-  PrimaryColumn,
+  PrimaryGeneratedColumn,
+  Unique,
   UpdateDateColumn,
 } from 'typeorm';
-import { Rol } from '../../rol/entities/rol.entity';
-import { Usuario } from '../../usuario/entities/usuario.entity';
 
+import { Usuario } from '../../usuario/entities/usuario.entity';
+import { Rol } from '../../rol/entities/rol.entity';
+
+/**
+ * Módulo: Seguridad / UsuarioRol
+ * Archivo: usuario-rol.entity.ts
+ *
+ * Descripción:
+ * Representa la tabla seguridad.usuario_rol.
+ * Asigna roles a los usuarios del sistema.
+ */
 @Entity({ schema: 'seguridad', name: 'usuario_rol' })
+@Unique('UQ_usuario_rol_usuario_rol', ['usuario_id', 'rol_id'])
 export class UsuarioRol {
-  @PrimaryColumn({ name: 'id', type: 'uuid' })
+  /** Identificador UUID de la asignación. */
+  @PrimaryGeneratedColumn('uuid', { name: 'id' })
   id!: string;
 
-  @Column({ name: 'id_usuario', type: 'uuid' })
-  idUsuario!: string;
+  /** UUID del usuario asignado. */
+  @Column({
+    name: 'usuario_id',
+    type: 'uuid',
+    nullable: false,
+  })
+  usuario_id!: string;
 
-  @ManyToOne(() => Usuario, { nullable: false, onDelete: 'RESTRICT' })
-  @JoinColumn({ name: 'id_usuario', referencedColumnName: 'idUsuario' })
+  /** Relación con el usuario asignado. */
+  @ManyToOne(() => Usuario, {
+    nullable: false,
+    onDelete: 'RESTRICT',
+  })
+  @JoinColumn({
+    name: 'usuario_id',
+    referencedColumnName: 'id',
+  })
   usuario!: Usuario;
 
-  @Column({ name: 'id_rol', type: 'uuid' })
-  idRol!: string;
+  /** UUID del rol asignado. */
+  @Column({
+    name: 'rol_id',
+    type: 'uuid',
+    nullable: false,
+  })
+  rol_id!: string;
 
-  @ManyToOne(() => Rol, { nullable: false, onDelete: 'RESTRICT' })
-  @JoinColumn({ name: 'id_rol', referencedColumnName: 'id' })
+  /** Relación con el rol asignado. */
+  @ManyToOne(() => Rol, {
+    nullable: false,
+    onDelete: 'RESTRICT',
+  })
+  @JoinColumn({
+    name: 'rol_id',
+    referencedColumnName: 'id',
+  })
   rol!: Rol;
 
-  @Column({ type: 'varchar', length: 50, default: 'ACTIVO' })
+  /** Estado de la asignación. */
+  @Column({
+    name: 'estado',
+    type: 'varchar',
+    length: 50,
+    default: 'ACTIVO',
+    nullable: false,
+  })
   estado!: string;
 
-  @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
+  /** Fecha de creación. */
+  @CreateDateColumn({
+    name: '_created_at',
+    type: 'timestamptz',
+  })
   createdAt!: Date;
 
-  @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
+  /** Fecha de actualización. */
+  @UpdateDateColumn({
+    name: '_updated_at',
+    type: 'timestamptz',
+  })
   updatedAt!: Date;
 
-  @Column({ name: 'deleted_at', type: 'timestamptz', nullable: true })
+  /** Fecha de eliminación lógica. */
+  @Column({
+    name: '_deleted_at',
+    type: 'timestamptz',
+    nullable: true,
+  })
   deletedAt!: Date | null;
 
-  @Column({ name: 'user_created', type: 'uuid' })
-  userCreated!: string;
+  /** UUID del usuario que creó la asignación. */
+  @Column({
+    name: '_user_created',
+    type: 'uuid',
+    nullable: false,
+  })
+  _user_created!: string;
 
-  @ManyToOne(() => Usuario, { nullable: false, onDelete: 'RESTRICT' })
-  @JoinColumn({ name: 'user_created', referencedColumnName: 'idUsuario' })
-  usuarioCreador!: Usuario;
+  @ManyToOne(() => Usuario, {
+    nullable: false,
+    onDelete: 'RESTRICT',
+  })
+  @JoinColumn({
+    name: '_user_created',
+    referencedColumnName: 'id',
+  })
+  usuario_creador!: Usuario;
 
-  @Column({ name: 'user_update', type: 'uuid', nullable: true })
-  userUpdate!: string | null;
+  /** UUID del usuario que actualizó la asignación. */
+  @Column({
+    name: '_user_update',
+    type: 'uuid',
+    nullable: true,
+  })
+  _user_update!: string | null;
 
-  @ManyToOne(() => Usuario, { nullable: true, onDelete: 'RESTRICT' })
-  @JoinColumn({ name: 'user_update', referencedColumnName: 'idUsuario' })
-  usuarioActualizador!: Usuario | null;
+  @ManyToOne(() => Usuario, {
+    nullable: true,
+    onDelete: 'RESTRICT',
+  })
+  @JoinColumn({
+    name: '_user_update',
+    referencedColumnName: 'id',
+  })
+  usuario_actualizador!: Usuario | null;
 
-  @Column({ name: 'user_deleted', type: 'uuid', nullable: true })
-  userDeleted!: string | null;
+  /** UUID del usuario que eliminó la asignación. */
+  @Column({
+    name: '_user_delete',
+    type: 'uuid',
+    nullable: true,
+  })
+  _user_delete!: string | null;
 
-  @ManyToOne(() => Usuario, { nullable: true, onDelete: 'RESTRICT' })
-  @JoinColumn({ name: 'user_deleted', referencedColumnName: 'idUsuario' })
-  usuarioEliminador!: Usuario | null;
+  @ManyToOne(() => Usuario, {
+    nullable: true,
+    onDelete: 'RESTRICT',
+  })
+  @JoinColumn({
+    name: '_user_delete',
+    referencedColumnName: 'id',
+  })
+  usuario_eliminador!: Usuario | null;
 }

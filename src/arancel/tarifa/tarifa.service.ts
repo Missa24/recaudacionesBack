@@ -104,9 +104,9 @@ export class TarifaService {
       ...dto,
       vigente_hasta: vigenteHasta,
       estado: 'ACTIVO',
-      _created_at: ahora,
-      _updated_at: ahora,
-      usuario_creador: { idUsuario } as Usuario,
+      createdAt: ahora,
+      updatedAt: ahora,
+      usuario_creador: { id: idUsuario } as Usuario,
     });
 
     try {
@@ -165,18 +165,18 @@ export class TarifaService {
     }
 
     if (startDate && endDate) {
-      filtros._created_at = And(
+      filtros.createdAt = And(
         MoreThanOrEqual(new Date(`${startDate}T00:00:00.000`)),
         LessThan(
           new Date(new Date(`${endDate}T00:00:00.000`).getTime() + 86400000),
         ),
       );
     } else if (startDate) {
-      filtros._created_at = MoreThanOrEqual(
+      filtros.createdAt = MoreThanOrEqual(
         new Date(`${startDate}T00:00:00.000`),
       );
     } else if (endDate) {
-      filtros._created_at = LessThan(
+      filtros.createdAt = LessThan(
         new Date(new Date(`${endDate}T00:00:00.000`).getTime() + 86400000),
       );
     }
@@ -191,7 +191,7 @@ export class TarifaService {
         usuario_creador: true,
         usuario_actualizador: true,
       },
-      order: { _created_at: sortOrder ?? 'DESC' },
+      order: { createdAt: sortOrder ?? 'DESC' },
       skip: (page - 1) * limit,
       take: limit,
     });
@@ -317,9 +317,9 @@ export class TarifaService {
 
     const ahora = new Date();
 
-    tarifa._updated_at = ahora;
+    tarifa.updatedAt = ahora;
     tarifa._user_update = idUsuario;
-    tarifa.usuario_actualizador = { idUsuario } as Usuario;
+    tarifa.usuario_actualizador = { id: idUsuario } as Usuario;
 
     try {
       await this.tarifaRepository.save(tarifa);
@@ -352,9 +352,9 @@ export class TarifaService {
 
     if (tarifa.estado === 'ACTIVO') {
       tarifa.estado = 'INACTIVO';
-      tarifa._deleted_at = ahora;
+      tarifa.deletedAt = ahora;
       tarifa._user_delete = idUsuario;
-      tarifa.usuario_eliminador = { idUsuario } as Usuario;
+      tarifa.usuario_eliminador = { id: idUsuario } as Usuario;
     } else {
       // Antes de reactivar, comprobar que no exista otra tarifa
       // con una vigencia superpuesta.
@@ -398,14 +398,14 @@ export class TarifaService {
       }
 
       tarifa.estado = 'ACTIVO';
-      tarifa._deleted_at = null;
+      tarifa.deletedAt = null;
       tarifa._user_delete = null;
       tarifa.usuario_eliminador = null;
     }
 
-    tarifa._updated_at = ahora;
+    tarifa.updatedAt = ahora;
     tarifa._user_update = idUsuario;
-    tarifa.usuario_actualizador = { idUsuario } as Usuario;
+    tarifa.usuario_actualizador = { id: idUsuario } as Usuario;
 
     try {
       await this.tarifaRepository.save(tarifa);

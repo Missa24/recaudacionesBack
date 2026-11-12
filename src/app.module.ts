@@ -36,6 +36,7 @@ import { CorrelativoAnualModule } from './tramite-vut/correlativo-anual/correlat
 import { CotizacionDetalleModule } from './tramite-vut/cotizacion-detalle/cotizacion-detalle.module';
 import { LiquidicacionDetalleModule } from './tramite-vut/liquidicacion-detalle/liquidicacion-detalle.module';
 import { RequisitoEntregadoModule } from './tramite-vut/requisito-entregado/requisito-entregado.module';
+import { SesionModule } from './seguridad/sesion/sesion.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -82,6 +83,7 @@ import { RequisitoEntregadoModule } from './tramite-vut/requisito-entregado/requ
     CotizacionDetalleModule,
     LiquidicacionDetalleModule,
     RequisitoEntregadoModule,
+    SesionModule,
   ],
   controllers: [AppController],
   providers: [

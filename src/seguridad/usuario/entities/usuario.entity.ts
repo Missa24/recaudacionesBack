@@ -2,7 +2,10 @@ import {
   Column,
   CreateDateColumn,
   Entity,
-  PrimaryColumn,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+  Unique,
   UpdateDateColumn,
 } from 'typeorm';
 
@@ -16,24 +19,21 @@ import {
  * de auditoría de los usuarios del sistema.
  *
  * Fecha de creación: 2026-11-10
- * Autor: Oscar Canchari
+ * Autor: Missael Apaza
  */
 @Entity({ schema: 'seguridad', name: 'usuario' })
+@Unique('UQ_usuario_username', ['username'])
+@Unique('UQ_usuario_email', ['email'])
 export class Usuario {
   /** Identificador UUID del usuario. */
-  @PrimaryColumn({
-    name: 'id_usuario',
-    type: 'uuid',
-  })
-  //@PrimaryGeneratedColumn("uuid")
-  idUsuario!: string;
+  @PrimaryGeneratedColumn('uuid')
+  id!: string;
 
   /** Nombre de usuario utilizado para identificarlo. */
   @Column({
     name: 'username',
     type: 'varchar',
     length: 50,
-    nullable: true,
   })
   username!: string;
 
@@ -41,7 +41,6 @@ export class Usuario {
   @Column({
     name: 'email',
     type: 'varchar',
-    nullable: true,
   })
   email!: string;
 
@@ -50,7 +49,6 @@ export class Usuario {
     name: 'ci',
     type: 'varchar',
     length: 30,
-    nullable: true,
   })
   ci!: string;
 
@@ -115,9 +113,8 @@ export class Usuario {
   @CreateDateColumn({
     name: 'created_at',
     type: 'timestamptz',
-    nullable: true,
   })
-  createdAt!: Date | null;
+  createdAt!: Date;
 
   /** Fecha y hora de la última modificación. */
   @UpdateDateColumn({
@@ -135,27 +132,57 @@ export class Usuario {
   })
   deletedAt!: Date | null;
 
-  /** UUID del usuario responsable de la creación. */
+  // Identificador del usuario que creó el registro.
   @Column({
-    name: 'user_created',
     type: 'uuid',
-    nullable: true,
+    name: '_user_created',
   })
-  userCreated!: string | null;
+  _user_created!: string;
 
-  /** UUID del usuario responsable de la actualización. */
-  @Column({
-    name: 'user_update',
-    type: 'uuid',
-    nullable: true,
+  /**
+   * Relación con el usuario responsable de la creación.
+   * No permite eliminar usuarios que tengan registros asociados.
+   */
+  @ManyToOne(() => Usuario, { nullable: false, onDelete: 'RESTRICT' })
+  @JoinColumn({
+    name: '_user_created',
+    referencedColumnName: 'id',
   })
-  userUpdate!: string | null;
+  usuario_creador!: Usuario;
 
-  /** UUID del usuario responsable de la eliminación. */
+  // Identificador del usuario que realizó la última actualización.
   @Column({
-    name: 'user_deleted',
     type: 'uuid',
+    name: '_user_update',
     nullable: true,
   })
-  userDeleted!: string | null;
+  _user_update!: string | null;
+
+  /**
+   * Relación con el usuario responsable de la actualización.
+   */
+  @ManyToOne(() => Usuario, { nullable: true, onDelete: 'RESTRICT' })
+  @JoinColumn({
+    name: '_user_update',
+    referencedColumnName: 'id',
+  })
+  usuario_actualizador!: Usuario | null;
+
+  // Identificador del usuario que realizó la eliminación lógica.
+  @Column({
+    type: 'uuid',
+    name: '_user_delete',
+    nullable: true,
+  })
+  _user_delete!: string | null;
+
+  /**
+   * Relación con el usuario responsable de la eliminación lógica.
+   */
+  @ManyToOne(() => Usuario, { nullable: true, onDelete: 'RESTRICT' })
+  @JoinColumn({
+    name: '_user_delete',
+    referencedColumnName: 'id',
+  })
+  usuario_eliminador!: Usuario | null;
 }

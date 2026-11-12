@@ -1,35 +1,30 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsOptional, Matches, MaxLength } from 'class-validator';
-
 /**
- * Datos para crear permiso. Estado y auditoría son asignados por el servicio.
- * Desarrollado por: Oscar Canchari.
+ * Módulo: Seguridad - Permiso
+ * Archivo: create-permiso.dto.ts
+ * Descripción:
+ * Define los datos necesarios para registrar un permiso.
  */
-export class CreatePermisoDto {
-  /** Obligatorio; no admite texto vacío. */
-  @ApiProperty({ example: 'Consultar usuarios', maxLength: 150 })
-  @IsString({ message: 'nombre debe ser un texto.' })
-  @MaxLength(150, { message: 'nombre admite hasta 150 caracteres.' })
-  @Matches(/\S/, { message: 'nombre no puede estar vacío.' })
-  nombre!: string;
 
-  /** Obligatorio; no admite texto vacío. */
-  @ApiProperty({ example: 'USUARIO_CONSULTAR', maxLength: 40 })
-  @IsString({ message: 'codigo debe ser un texto.' })
-  @MaxLength(40, { message: 'codigo admite hasta 40 caracteres.' })
-  @Matches(/^[A-Za-z0-9_]+$/, {
-    message: 'codigo solo permite letras, números y guiones bajos.',
+import { ApiProperty } from '@nestjs/swagger';
+import { IsNotEmpty, IsString, MaxLength } from 'class-validator';
+
+export class CreatePermisoDto {
+  @ApiProperty({
+    description: 'Código funcional único del permiso.',
+    example: 'USUARIO_CREAR',
+  })
+  @IsNotEmpty({ message: 'El código no puede estar vacío' })
+  @IsString({ message: 'El código debe ser un texto' })
+  @MaxLength(100, {
+    message: 'El código no debe superar los 100 caracteres',
   })
   codigo!: string;
 
-  /** Opcional; permite null para limpiar el valor. */
-  @ApiPropertyOptional({
-    example: 'Descripción de las funciones.',
-    maxLength: 5000,
-    nullable: true,
+  @ApiProperty({
+    description: 'Descripción funcional del permiso.',
+    example: 'Permite registrar nuevos usuarios en el sistema.',
   })
-  @IsOptional()
-  @IsString({ message: 'descripcion debe ser un texto.' })
-  @MaxLength(5000, { message: 'descripcion admite hasta 5000 caracteres.' })
-  descripcion?: string | null;
+  @IsNotEmpty({ message: 'La descripción no puede estar vacía' })
+  @IsString({ message: 'La descripción debe ser un texto' })
+  descripcion!: string;
 }

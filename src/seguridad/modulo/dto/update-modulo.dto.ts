@@ -2,9 +2,9 @@ import { PartialType } from '@nestjs/swagger';
 import { CreateModuloDto } from './create-modulo.dto';
 
 /**
- * Edición parcial. No permite null en los campos obligatorios.
- * Desarrollado por: Oscar Canchari.
+ * Módulo: Seguridad - Módulo
+ * Archivo: update-modulo.dto.ts
+ *
+ * Permite actualizar parcialmente los datos de un módulo.
  */
-export class UpdateModuloDto extends PartialType(CreateModuloDto, {
-  skipNullProperties: false,
-}) {}
+export class UpdateModuloDto extends PartialType(CreateModuloDto) {}

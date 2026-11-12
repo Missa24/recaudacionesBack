@@ -1,402 +1,401 @@
+/**
+ * Módulo: Seguridad - Permiso
+ * Archivo: permiso.service.ts
+ * Descripción:
+ * Contiene la lógica de negocio para administrar los permisos
+ * del sistema, incluyendo registro, consulta, actualización
+ * y cambios de estado con auditoría.
+ */
+
 import {
   BadRequestException,
   ConflictException,
   Injectable,
+  InternalServerErrorException,
   Logger,
   NotFoundException,
 } from '@nestjs/common';
+
 import { InjectRepository } from '@nestjs/typeorm';
-import {
-  And,
-  FindOptionsOrder,
-  FindOptionsWhere,
-  ILike,
-  IsNull,
-  LessThan,
-  LessThanOrEqual,
-  MoreThanOrEqual,
-  Not,
-  Repository,
-} from 'typeorm';
-import { PaginatedResponse } from '../../shared/interface/paginated-response.interface';
-import { esErrorDuplicado } from '../../shared/util/errores-duplicados.util';
+import { FindOptionsWhere, In, IsNull, Repository } from 'typeorm';
+
+import { Permiso } from './entities/permiso.entity';
 import { CreatePermisoDto } from './dto/create-permiso.dto';
 import { UpdatePermisoDto } from './dto/update-permiso.dto';
 import { QueryPermisoDto } from './dto/query-permiso.dto';
-import { Permiso } from './entities/permiso.entity';
-import {
-  PermisoCreateResponse,
-  PermisoDetalleResponse,
-  PermisoEstadoResponse,
-  PermisoListadoResponse,
-} from './interfaces/permiso-response.interface';
-import {
-  mapResponsePermisoDetalle,
-  mapResponsePermisoListado,
-} from './util/map-response-permiso.util';
 
-/**
- * Lógica de permiso. Utiliza Repository de TypeORM, sin QueryBuilder.
- * Desarrollado por: Oscar Canchari.
- */
+import { mapearRespuesta } from './util/map-response-permiso.util';
+
+import { PaginatedResponse } from 'src/shared/interface/paginated-response.interface';
+
+import { esErrorDuplicado } from 'src/shared/util/errores-duplicados.util';
+import {
+  PermisoMessageResponse,
+  PermisoResponse,
+} from './interfaces/permiso-response.interface';
+
 @Injectable()
 export class PermisoService {
   private readonly logger = new Logger(PermisoService.name);
 
   constructor(
     @InjectRepository(Permiso)
-    private readonly repositorio: Repository<Permiso>,
+    private readonly permisoRepository: Repository<Permiso>,
   ) {}
 
-  /** POST /api/permiso: valida unicidad, asigna estado y registra al responsable. */
+  /*
+  Nombre del método: crear
+  Descripción: Registra un nuevo permiso y asocia al usuario creador.
+  Parámetros:
+    - dto: CreatePermisoDto.
+    - idUsuario: Usuario responsable de la creación.
+  Respuestas:
+    - 201: Permiso registrado correctamente.
+    - 409: El código ya se encuentra registrado.
+    - 500: Error al guardar.
+  */
+
   async crear(
     dto: CreatePermisoDto,
-    responsable: string,
-  ): Promise<PermisoCreateResponse> {
-    const nombre = this.exigirTexto(dto.nombre, 'nombre').trim();
-    const codigo = this.exigirTexto(dto.codigo, 'codigo').trim().toUpperCase();
-    await this.verificarDuplicados(nombre, codigo);
-    const registro = this.repositorio.create({
-      nombre: nombre,
-      codigo,
-      descripcion: dto.descripcion?.trim() ?? null,
-      estado: 'ACTIVO',
-      user_created: responsable,
-      user_update: null,
-      user_deleted: null,
-      deleted_at: null,
+    idUsuario: string,
+  ): Promise<PermisoMessageResponse> {
+    const codigo = dto.codigo.trim().toUpperCase();
+
+    const existe = await this.permisoRepository.findOne({
+      where: { codigo },
     });
-    try {
-      const guardado = await this.repositorio.save(registro);
-      this.logger.log(`Permiso creado: ${guardado.id}`);
-      return { message: 'Permiso creado correctamente.', id: guardado.id };
-    } catch (error) {
-      this.manejarErrorDuplicado(error);
-      throw error;
-    }
-  }
 
-  /**
-   * GET /api/permiso: pagina y busca por nombre o código.
-   * Combina estado y fechas en cada condición OR de búsqueda.
-   * Los días sin hora se interpretan en Bolivia (UTC-04:00).
-   */
-  async listar(
-    query: QueryPermisoDto,
-  ): Promise<PaginatedResponse<PermisoListadoResponse>> {
-    const page = Number(query.page ?? 1);
-    const limit = Number(query.limit ?? 10);
-    if (
-      !Number.isInteger(page) ||
-      page < 1 ||
-      !Number.isInteger(limit) ||
-      limit < 1 ||
-      limit > 100
-    ) {
-      throw new BadRequestException(
-        'page debe ser mayor o igual a 1 y limit debe estar entre 1 y 100.',
-      );
-    }
-    const status = query.status ?? 'ACTIVO';
-    const sortBy = query.sortBy ?? 'createdAt';
-    const sortOrder = query.sortOrder ?? 'DESC';
-    const dateField = query.dateField ?? 'createdAt';
-    if (!['ACTIVO', 'INACTIVO', 'TODOS'].includes(status))
-      throw new BadRequestException(
-        'status debe ser ACTIVO, INACTIVO o TODOS.',
-      );
-    if (!['createdAt', 'updatedAt'].includes(sortBy))
-      throw new BadRequestException('sortBy debe ser createdAt o updatedAt.');
-    if (sortOrder !== 'ASC' && sortOrder !== 'DESC')
-      throw new BadRequestException('sortOrder debe ser ASC o DESC.');
-    if (dateField !== 'createdAt' && dateField !== 'updatedAt')
-      throw new BadRequestException(
-        'dateField debe ser createdAt o updatedAt.',
-      );
-
-    const filtro: FindOptionsWhere<Permiso> = { deleted_at: IsNull() };
-    if (status !== 'TODOS') filtro.estado = status;
-    const inicio = query.startDate
-      ? this.convertirFechaFiltro(query.startDate, false)
-      : null;
-    const fin = query.endDate
-      ? this.convertirFechaFiltro(query.endDate, true)
-      : null;
-    if (
-      inicio &&
-      fin &&
-      (fin.exclusivo ? inicio.valor >= fin.valor : inicio.valor > fin.valor)
-    ) {
-      throw new BadRequestException(
-        'startDate no puede ser posterior a endDate.',
-      );
-    }
-    // Traducir los nombres públicos a las propiedades reales de la entidad.
-    const campoFecha = dateField === 'createdAt' ? 'created_at' : 'updated_at';
-    if (inicio && fin)
-      filtro[campoFecha] = And(
-        MoreThanOrEqual(inicio.valor),
-        fin.exclusivo ? LessThan(fin.valor) : LessThanOrEqual(fin.valor),
-      );
-    else if (inicio) filtro[campoFecha] = MoreThanOrEqual(inicio.valor);
-    else if (fin)
-      filtro[campoFecha] = fin.exclusivo
-        ? LessThan(fin.valor)
-        : LessThanOrEqual(fin.valor);
-
-    const search = (query.search ?? '').trim();
-    if (search.length > 100)
-      throw new BadRequestException(
-        'La búsqueda no debe superar 100 caracteres.',
-      );
-    let where: FindOptionsWhere<Permiso> | FindOptionsWhere<Permiso>[] = filtro;
-    if (search) {
-      const patron = `%${this.escaparLike(search)}%`;
-      where = [
-        { ...filtro, nombre: ILike(patron) },
-        { ...filtro, codigo: ILike(patron) },
-      ];
-    }
-    // El UUID desempata para mantener estable el orden de las páginas.
-    const order: FindOptionsOrder<Permiso> =
-      sortBy === 'updatedAt'
-        ? { updated_at: sortOrder, id: 'ASC' }
-        : { created_at: sortOrder, id: 'ASC' };
-    const [registros, total] = await this.repositorio.findAndCount({
-      where,
-      order,
-      skip: (page - 1) * limit,
-      take: limit,
-      select: {
-        id: true,
-        nombre: true,
-        codigo: true,
-        estado: true,
-        user_created: true,
-        created_at: true,
-      },
-    });
-    const totalPages = Math.ceil(total / limit);
-    return {
-      items: registros.map(mapResponsePermisoListado),
-      pagination: {
-        total,
-        page,
-        limit,
-        totalPages,
-        hasNextPage: page < totalPages,
-        hasPreviousPage: page > 1,
-      },
-    };
-  }
-
-  /** GET /api/permiso/buscar/:valor: consulta exacta por UUID o código. */
-  async buscarPorIdentificador(valor: string): Promise<PermisoDetalleResponse> {
-    const identificador = this.exigirTexto(valor, 'identificador').trim();
-    const esUUID =
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-        identificador,
-      );
-    if (!esUUID && !/^[A-Za-z0-9_]{1,40}$/.test(identificador))
-      throw new BadRequestException(
-        'Debe proporcionar un UUID o código válido.',
-      );
-    const where: FindOptionsWhere<Permiso> = esUUID
-      ? { id: identificador, deleted_at: IsNull() }
-      : {
-          codigo: ILike(this.escaparLike(identificador)),
-          deleted_at: IsNull(),
-        };
-    const registro = await this.repositorio.findOne({ where });
-    if (!registro) throw new NotFoundException('Permiso no encontrado.');
-    return mapResponsePermisoDetalle(registro);
-  }
-
-  /** PATCH /api/permiso/:id: actualiza solo campos permitidos y excluye el propio ID al validar duplicados. */
-  async editar(
-    id: string,
-    dto: UpdatePermisoDto,
-    responsable: string,
-  ): Promise<PermisoDetalleResponse> {
-    const registro = await this.obtenerRegistro(id);
-    if (
-      !dto ||
-      typeof dto !== 'object' ||
-      Array.isArray(dto) ||
-      Object.keys(dto).length === 0
-    ) {
-      throw new BadRequestException(
-        'Debe enviar al menos un campo para actualizar.',
-      );
-    }
-    const permitidos = new Set(['nombre', 'codigo', 'descripcion']);
-    const invalido = Object.keys(dto).find((campo) => !permitidos.has(campo));
-    if (invalido)
-      throw new BadRequestException(`El campo ${invalido} no está permitido.`);
-    const nombre =
-      dto.nombre !== undefined
-        ? this.exigirTexto(dto.nombre, 'nombre').trim()
-        : undefined;
-    const codigo =
-      dto.codigo !== undefined
-        ? this.exigirTexto(dto.codigo, 'codigo').trim().toUpperCase()
-        : undefined;
-    await this.verificarDuplicados(nombre, codigo, id);
-    if (nombre !== undefined) registro.nombre = nombre;
-    if (codigo !== undefined) registro.codigo = codigo;
-    if (dto.descripcion !== undefined)
-      registro.descripcion =
-        dto.descripcion === null ? null : dto.descripcion.trim();
-    registro.user_update = responsable;
-    try {
-      const actualizado = await this.repositorio.save(registro);
-      this.logger.log(`Permiso actualizado: ${id}`);
-      return mapResponsePermisoDetalle(actualizado);
-    } catch (error) {
-      this.manejarErrorDuplicado(error);
-      throw error;
-    }
-  }
-
-  /** PATCH /api/permiso/:id/estado: alterna alta/baja sin recibir body. */
-  async cambiarEstado(
-    id: string,
-    responsable: string,
-  ): Promise<PermisoEstadoResponse> {
-    const registro = await this.obtenerRegistro(id);
-    if (registro.estado !== 'ACTIVO' && registro.estado !== 'INACTIVO')
-      throw new BadRequestException('El estado actual no es válido.');
-    registro.estado = registro.estado === 'ACTIVO' ? 'INACTIVO' : 'ACTIVO';
-    registro.user_update = responsable;
-    await this.repositorio.save(registro);
-    const accion = registro.estado === 'ACTIVO' ? 'alta' : 'baja';
-    this.logger.log(`Permiso dado de ${accion}: ${id}`);
-    return {
-      message: `Permiso dado de ${accion} correctamente.`,
-      id,
-      estado: registro.estado,
-    };
-  }
-
-  /** Recupera un registro existente que no haya sido eliminado lógicamente. */
-  private async obtenerRegistro(id: string): Promise<Permiso> {
-    const registro = await this.repositorio.findOne({
-      where: { id, deleted_at: IsNull() },
-    });
-    if (!registro) throw new NotFoundException('Permiso no encontrado.');
-    return registro;
-  }
-
-  /** Valida nombre y código sin distinguir mayúsculas. Reserva también los valores eliminados. */
-  private async verificarDuplicados(
-    nombre?: string,
-    codigo?: string,
-    excluirId?: string,
-  ): Promise<void> {
-    const base: FindOptionsWhere<Permiso> = excluirId
-      ? { id: Not(excluirId) }
-      : {};
-    if (
-      nombre !== undefined &&
-      (await this.repositorio.findOne({
-        where: { ...base, nombre: ILike(this.escaparLike(nombre)) },
-        withDeleted: true,
-      }))
-    ) {
-      throw new ConflictException('Ya existe un permiso con ese nombre.');
-    }
-    if (
-      codigo !== undefined &&
-      (await this.repositorio.findOne({
-        where: { ...base, codigo: ILike(this.escaparLike(codigo)) },
-        withDeleted: true,
-      }))
-    ) {
-      throw new ConflictException('Ya existe un permiso con ese código.');
-    }
-  }
-
-  /** Impide null, tipos incorrectos y textos vacíos en campos obligatorios. */
-  private exigirTexto(valor: unknown, campo: string): string {
-    if (typeof valor !== 'string' || !valor.trim())
-      throw new BadRequestException(
-        `El campo ${campo} debe ser un texto no vacío.`,
-      );
-    return valor;
-  }
-
-  /** Traduce una violación UNIQUE de PostgreSQL a HTTP 409. */
-  private manejarErrorDuplicado(error: unknown): void {
-    if (esErrorDuplicado(error))
+    if (existe) {
       throw new ConflictException(
-        'Ya existe un permiso con ese nombre o código.',
+        'Ya existe un permiso registrado con ese código',
       );
-  }
+    }
 
-  /** Escapa %, _ y barra invertida para buscar texto literal mediante ILIKE. */
-  private escaparLike(valor: string): string {
-    return valor.replace(/[\\%_]/g, '\\$&');
-  }
+    const permiso = this.permisoRepository.create({
+      codigo,
+      descripcion: dto.descripcion.trim(),
+      usuario_creador: { id: idUsuario },
+    });
 
-  /** Convierte días de Bolivia y fechas ISO con zona; el fin de un día es exclusivo. */
-  private convertirFechaFiltro(
-    fecha: string,
-    esFinal: boolean,
-  ): {
-    valor: Date;
-    exclusivo: boolean;
-  } {
-    // Comprobar si se envió únicamente AAAA-MM-DD.
-    const soloDia = /^\d{4}-\d{2}-\d{2}$/.test(fecha);
-
-    if (soloDia) {
-      // Validar que la fecha exista realmente.
-      const comprobacion = new Date(`${fecha}T00:00:00.000Z`);
-
-      if (
-        Number.isNaN(comprobacion.getTime()) ||
-        comprobacion.toISOString().slice(0, 10) !== fecha
-      ) {
-        throw new BadRequestException('La fecha enviada no es válida.');
-      }
-
-      // Inicio del día en Bolivia, UTC-04:00.
-      const inicioBolivia = new Date(`${fecha}T00:00:00-04:00`);
-
-      if (esFinal) {
-        // Incluir todo el último día.
-        return {
-          valor: new Date(inicioBolivia.getTime() + 24 * 60 * 60 * 1000),
-          exclusivo: true,
-        };
-      }
+    try {
+      await this.permisoRepository.save(permiso);
 
       return {
-        valor: inicioBolivia,
-        exclusivo: false,
+        message: 'Permiso registrado correctamente',
       };
-    }
+    } catch (error: unknown) {
+      if (esErrorDuplicado(error)) {
+        throw new ConflictException(
+          'Ya existe un permiso registrado con ese código',
+        );
+      }
 
-    /*
-     * Para fechas con hora, exigir zona horaria
-     * explícita para evitar diferencias por la zona
-     * horaria del servidor.
-     */
-    if (!/(Z|[+-]\d{2}:\d{2})$/i.test(fecha)) {
+      this.logger.error(
+        `Error al crear permiso. Código: ${codigo}`,
+        error instanceof Error ? error.stack : String(error),
+      );
+
+      throw new InternalServerErrorException('No se pudo registrar el permiso');
+    }
+  }
+
+  /*
+  Nombre del método: listar
+  Descripción: Obtiene los permisos aplicando búsqueda,
+               filtros, ordenamiento y paginación.
+  Parámetros:
+    - query: QueryPermisoDto.
+  Respuestas:
+    - 200: Listado paginado.
+    - 400: Campo de ordenamiento inválido.
+  */
+
+  async listar(
+    query: QueryPermisoDto,
+  ): Promise<PaginatedResponse<PermisoResponse>> {
+    const {
+      page = 1,
+      limit = 10,
+      sortBy = 'createdAt',
+      sortOrder = 'DESC',
+      status,
+      search,
+    } = query;
+
+    const camposOrdenamiento: Record<string, string> = {
+      createdAt: 'createdAt',
+      codigo: 'codigo',
+      descripcion: 'descripcion',
+    };
+
+    const campoOrdenamiento = camposOrdenamiento[sortBy];
+
+    if (!campoOrdenamiento) {
       throw new BadRequestException(
-        'La fecha debe ser AAAA-MM-DD o una fecha ISO con zona horaria.',
+        'El campo de ordenamiento solicitado no es válido',
       );
     }
 
-    const valor = new Date(fecha);
+    const where: FindOptionsWhere<Permiso> = {
+      deletedAt: IsNull(),
+    };
 
-    if (Number.isNaN(valor.getTime())) {
-      throw new BadRequestException('La fecha enviada no es válida.');
+    if (status && status !== 'TODOS') {
+      where.estado = status;
+    } else if (!status) {
+      where.estado = 'ACTIVO';
     }
 
-    return {
-      valor,
-      exclusivo: false,
-    };
+    const skip = (page - 1) * limit;
+
+    try {
+      let registros: Permiso[];
+      let total: number;
+
+      if (search) {
+        const resultado = await this.permisoRepository
+          .createQueryBuilder('permiso')
+          .leftJoinAndSelect('permiso.usuario_creador', 'creador')
+          .leftJoinAndSelect('permiso.usuario_actualizador', 'actualizador')
+          .where('permiso.deletedAt IS NULL')
+          .andWhere(
+            status && status !== 'TODOS'
+              ? 'permiso.estado = :status'
+              : !status
+                ? "permiso.estado = 'ACTIVO'"
+                : '1 = 1',
+            { status },
+          )
+          .andWhere(
+            `(
+              permiso.codigo ILIKE :search OR
+              permiso.descripcion ILIKE :search
+            )`,
+            { search: `%${search}%` },
+          )
+          .orderBy(`permiso.${campoOrdenamiento}`, sortOrder)
+          .skip(skip)
+          .take(limit)
+          .getManyAndCount();
+
+        [registros, total] = resultado;
+      } else {
+        [registros, total] = await this.permisoRepository.findAndCount({
+          where,
+          relations: {
+            usuario_creador: true,
+            usuario_actualizador: true,
+          },
+          order: {
+            [campoOrdenamiento]: sortOrder,
+          },
+          skip,
+          take: limit,
+        });
+      }
+
+      const items = registros.map((registro) => mapearRespuesta(registro));
+
+      const totalPages = Math.ceil(total / limit);
+
+      return {
+        items,
+        pagination: {
+          total,
+          page,
+          limit,
+          totalPages,
+          hasNextPage: page < totalPages,
+          hasPreviousPage: page > 1,
+        },
+      };
+    } catch (error: unknown) {
+      this.logger.error(
+        `Error al listar permisos. Página: ${page}`,
+        error instanceof Error ? error.stack : String(error),
+      );
+
+      throw error;
+    }
+  }
+
+  /*
+  Nombre del método: buscarPorId
+  Descripción: Busca un permiso por su identificador UUID.
+  */
+
+  async buscarPorId(id: string): Promise<PermisoResponse> {
+    const permiso = await this.permisoRepository.findOne({
+      where: {
+        id,
+        deletedAt: IsNull(),
+      },
+      relations: {
+        usuario_creador: true,
+        usuario_actualizador: true,
+      },
+    });
+
+    if (!permiso) {
+      throw new NotFoundException('No existe un permiso con ese identificador');
+    }
+
+    return mapearRespuesta(permiso);
+  }
+
+  /*
+  Nombre del método: actualizar
+  Descripción: Actualiza parcialmente un permiso activo.
+               Registra el usuario y fecha de actualización.
+  */
+
+  async actualizar(
+    id: string,
+    dto: UpdatePermisoDto,
+    idUsuario: string,
+  ): Promise<PermisoMessageResponse> {
+    const permiso = await this.permisoRepository.findOne({
+      where: {
+        id,
+        deletedAt: IsNull(),
+      },
+    });
+
+    if (!permiso) {
+      throw new NotFoundException('No existe un permiso con ese identificador');
+    }
+
+    if (permiso.estado !== 'ACTIVO') {
+      throw new ConflictException('No se puede actualizar un permiso inactivo');
+    }
+
+    if (dto.codigo !== undefined) {
+      const codigo = dto.codigo.trim().toUpperCase();
+
+      if (codigo !== permiso.codigo) {
+        const codigoDuplicado = await this.permisoRepository.findOne({
+          where: { codigo },
+        });
+
+        if (codigoDuplicado) {
+          throw new ConflictException(
+            'Ya existe otro permiso registrado con ese código',
+          );
+        }
+      }
+
+      permiso.codigo = codigo;
+    }
+
+    if (dto.descripcion !== undefined) {
+      permiso.descripcion = dto.descripcion.trim();
+    }
+
+    permiso._user_update = idUsuario;
+    permiso.updatedAt = new Date();
+
+    try {
+      await this.permisoRepository.save(permiso);
+
+      return {
+        message: 'Permiso actualizado correctamente',
+      };
+    } catch (error: unknown) {
+      if (esErrorDuplicado(error)) {
+        throw new ConflictException(
+          'Ya existe otro permiso registrado con ese código',
+        );
+      }
+
+      this.logger.error(
+        `Error al actualizar permiso. ID: ${id}`,
+        error instanceof Error ? error.stack : String(error),
+      );
+
+      throw new InternalServerErrorException(
+        'No se pudo actualizar el permiso',
+      );
+    }
+  }
+
+  /*
+  Nombre del método: cambiarEstado
+  Descripción: Alterna el estado del permiso entre ACTIVO e INACTIVO.
+               Al desactivar registra eliminación lógica y auditoría.
+               Al reactivar limpia los datos de eliminación.
+  */
+
+  async cambiarEstado(
+    id: string,
+    idUsuario: string,
+  ): Promise<PermisoMessageResponse> {
+    const permiso = await this.permisoRepository.findOne({
+      where: { id },
+    });
+
+    if (!permiso) {
+      throw new NotFoundException('No existe un permiso con ese identificador');
+    }
+
+    const nuevoEstado = permiso.estado === 'ACTIVO' ? 'INACTIVO' : 'ACTIVO';
+
+    permiso.estado = nuevoEstado;
+
+    if (nuevoEstado === 'INACTIVO') {
+      permiso._user_delete = idUsuario;
+      permiso.deletedAt = new Date();
+      permiso._user_update = null;
+    } else {
+      permiso._user_update = idUsuario;
+      permiso._user_delete = null;
+      permiso.deletedAt = null;
+    }
+
+    try {
+      await this.permisoRepository.save(permiso);
+
+      return {
+        message: `Permiso ${nuevoEstado === 'ACTIVO' ? 'activado' : 'inactivado'} correctamente`,
+      };
+    } catch (error: unknown) {
+      this.logger.error(
+        `Error al cambiar estado del permiso. ID: ${id}`,
+        error instanceof Error ? error.stack : String(error),
+      );
+
+      throw new InternalServerErrorException(
+        'No se pudo cambiar el estado del permiso',
+      );
+    }
+  }
+  async validarPermisos(ids: string[]): Promise<Permiso[]> {
+    const idsUnicos = [...new Set(ids)];
+
+    const permisos = await this.permisoRepository.find({
+      where: {
+        id: In(idsUnicos),
+        estado: 'ACTIVO',
+        deletedAt: IsNull(),
+      },
+    });
+
+    if (permisos.length !== idsUnicos.length) {
+      throw new NotFoundException(
+        'Uno o varios permisos no existen, están inactivos o fueron eliminados',
+      );
+    }
+
+    return permisos;
+  }
+  async obtenerPermisosActivos(): Promise<Permiso[]> {
+    return this.permisoRepository.find({
+      where: {
+        estado: 'ACTIVO',
+        deletedAt: IsNull(),
+      },
+      order: {
+        codigo: 'ASC',
+      },
+    });
   }
 }

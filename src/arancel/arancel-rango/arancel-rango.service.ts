@@ -41,7 +41,7 @@ export class ArancelRangoService {
     this.validarLimites(dto.desde, dto.hasta);
     const rango = this.arancelRangoRepository.create({
       ...dto,
-      usuario_creador: { idUsuario } as Usuario,
+      usuario_creador: { id: idUsuario } as Usuario,
     });
     try {
       await this.arancelRangoRepository.save(rango);
@@ -78,18 +78,18 @@ export class ArancelRangoService {
     else if (!status) filtros.estado = 'ACTIVO';
     if (tarifa_id) filtros.tarifa_id = tarifa_id;
     if (startDate && endDate) {
-      filtros._created_at = And(
+      filtros.createdAt = And(
         MoreThanOrEqual(new Date(`${startDate}T00:00:00.000`)),
         LessThan(
           new Date(new Date(`${endDate}T00:00:00.000`).getTime() + 86400000),
         ),
       );
     } else if (startDate) {
-      filtros._created_at = MoreThanOrEqual(
+      filtros.createdAt = MoreThanOrEqual(
         new Date(`${startDate}T00:00:00.000`),
       );
     } else if (endDate) {
-      filtros._created_at = LessThan(
+      filtros.createdAt = LessThan(
         new Date(new Date(`${endDate}T00:00:00.000`).getTime() + 86400000),
       );
     }
@@ -100,7 +100,7 @@ export class ArancelRangoService {
         usuario_creador: true,
         usuario_actualizador: true,
       },
-      order: { _created_at: sortOrder ?? 'DESC' },
+      order: { createdAt: sortOrder ?? 'DESC' },
       skip: (page - 1) * limit,
       take: limit,
     });
@@ -152,9 +152,9 @@ export class ArancelRangoService {
     );
 
     Object.assign(rango, dto);
-    rango._updated_at = new Date();
+    rango.updatedAt = new Date();
     rango._user_update = idUsuario;
-    rango.usuario_actualizador = { idUsuario } as Usuario;
+    rango.usuario_actualizador = { id: idUsuario } as Usuario;
     await this.arancelRangoRepository.save(rango);
     return { message: 'Arancel rango actualizado correctamente.' };
   }
@@ -169,14 +169,14 @@ export class ArancelRangoService {
     }
     rango.estado = rango.estado === 'ACTIVO' ? 'INACTIVO' : 'ACTIVO';
     if (rango.estado === 'INACTIVO') {
-      rango._deleted_at = new Date();
+      rango.deletedAt = new Date();
       rango._user_delete = idUsuario;
-      rango._updated_at = null;
+      rango.updatedAt = null;
       rango._user_update = null;
     } else {
-      rango._deleted_at = null;
+      rango.deletedAt = null;
       rango._user_delete = null;
-      rango._updated_at = new Date();
+      rango.updatedAt = new Date();
       rango._user_update = idUsuario;
     }
     await this.arancelRangoRepository.save(rango);

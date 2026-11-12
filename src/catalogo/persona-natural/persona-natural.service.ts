@@ -122,10 +122,10 @@ export class PersonaNaturalService {
       complemento,
       expedido,
       estado: 'ACTIVO',
-      _created_at: new Date(),
-      _updated_at: new Date(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
       _user_created: idUsuario,
-      usuario_creador: { idUsuario } as Usuario,
+      usuario_creador: { id: idUsuario } as Usuario,
     });
 
     try {
@@ -189,13 +189,13 @@ export class PersonaNaturalService {
 
     // Definir campos permitidos para ordenar
     const camposOrdenamiento: Record<string, keyof PersonaNatural> = {
-      createdAt: '_created_at',
+      createdAt: 'createdAt',
       nombres: 'nombres',
       numero_documento: 'numero_documento',
       fecha_nacimiento: 'fecha_nacimiento',
     };
 
-    const campoOrdenamiento = camposOrdenamiento[sortBy] ?? '_created_at';
+    const campoOrdenamiento = camposOrdenamiento[sortBy] ?? 'createdAt';
 
     // Construir filtros comunes
     const filtros: FindOptionsWhere<PersonaNatural> = {};
@@ -219,18 +219,16 @@ export class PersonaNaturalService {
 
     // Filtro por rango de fechas (Bolivia UTC-4)
     if (startDate && endDate) {
-      filtros._created_at = And(
+      filtros.createdAt = And(
         MoreThanOrEqual(new Date(`${startDate}T00:00:00.000`)),
         LessThanOrEqual(new Date(`${endDate}T23:59:59.999`)),
       );
     } else if (startDate) {
-      filtros._created_at = MoreThanOrEqual(
+      filtros.createdAt = MoreThanOrEqual(
         new Date(`${startDate}T00:00:00.000`),
       );
     } else if (endDate) {
-      filtros._created_at = LessThanOrEqual(
-        new Date(`${endDate}T23:59:59.999`),
-      );
+      filtros.createdAt = LessThanOrEqual(new Date(`${endDate}T23:59:59.999`));
     }
 
     // Construir condiciones OR para búsqueda general
@@ -447,9 +445,9 @@ export class PersonaNaturalService {
     }
 
     Object.assign(persona, dto);
-    persona._updated_at = new Date();
+    persona.updatedAt = new Date();
     persona._user_update = idUsuario;
-    persona.usuario_actualizador = { idUsuario } as Usuario;
+    persona.usuario_actualizador = { id: idUsuario } as Usuario;
 
     try {
       await this.personaNaturalRepository.save(persona);
@@ -502,16 +500,16 @@ export class PersonaNaturalService {
 
     const estadoAnterior = persona.estado;
     persona.estado = persona.estado === 'ACTIVO' ? 'INACTIVO' : 'ACTIVO';
-    persona._updated_at = new Date();
+    persona.updatedAt = new Date();
     persona._user_update = idUsuario;
-    persona.usuario_actualizador = { idUsuario } as Usuario;
+    persona.usuario_actualizador = { id: idUsuario } as Usuario;
 
     if (persona.estado === 'INACTIVO') {
-      persona._deleted_at = new Date();
+      persona.deletedAt = new Date();
       persona._user_delete = idUsuario;
-      persona.usuario_eliminador = { idUsuario } as Usuario;
+      persona.usuario_eliminador = { id: idUsuario } as Usuario;
     } else {
-      persona._deleted_at = null;
+      persona.deletedAt = null;
       persona._user_delete = null;
       persona.usuario_eliminador = null;
     }

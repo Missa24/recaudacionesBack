@@ -1,30 +1,22 @@
 /**
- * Contratos de respuesta. La auditoría utiliza nombres claros para el frontend.
- * Desarrollado por: Oscar Canchari.
+ * Módulo: Seguridad - Módulo
+ * Archivo: modulo-response.interface.ts
+ *
+ * Define las estructuras de respuesta del módulo.
  */
-export interface ModuloListadoResponse {
-  id: string;
-  nombres: string;
-  codigo: string;
-  estado: string;
-  responsable_creacion: string;
-  fecha_creacion: Date;
-}
 
-export interface ModuloDetalleResponse extends ModuloListadoResponse {
+export interface ModuloResponse {
+  id: string;
+  nombre: string;
+  codigo: string;
   descripcion: string | null;
   ruta: string;
-  responsable_actualizacion: string | null;
-  fecha_actualizacion: Date;
-}
-
-export interface ModuloCreateResponse {
-  message: string;
-  id: string;
-}
-
-export interface ModuloEstadoResponse {
-  message: string;
-  id: string;
   estado: string;
+
+  responsable_creacion: string | null;
+  responsable_actualizacion: string | null;
+}
+
+export interface ModuloMessageResponse {
+  message: string;
 }

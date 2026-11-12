@@ -70,7 +70,7 @@ export class ArancelGeneralService {
       // Crear registro.
       const arancel = this.arancelRepository.create({
         ...dto,
-        usuario_creador: { idUsuario } as Usuario,
+        usuario_creador: { id: idUsuario } as Usuario,
       });
 
       await this.arancelRepository.save(arancel);
@@ -125,18 +125,18 @@ export class ArancelGeneralService {
     if (dependencia_id) filtros.dependencia_id = dependencia_id;
 
     if (startDate && endDate) {
-      filtros._created_at = And(
+      filtros.createdAt = And(
         MoreThanOrEqual(new Date(`${startDate}T00:00:00.000`)),
         LessThan(
           new Date(new Date(`${endDate}T00:00:00.000`).getTime() + 86400000),
         ),
       );
     } else if (startDate) {
-      filtros._created_at = MoreThanOrEqual(
+      filtros.createdAt = MoreThanOrEqual(
         new Date(`${startDate}T00:00:00.000`),
       );
     } else if (endDate) {
-      filtros._created_at = LessThan(
+      filtros.createdAt = LessThan(
         new Date(new Date(`${endDate}T00:00:00.000`).getTime() + 86400000),
       );
     }
@@ -155,7 +155,7 @@ export class ArancelGeneralService {
         usuario_creador: true,
         usuario_actualizador: true,
       },
-      order: { _created_at: sortOrder ?? 'DESC' },
+      order: { createdAt: sortOrder ?? 'DESC' },
       skip: (page - 1) * limit,
       take: limit,
     });
@@ -237,9 +237,9 @@ export class ArancelGeneralService {
       // Actualizar datos.
       Object.assign(arancel, dto);
 
-      arancel._updated_at = new Date();
+      arancel.updatedAt = new Date();
       arancel._user_update = idUsuario;
-      arancel.usuario_actualizador = { idUsuario } as Usuario;
+      arancel.usuario_actualizador = { id: idUsuario } as Usuario;
 
       await this.arancelRepository.save(arancel);
 
@@ -275,14 +275,14 @@ export class ArancelGeneralService {
 
     arancel.estado = arancel.estado === 'ACTIVO' ? 'INACTIVO' : 'ACTIVO';
     if (arancel.estado === 'INACTIVO') {
-      arancel._deleted_at = new Date();
+      arancel.deletedAt = new Date();
       arancel._user_delete = idUsuario;
-      arancel._updated_at = null;
+      arancel.updatedAt = null;
       arancel._user_update = null;
     } else {
-      arancel._deleted_at = null;
+      arancel.deletedAt = null;
       arancel._user_delete = null;
-      arancel._updated_at = new Date();
+      arancel.updatedAt = new Date();
       arancel._user_update = idUsuario;
     }
 

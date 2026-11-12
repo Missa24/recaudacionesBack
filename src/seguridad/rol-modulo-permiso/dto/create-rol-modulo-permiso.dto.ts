@@ -1,16 +1,35 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsUUID } from 'class-validator';
+import { IsNotEmpty, IsUUID } from 'class-validator';
 
+/**
+ * Módulo: Seguridad - RolModuloPermiso
+ * Archivo: create-rol-modulo-permiso.dto.ts
+ *
+ * Define los datos necesarios para asignar un permiso
+ * a un rol dentro de un módulo.
+ */
 export class CreateRolModuloPermisoDto {
-  @ApiProperty({ example: '20000000-0000-4000-8000-000000000004' })
-  @IsUUID()
-  id_rol!: string;
+  @ApiProperty({
+    description: 'Identificador UUID del rol.',
+    example: '8b461287-8416-412e-84e7-b5c77615ea2a',
+  })
+  @IsNotEmpty({ message: 'El rol es obligatorio' })
+  @IsUUID('4', { message: 'El identificador del rol no es válido' })
+  rol_id!: string;
 
-  @ApiProperty({ example: '30000000-0000-4000-8000-000000000004' })
-  @IsUUID()
-  id_modulo!: string;
+  @ApiProperty({
+    description: 'Identificador UUID del módulo.',
+    example: '8b461287-8416-412e-84e7-b5c77615ea2a',
+  })
+  @IsNotEmpty({ message: 'El módulo es obligatorio' })
+  @IsUUID('4', { message: 'El identificador del módulo no es válido' })
+  modulo_id!: string;
 
-  @ApiProperty({ example: '40000000-0000-4000-8000-000000000003' })
-  @IsUUID()
-  id_permiso!: string;
+  @ApiProperty({
+    description: 'Identificador UUID del permiso.',
+    example: '8b461287-8416-412e-84e7-b5c77615ea2a',
+  })
+  @IsNotEmpty({ message: 'El permiso es obligatorio' })
+  @IsUUID('4', { message: 'El identificador del permiso no es válido' })
+  permiso_id!: string;
 }

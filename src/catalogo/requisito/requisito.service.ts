@@ -97,10 +97,10 @@ export class RequisitoService {
       codigo: dto.codigo,
       descripcion: dto.descripcion,
       estado: 'ACTIVO',
-      _created_at: new Date(),
-      _updated_at: new Date(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
       _user_created: idUsuario,
-      usuario_creador: { idUsuario } as Usuario,
+      usuario_creador: { id: idUsuario } as Usuario,
     });
 
     try {
@@ -160,11 +160,11 @@ export class RequisitoService {
     const camposOrdenamiento: Record<string, keyof Requisito> = {
       codigo: 'codigo',
       descripcion: 'descripcion',
-      createdAt: '_created_at',
-      updatedAt: '_updated_at',
+      createdAt: 'createdAt',
+      updatedAt: 'updatedAt',
     };
 
-    const campoOrdenamiento = camposOrdenamiento[sortBy] ?? '_created_at';
+    const campoOrdenamiento = camposOrdenamiento[sortBy] ?? 'createdAt';
 
     // Construir filtros comunes
     const filtros: FindOptionsWhere<Requisito> = {};
@@ -178,18 +178,16 @@ export class RequisitoService {
 
     // Filtro por rango de fechas (Bolivia UTC-4)
     if (startDate && endDate) {
-      filtros._created_at = And(
+      filtros.createdAt = And(
         MoreThanOrEqual(new Date(`${startDate}T00:00:00.000`)),
         LessThanOrEqual(new Date(`${endDate}T23:59:59.999`)),
       );
     } else if (startDate) {
-      filtros._created_at = MoreThanOrEqual(
+      filtros.createdAt = MoreThanOrEqual(
         new Date(`${startDate}T00:00:00.000`),
       );
     } else if (endDate) {
-      filtros._created_at = LessThanOrEqual(
-        new Date(`${endDate}T23:59:59.999`),
-      );
+      filtros.createdAt = LessThanOrEqual(new Date(`${endDate}T23:59:59.999`));
     }
 
     // Construir condiciones OR para búsqueda general
@@ -293,7 +291,7 @@ export class RequisitoService {
       where: {
         codigo,
         estado: 'ACTIVO',
-        _deleted_at: IsNull(),
+        deletedAt: IsNull(),
       },
       relations: {
         usuario_creador: true,
@@ -365,9 +363,9 @@ export class RequisitoService {
       requisito.descripcion = dto.descripcion;
     }
 
-    requisito._updated_at = new Date();
+    requisito.updatedAt = new Date();
     requisito._user_update = idUsuario;
-    requisito.usuario_actualizador = { idUsuario } as Usuario;
+    requisito.usuario_actualizador = { id: idUsuario } as Usuario;
 
     try {
       await this.requisitoRepository.save(requisito);
@@ -425,18 +423,18 @@ export class RequisitoService {
     if (nuevoEstado === 'INACTIVO') {
       // Registra quién y cuándo realizó la desactivación.
       requisito._user_delete = idUsuario;
-      requisito._deleted_at = new Date();
-      requisito.usuario_eliminador = { idUsuario } as Usuario;
+      requisito.deletedAt = new Date();
+      requisito.usuario_eliminador = { id: idUsuario } as Usuario;
       requisito._user_update = null;
-      requisito._updated_at = null;
+      requisito.updatedAt = null;
       requisito.usuario_actualizador = null;
     } else {
       // Al reactivar, limpia los datos de eliminación lógica.
       requisito._user_update = idUsuario;
-      requisito._updated_at = new Date();
-      requisito.usuario_actualizador = { idUsuario } as Usuario;
+      requisito.updatedAt = new Date();
+      requisito.usuario_actualizador = { id: idUsuario } as Usuario;
       requisito._user_delete = null;
-      requisito._deleted_at = null;
+      requisito.deletedAt = null;
       requisito.usuario_eliminador = null;
     }
 

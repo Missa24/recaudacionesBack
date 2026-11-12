@@ -102,10 +102,10 @@ export class PersonaJuridicaService {
     const persona = this.personaJuridicaRepository.create({
       ...dto,
       estado: 'ACTIVO',
-      _created_at: new Date(),
-      _updated_at: new Date(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
       _user_created: idUsuario,
-      usuario_creador: { idUsuario } as Usuario,
+      usuario_creador: { id: idUsuario } as Usuario,
     });
 
     try {
@@ -166,12 +166,12 @@ export class PersonaJuridicaService {
 
     // Definir campos permitidos para ordenar
     const camposOrdenamiento: Record<string, keyof PersonaJuridica> = {
-      createdAt: '_created_at',
+      createdAt: 'createdAt',
       nit: 'nit',
       razon_social: 'razon_social',
     };
 
-    const campoOrdenamiento = camposOrdenamiento[sortBy] ?? '_created_at';
+    const campoOrdenamiento = camposOrdenamiento[sortBy] ?? 'createdAt';
 
     // Construir filtros
     const filtros: FindOptionsWhere<PersonaJuridica> = {};
@@ -185,18 +185,16 @@ export class PersonaJuridicaService {
 
     // Filtro por rango de fechas (horario local de Bolivia)
     if (startDate && endDate) {
-      filtros._created_at = And(
+      filtros.createdAt = And(
         MoreThanOrEqual(new Date(`${startDate}T00:00:00.000`)),
         LessThanOrEqual(new Date(`${endDate}T23:59:59.999`)),
       );
     } else if (startDate) {
-      filtros._created_at = MoreThanOrEqual(
+      filtros.createdAt = MoreThanOrEqual(
         new Date(`${startDate}T00:00:00.000`),
       );
     } else if (endDate) {
-      filtros._created_at = LessThanOrEqual(
-        new Date(`${endDate}T23:59:59.999`),
-      );
+      filtros.createdAt = LessThanOrEqual(new Date(`${endDate}T23:59:59.999`));
     }
     // Construir condiciones de búsqueda OR
     const condiciones: FindOptionsWhere<PersonaJuridica>[] = [];
@@ -380,9 +378,9 @@ export class PersonaJuridicaService {
     if (dto.telefono !== undefined) persona.telefono = dto.telefono;
     if (dto.email !== undefined) persona.email = dto.email;
 
-    persona._updated_at = new Date();
+    persona.updatedAt = new Date();
     persona._user_update = idUsuario;
-    persona.usuario_actualizador = { idUsuario } as Usuario;
+    persona.usuario_actualizador = { id: idUsuario } as Usuario;
 
     try {
       await this.personaJuridicaRepository.save(persona);
@@ -436,16 +434,16 @@ export class PersonaJuridicaService {
     const estadoAnterior = persona.estado;
 
     persona.estado = persona.estado === 'ACTIVO' ? 'INACTIVO' : 'ACTIVO';
-    persona._updated_at = new Date();
+    persona.updatedAt = new Date();
     persona._user_update = idUsuario;
-    persona.usuario_actualizador = { idUsuario } as Usuario;
+    persona.usuario_actualizador = { id: idUsuario } as Usuario;
 
     if (persona.estado === 'INACTIVO') {
-      persona._deleted_at = new Date();
+      persona.deletedAt = new Date();
       persona._user_delete = idUsuario;
-      persona.usuario_eliminador = { idUsuario } as Usuario;
+      persona.usuario_eliminador = { id: idUsuario } as Usuario;
     } else {
-      persona._deleted_at = null;
+      persona.deletedAt = null;
       persona._user_delete = null;
       persona.usuario_eliminador = null;
     }

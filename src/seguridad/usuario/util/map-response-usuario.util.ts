@@ -1,76 +1,42 @@
-import { Usuario } from '../entities/usuario.entity';
-
-import {
-  UsuarioDetalleResponse,
-  UsuarioListadoResponse,
-} from '../interfaces/usuario-response.interface';
-
 /**
- * Módulo: Seguridad / Usuario
+ * Módulo: Seguridad - Usuario
  * Archivo: map-response-usuario.util.ts
  *
  * Descripción:
- * Transforma entidades TypeORM en respuestas del frontend.
- * Separa los campos del listado y del detalle.
+ * Proporciona una función auxiliar para transformar
+ * una entidad Usuario en su estructura de respuesta.
  *
- * Fecha de creación: 2026-11-10
- * Autor: Oscar Canchari
+ * Incluye los nombres de usuario de los responsables
+ * de creación, actualización y eliminación lógica.
+ *
+ * Desarrollado por: Missael Apaza - Fecha: 11/11/2026
  */
 
+import { Usuario } from '../entities/usuario.entity';
+import { UsuarioResponse } from '../interfaces/usuario-response.interface';
+
 /**
- * Nombre del método: mapResponseUsuarioListado
+ * Transforma una entidad Usuario en su estructura de respuesta.
  *
- * Descripción:
- * Devuelve solamente los datos importantes del usuario,
- * incluyendo responsable y fecha de creación.
+ * Obtiene los nombres de usuario de las relaciones de auditoría
+ * cuando estas se encuentran disponibles.
  *
- * Parámetros:
- * - usuario: Entidad Usuario obtenida de PostgreSQL.
- *
- * Retorno:
- * - UsuarioListadoResponse.
  */
-export function mapResponseUsuarioListado(
-  usuario: Usuario,
-): UsuarioListadoResponse {
+export function mapearRespuesta(usuario: Usuario): UsuarioResponse {
   return {
-    idUsuario: usuario.idUsuario,
+    id: usuario.id,
     username: usuario.username,
+    email: usuario.email,
+    ci: usuario.ci,
     nombres: usuario.nombres,
     apellido_paterno: usuario.apellidoPaterno,
     apellido_materno: usuario.apellidoMaterno,
-    ci: usuario.ci,
-    email: usuario.email,
-    estado: usuario.estado,
-
-    responsable_creacion: usuario.userCreated,
-    fecha_creacion: usuario.createdAt,
-  };
-}
-
-/**
- * Nombre del método: mapResponseUsuarioDetalle
- *
- * Descripción:
- * Devuelve los datos completos de un usuario.
- * Incluye fecha y responsable de creación y actualización.
- *
- * Parámetros:
- * - usuario: Entidad Usuario obtenida de PostgreSQL.
- *
- * Retorno:
- * - UsuarioDetalleResponse.
- */
-export function mapResponseUsuarioDetalle(
-  usuario: Usuario,
-): UsuarioDetalleResponse {
-  return {
-    ...mapResponseUsuarioListado(usuario),
-
     celular: usuario.celular,
+    estado: usuario.estado,
     ultimo_acceso: usuario.ultimoAcceso,
 
-    responsable_actualizacion: usuario.userUpdate,
-    fecha_actualizacion: usuario.updatedAt,
+    responsable_creacion: usuario.usuario_creador?.username ?? null,
+    responsable_actualizacion: usuario.usuario_actualizador?.username ?? null,
+    responsable_eliminacion: usuario.usuario_eliminador?.username ?? null,
   };
 }

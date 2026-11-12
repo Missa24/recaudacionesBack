@@ -67,4 +67,59 @@ export class RequisitoEntregado {
 
   @Column({ type: 'varchar', length: 20, default: 'ACTIVO' })
   estado!: string;
+
+  // Auditoría
+
+  @Column({
+    type: 'timestamptz',
+    name: '_created_at',
+    default: () => 'clock_timestamp()',
+  })
+  _created_at!: Date;
+
+  @Column({
+    type: 'timestamptz',
+    name: '_updated_at',
+    default: () => 'clock_timestamp()',
+  })
+  _updated_at!: Date;
+
+  @Column({
+    type: 'timestamptz',
+    name: '_deleted_at',
+    nullable: true,
+  })
+  _deleted_at!: Date | null;
+
+  // Relaciones de auditoría
+
+  @ManyToOne(() => Usuario, {
+    nullable: false,
+    onDelete: 'RESTRICT',
+  })
+  @JoinColumn({
+    name: '_user_created',
+    referencedColumnName: 'idUsuario',
+  })
+  usuarioCreador!: Usuario;
+
+  @ManyToOne(() => Usuario, {
+    nullable: true,
+    onDelete: 'RESTRICT',
+  })
+  @JoinColumn({
+    name: '_user_update',
+    referencedColumnName: 'idUsuario',
+  })
+  usuarioActualizador!: Usuario | null;
+
+  @ManyToOne(() => Usuario, {
+    nullable: true,
+    onDelete: 'RESTRICT',
+  })
+  @JoinColumn({
+    name: '_user_delete',
+    referencedColumnName: 'idUsuario',
+  })
+  usuarioEliminador!: Usuario | null;
 }

@@ -62,7 +62,7 @@ export class TipoTramiteCatalogoService {
 
       const tipo = this.tipoTramiteRepository.create({
         ...dto,
-        usuario_creador: { idUsuario } as Usuario,
+        usuario_creador: { id: idUsuario } as Usuario,
       });
 
       await this.tipoTramiteRepository.save(tipo);
@@ -116,18 +116,18 @@ export class TipoTramiteCatalogoService {
     if (codigo) filtros.codigo = ILike(`%${codigo.trim()}%`);
     if (nombre) filtros.nombre = ILike(`%${nombre.trim()}%`);
     if (startDate && endDate) {
-      filtros._created_at = And(
+      filtros.createdAt = And(
         MoreThanOrEqual(new Date(`${startDate}T00:00:00.000`)),
         LessThan(
           new Date(new Date(`${endDate}T00:00:00.000`).getTime() + 86400000),
         ),
       );
     } else if (startDate) {
-      filtros._created_at = MoreThanOrEqual(
+      filtros.createdAt = MoreThanOrEqual(
         new Date(`${startDate}T00:00:00.000`),
       );
     } else if (endDate) {
-      filtros._created_at = LessThan(
+      filtros.createdAt = LessThan(
         new Date(new Date(`${endDate}T00:00:00.000`).getTime() + 86400000),
       );
     }
@@ -147,7 +147,7 @@ export class TipoTramiteCatalogoService {
         usuario_creador: true,
         usuario_actualizador: true,
       },
-      order: { _created_at: sortOrder ?? 'DESC' },
+      order: { createdAt: sortOrder ?? 'DESC' },
       skip: (page - 1) * limit,
       take: limit,
     });
@@ -219,9 +219,9 @@ export class TipoTramiteCatalogoService {
 
       Object.assign(tipo, dto);
 
-      tipo._updated_at = new Date();
+      tipo.updatedAt = new Date();
       tipo._user_update = idUsuario;
-      tipo.usuario_actualizador = { idUsuario } as Usuario;
+      tipo.usuario_actualizador = { id: idUsuario } as Usuario;
 
       await this.tipoTramiteRepository.save(tipo);
 
@@ -256,14 +256,14 @@ export class TipoTramiteCatalogoService {
     }
     tipo.estado = tipo.estado === 'ACTIVO' ? 'INACTIVO' : 'ACTIVO';
     if (tipo.estado === 'INACTIVO') {
-      tipo._deleted_at = new Date();
+      tipo.deletedAt = new Date();
       tipo._user_delete = idUsuario;
-      tipo._updated_at = null;
+      tipo.updatedAt = null;
       tipo._user_update = null;
     } else {
-      tipo._deleted_at = null;
+      tipo.deletedAt = null;
       tipo._user_delete = null;
-      tipo._updated_at = new Date();
+      tipo.updatedAt = new Date();
       tipo._user_update = idUsuario;
     }
     await this.tipoTramiteRepository.save(tipo);

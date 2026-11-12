@@ -93,7 +93,7 @@ export class DependenciaService {
     // Prepara la entidad asociando los datos del usuario creador.
     const dependencia = this.dependenciaRepository.create({
       ...dto,
-      usuario_creador: { idUsuario },
+      usuario_creador: { id: idUsuario },
     });
 
     try {
@@ -157,10 +157,10 @@ export class DependenciaService {
 
     // Campos permitidos para ordenar
     const camposOrdenamiento: Record<string, keyof Dependencia> = {
-      createdAt: '_created_at',
+      createdAt: 'createdAt',
     };
 
-    const campoOrdenamiento = camposOrdenamiento[sortBy] ?? '_created_at';
+    const campoOrdenamiento = camposOrdenamiento[sortBy] ?? 'createdAt';
 
     // Construir filtros comunes
     const filtros: FindOptionsWhere<Dependencia> = {};
@@ -189,18 +189,16 @@ export class DependenciaService {
 
     // Filtro por rango de fechas (Bolivia)
     if (startDate && endDate) {
-      filtros._created_at = And(
+      filtros.createdAt = And(
         MoreThanOrEqual(new Date(`${startDate}T00:00:00.000`)),
         LessThanOrEqual(new Date(`${endDate}T23:59:59.999`)),
       );
     } else if (startDate) {
-      filtros._created_at = MoreThanOrEqual(
+      filtros.createdAt = MoreThanOrEqual(
         new Date(`${startDate}T00:00:00.000`),
       );
     } else if (endDate) {
-      filtros._created_at = LessThanOrEqual(
-        new Date(`${endDate}T23:59:59.999`),
-      );
+      filtros.createdAt = LessThanOrEqual(new Date(`${endDate}T23:59:59.999`));
     }
 
     // Construir condiciones OR para búsqueda general
@@ -303,7 +301,7 @@ export class DependenciaService {
       where: {
         codigo,
         estado: 'ACTIVO',
-        _deleted_at: IsNull(),
+        deletedAt: IsNull(),
       },
       relations: {
         usuario_creador: true,
@@ -357,9 +355,9 @@ export class DependenciaService {
     }
 
     Object.assign(dependencia, dto);
-    dependencia._updated_at = new Date();
+    dependencia.updatedAt = new Date();
     dependencia._user_update = idUsuario;
-    dependencia.usuario_actualizador = { idUsuario } as Usuario;
+    dependencia.usuario_actualizador = { id: idUsuario } as Usuario;
 
     try {
       await this.dependenciaRepository.save(dependencia);
@@ -424,14 +422,14 @@ export class DependenciaService {
 
     if (nuevoEstado === 'INACTIVO') {
       dependencia._user_delete = idUsuario;
-      dependencia._deleted_at = new Date();
+      dependencia.deletedAt = new Date();
       dependencia._user_update = null;
-      dependencia._updated_at = null;
+      dependencia.updatedAt = null;
     } else {
       dependencia._user_update = idUsuario;
-      dependencia._updated_at = new Date();
+      dependencia.updatedAt = new Date();
       dependencia._user_delete = null;
-      dependencia._deleted_at = null;
+      dependencia.deletedAt = null;
     }
 
     try {

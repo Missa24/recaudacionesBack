@@ -1,231 +1,253 @@
+/**
+ * Módulo: Seguridad - Rol
+ * Archivo: rol.controller.ts
+ * Descripción:
+ * Controlador encargado de exponer los endpoints para el registro,
+ * consulta, actualización y cambio de estado de los roles.
+ *
+ * Desarrollado por: Missael Apaza - Fecha: 11/11/2026
+ */
+
 import {
-  Body,
   Controller,
   Get,
-  Param,
-  ParseUUIDPipe,
-  Patch,
   Post,
+  Body,
+  Patch,
+  Param,
   Query,
   UseGuards,
 } from '@nestjs/common';
+
 import { AuthGuard } from '@nestjs/passport';
 
 import {
-  ApiBearerAuth,
-  ApiBody,
-  ApiOperation,
-  ApiParam,
-  ApiResponse,
   ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
+  ApiOkResponse,
 } from '@nestjs/swagger';
-import { PaginatedResponse } from '../../shared/interface/paginated-response.interface';
+
+import { RolService } from './rol.service';
 import { CreateRolDto } from './dto/create-rol.dto';
 import { UpdateRolDto } from './dto/update-rol.dto';
 import { QueryRolDto } from './dto/query-rol.dto';
-import {
-  RolCreateResponse,
-  RolDetalleResponse,
-  RolEstadoResponse,
-  RolListadoResponse,
-} from './interfaces/rol-response.interface';
-import { RolService } from './rol.service';
 
-/** UUID temporal del responsable. Sustituir por el usuario autenticado al integrar JWT. */
+// Identificador temporal del usuario responsable de las operaciones.
 const userId = '8b461287-8416-412e-84e7-b5c77615ea2a';
 
 /**
- * Recibe solicitudes de rol y delega las reglas de negocio al servicio.
- * Desarrollado por: Oscar Canchari.
+ * Controlador: RolController
+ * Descripción:
+ * Gestiona las solicitudes HTTP relacionadas con los roles
+ * y delega su procesamiento al servicio correspondiente.
+ *
+ * Desarrollado por: Missael Apaza - Fecha: 11/11/2026
  */
 @ApiTags('Seguridad / Rol')
-// Al integrar autenticación, importar y habilitar ApiBearerAuth, UseGuards y AuthGuard.
 @ApiBearerAuth('JWT')
 @UseGuards(AuthGuard('jwt'))
 @Controller('rol')
 export class RolController {
-  constructor(private readonly servicio: RolService) {}
+  constructor(private readonly rolService: RolService) {}
 
-  /**
-   * POST /api/rol
-   * Registra un rol validando sus datos y la unicidad de nombre y código.
-   * Devuelve 201; valida datos (400) y existencia/unicidad cuando corresponde.
-   */
+  /*
+  Nombre de la ruta: rol
+  Método HTTP: POST
+  Descripción: Registra un nuevo rol dentro del sistema.
+  Cuerpo de la solicitud:
+    - CreateRolDto: Código y descripción del rol.
+  Respuestas posibles:
+    - 201: Rol registrado correctamente.
+    - 400: Datos de entrada inválidos.
+    - 403: Acceso denegado.
+    - 409: Ya existe un rol con ese código.
+  Fecha de creación: 2026-11-11
+  Autor: Missael Apaza
+  */
   @Post()
   @ApiOperation({
-    summary: 'Crear rol',
-    description:
-      'Registra un rol validando sus datos y la unicidad de nombre y código.',
+    summary: 'Registrar rol',
+    description: 'Registra un nuevo rol dentro del sistema.',
   })
-  @ApiBody({ type: CreateRolDto })
   @ApiResponse({
     status: 201,
-    description: 'Operación realizada correctamente.',
-    schema: {
-      example: {
-        message: 'Registro creado correctamente.',
-        id: '550e8400-e29b-41d4-a716-446655440000',
-      },
-    },
+    description: 'Rol registrado correctamente.',
   })
-  @ApiResponse({ status: 400, description: 'Datos o parámetros inválidos.' })
-  @ApiResponse({ status: 409, description: 'Nombre o código duplicado.' })
-  @ApiResponse({ status: 500, description: 'Error interno del servidor.' })
-  crear(@Body() dto: CreateRolDto): Promise<RolCreateResponse> {
-    return this.servicio.crear(dto, userId);
+  @ApiResponse({
+    status: 400,
+    description: 'Datos de entrada inválidos.',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Acceso denegado.',
+  })
+  @ApiResponse({
+    status: 409,
+    description: 'Ya existe un rol con ese código.',
+  })
+  crear(@Body() dto: CreateRolDto) {
+    return this.rolService.crear(dto, userId);
   }
 
-  /**
-   * GET /api/rol
-   * Lista por nombre o código con paginación, estado, fechas y ordenamiento.
-   * Devuelve 200; valida datos (400) y existencia/unicidad cuando corresponde.
-   */
-  @Get()
+  /*
+  Nombre de la ruta: rol
+  Método HTTP: GET
+  Descripción: Obtiene los roles aplicando filtros, búsqueda,
+               ordenamiento y paginación.
+  Parámetros de consulta:
+    - QueryRolDto: Filtros de búsqueda, estado, orden y paginación.
+  Respuestas posibles:
+    - 200: Listado de roles obtenido correctamente.
+    - 403: Acceso denegado.
+  Fecha de creación: 2026-11-11
+  Autor: Missael Apaza
+  */
   @ApiOperation({
-    summary: 'Listar rol',
+    summary: 'Listar roles',
     description:
-      'Lista por nombre o código con paginación, estado, fechas y ordenamiento.',
+      'Permite buscar, filtrar, ordenar y paginar los registros de roles.',
+  })
+  @ApiOkResponse({
+    description: 'Listado de roles obtenido correctamente.',
   })
   @ApiResponse({
-    status: 200,
-    description: 'Operación realizada correctamente.',
-    schema: {
-      example: {
-        items: [
-          {
-            id: '550e8400-e29b-41d4-a716-446655440000',
-            nombre: 'Administrador',
-            codigo: 'ADMINISTRADOR',
-            estado: 'ACTIVO',
-            responsable_creacion: '8b461287-8416-412e-84e7-b5c77615ea2a',
-            fecha_creacion: '2026-11-11T04:00:00.000Z',
-          },
-        ],
-        pagination: {
-          total: 1,
-          page: 1,
-          limit: 10,
-          totalPages: 1,
-          hasNextPage: false,
-          hasPreviousPage: false,
-        },
-      },
-    },
+    status: 403,
+    description: 'Acceso denegado.',
   })
-  @ApiResponse({ status: 400, description: 'Datos o parámetros inválidos.' })
-  @ApiResponse({ status: 500, description: 'Error interno del servidor.' })
-  listar(
-    @Query() query: QueryRolDto,
-  ): Promise<PaginatedResponse<RolListadoResponse>> {
-    return this.servicio.listar(query);
+  @Get()
+  listar(@Query() query: QueryRolDto) {
+    return this.rolService.listar(query);
   }
 
-  /**
-   * GET /api/rol/buscar/:valor
-   * Consulta el detalle por UUID o código exacto.
-   * Devuelve 200; valida datos (400) y existencia/unicidad cuando corresponde.
-   */
-  @Get('buscar/:valor')
+  /*
+  Nombre de la ruta: rol/:id
+  Método HTTP: GET
+  Descripción: Obtiene un rol mediante su identificador único.
+  Parámetros de ruta:
+    - id: Identificador UUID del rol.
+  Respuestas posibles:
+    - 200: Registro encontrado.
+    - 403: Acceso denegado.
+    - 404: Registro no encontrado.
+  Fecha de creación: 2026-11-11
+  Autor: Missael Apaza
+  */
+  @Get(':id')
   @ApiOperation({
-    summary: 'Buscar rol',
-    description: 'Consulta el detalle por UUID o código exacto.',
+    summary: 'Obtener rol por ID',
+    description: 'Busca un rol mediante su identificador único.',
   })
-  @ApiParam({ name: 'valor', description: 'UUID o código.', type: String })
+  @ApiParam({
+    name: 'id',
+    description: 'Identificador UUID del rol.',
+    example: '8b461287-8416-412e-84e7-b5c77615ea2a',
+  })
   @ApiResponse({
     status: 200,
-    description: 'Operación realizada correctamente.',
-    schema: {
-      example: {
-        id: '550e8400-e29b-41d4-a716-446655440000',
-        nombre: 'Administrador',
-        codigo: 'ADMINISTRADOR',
-        estado: 'ACTIVO',
-        responsable_creacion: '8b461287-8416-412e-84e7-b5c77615ea2a',
-        fecha_creacion: '2026-11-11T04:00:00.000Z',
-        descripcion: 'Descripción de las funciones.',
-        responsable_actualizacion: null,
-        fecha_actualizacion: '2026-11-11T04:00:00.000Z',
-      },
-    },
+    description: 'Registro encontrado.',
   })
-  @ApiResponse({ status: 400, description: 'Datos o parámetros inválidos.' })
-  @ApiResponse({ status: 404, description: 'Rol no encontrado.' })
-  @ApiResponse({ status: 500, description: 'Error interno del servidor.' })
-  buscarPorIdentificador(
-    @Param('valor') valor: string,
-  ): Promise<RolDetalleResponse> {
-    return this.servicio.buscarPorIdentificador(valor);
+  @ApiResponse({
+    status: 403,
+    description: 'Acceso denegado.',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Registro no encontrado.',
+  })
+  obtenerPorId(@Param('id') id: string) {
+    return this.rolService.buscarPorId(id);
   }
 
-  /**
-   * PATCH /api/rol/:id
-   * Actualiza los campos enviados validando nombre y código únicos.
-   * Devuelve 200; valida datos (400) y existencia/unicidad cuando corresponde.
-   */
+  /*
+  Nombre de la ruta: rol/:id
+  Método HTTP: PATCH
+  Descripción: Actualiza parcialmente los datos de un rol existente.
+  Parámetros de ruta:
+    - id: Identificador UUID del rol.
+  Cuerpo de la solicitud:
+    - UpdateRolDto: Campos a actualizar.
+  Respuestas posibles:
+    - 200: Rol actualizado correctamente.
+    - 400: Datos de actualización inválidos.
+    - 403: Acceso denegado.
+    - 404: Registro no encontrado.
+    - 409: Rol inactivo o código duplicado.
+  Fecha de creación: 2026-11-11
+  Autor: Missael Apaza
+  */
   @Patch(':id')
   @ApiOperation({
-    summary: 'Editar rol',
-    description:
-      'Actualiza los campos enviados validando nombre y código únicos.',
+    summary: 'Actualizar rol',
+    description: 'Modifica los datos de un rol existente.',
   })
-  @ApiBody({ type: UpdateRolDto })
-  @ApiParam({ name: 'id', description: 'UUID del registro.', type: String })
+  @ApiParam({
+    name: 'id',
+    description: 'Identificador UUID del rol.',
+    example: '8b461287-8416-412e-84e7-b5c77615ea2a',
+  })
   @ApiResponse({
     status: 200,
-    description: 'Operación realizada correctamente.',
-    schema: {
-      example: {
-        id: '550e8400-e29b-41d4-a716-446655440000',
-        nombre: 'Administrador',
-        codigo: 'ADMINISTRADOR',
-        estado: 'ACTIVO',
-        responsable_creacion: '8b461287-8416-412e-84e7-b5c77615ea2a',
-        fecha_creacion: '2026-11-11T04:00:00.000Z',
-        descripcion: 'Descripción de las funciones.',
-        responsable_actualizacion: null,
-        fecha_actualizacion: '2026-11-11T04:00:00.000Z',
-      },
-    },
+    description: 'Rol actualizado correctamente.',
   })
-  @ApiResponse({ status: 400, description: 'Datos o parámetros inválidos.' })
-  @ApiResponse({ status: 404, description: 'Rol no encontrado.' })
-  @ApiResponse({ status: 409, description: 'Nombre o código duplicado.' })
-  @ApiResponse({ status: 500, description: 'Error interno del servidor.' })
-  editar(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Body() dto: UpdateRolDto,
-  ): Promise<RolDetalleResponse> {
-    return this.servicio.editar(id, dto, userId);
+  @ApiResponse({
+    status: 400,
+    description: 'Datos de actualización inválidos.',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Acceso denegado.',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Registro no encontrado.',
+  })
+  @ApiResponse({
+    status: 409,
+    description: 'Rol inactivo o código duplicado.',
+  })
+  actualizar(@Param('id') id: string, @Body() dto: UpdateRolDto) {
+    return this.rolService.actualizar(id, dto, userId);
   }
 
-  /**
-   * PATCH /api/rol/:id/estado
-   * Alterna ACTIVO e INACTIVO sin recibir body.
-   * Devuelve 200; valida datos (400) y existencia/unicidad cuando corresponde.
-   */
+  /*
+  Nombre de la ruta: rol/:id/estado
+  Método HTTP: PATCH
+  Descripción: Cambia el estado de un rol entre ACTIVO e INACTIVO.
+  Parámetros de ruta:
+    - id: Identificador UUID del rol.
+  Respuestas posibles:
+    - 200: Estado actualizado correctamente.
+    - 403: Acceso denegado.
+    - 404: Registro no encontrado.
+  Fecha de creación: 2026-11-11
+  Autor: Missael Apaza
+  */
   @Patch(':id/estado')
   @ApiOperation({
-    summary: 'Dar de alta o baja a rol',
-    description: 'Alterna ACTIVO e INACTIVO sin recibir body.',
+    summary: 'Cambiar estado de rol',
+    description: 'Alterna el estado del rol entre ACTIVO e INACTIVO.',
   })
-  @ApiParam({ name: 'id', description: 'UUID del registro.', type: String })
+  @ApiParam({
+    name: 'id',
+    description: 'Identificador UUID del rol.',
+    example: '8b461287-8416-412e-84e7-b5c77615ea2a',
+  })
   @ApiResponse({
     status: 200,
-    description: 'Operación realizada correctamente.',
-    schema: {
-      example: {
-        message: 'Registro dado de baja correctamente.',
-        id: '550e8400-e29b-41d4-a716-446655440000',
-        estado: 'INACTIVO',
-      },
-    },
+    description: 'Estado actualizado correctamente.',
   })
-  @ApiResponse({ status: 400, description: 'Datos o parámetros inválidos.' })
-  @ApiResponse({ status: 404, description: 'Rol no encontrado.' })
-  @ApiResponse({ status: 500, description: 'Error interno del servidor.' })
-  cambiarEstado(
-    @Param('id', ParseUUIDPipe) id: string,
-  ): Promise<RolEstadoResponse> {
-    return this.servicio.cambiarEstado(id, userId);
+  @ApiResponse({
+    status: 403,
+    description: 'Acceso denegado.',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Registro no encontrado.',
+  })
+  cambiarEstado(@Param('id') id: string) {
+    return this.rolService.cambiarEstado(id, userId);
   }
 }

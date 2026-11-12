@@ -1,231 +1,183 @@
+/**
+ * Módulo: Seguridad - Permiso
+ * Archivo: permiso.controller.ts
+ * Descripción:
+ * Controlador encargado de exponer los endpoints para
+ * registrar, consultar, actualizar y cambiar el estado
+ * de los permisos del sistema.
+ */
+
 import {
-  Body,
   Controller,
   Get,
-  Param,
-  ParseUUIDPipe,
-  Patch,
   Post,
+  Body,
+  Patch,
+  Param,
   Query,
   UseGuards,
 } from '@nestjs/common';
+
 import { AuthGuard } from '@nestjs/passport';
 
 import {
-  ApiBearerAuth,
-  ApiBody,
-  ApiOperation,
-  ApiParam,
-  ApiResponse,
   ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
+  ApiOkResponse,
 } from '@nestjs/swagger';
-import { PaginatedResponse } from '../../shared/interface/paginated-response.interface';
+
+import { PermisoService } from './permiso.service';
 import { CreatePermisoDto } from './dto/create-permiso.dto';
 import { UpdatePermisoDto } from './dto/update-permiso.dto';
 import { QueryPermisoDto } from './dto/query-permiso.dto';
-import {
-  PermisoCreateResponse,
-  PermisoDetalleResponse,
-  PermisoEstadoResponse,
-  PermisoListadoResponse,
-} from './interfaces/permiso-response.interface';
-import { PermisoService } from './permiso.service';
 
-/** UUID temporal del responsable. Sustituir por el usuario autenticado al integrar JWT. */
+// Identificador temporal del usuario responsable.
 const userId = '8b461287-8416-412e-84e7-b5c77615ea2a';
 
-/**
- * Recibe solicitudes de permiso y delega las reglas de negocio al servicio.
- * Desarrollado por: Oscar Canchari.
- */
 @ApiTags('Seguridad / Permiso')
-// Al integrar autenticación, importar y habilitar ApiBearerAuth, UseGuards y AuthGuard.
 @ApiBearerAuth('JWT')
 @UseGuards(AuthGuard('jwt'))
 @Controller('permiso')
 export class PermisoController {
-  constructor(private readonly servicio: PermisoService) {}
+  constructor(private readonly permisoService: PermisoService) {}
 
-  /**
-   * POST /api/permiso
-   * Registra un permiso validando sus datos y la unicidad de nombre y código.
-   * Devuelve 201; valida datos (400) y existencia/unicidad cuando corresponde.
-   */
+  /*
+  Nombre de la ruta: permiso
+  Método HTTP: POST
+  Descripción: Registra un nuevo permiso.
+  */
+
   @Post()
   @ApiOperation({
-    summary: 'Crear permiso',
-    description:
-      'Registra un permiso validando sus datos y la unicidad de nombre y código.',
+    summary: 'Registrar permiso',
+    description: 'Registra un nuevo permiso en el catálogo del sistema.',
   })
-  @ApiBody({ type: CreatePermisoDto })
   @ApiResponse({
     status: 201,
-    description: 'Operación realizada correctamente.',
-    schema: {
-      example: {
-        message: 'Registro creado correctamente.',
-        id: '550e8400-e29b-41d4-a716-446655440000',
-      },
-    },
+    description: 'Permiso registrado correctamente.',
   })
-  @ApiResponse({ status: 400, description: 'Datos o parámetros inválidos.' })
-  @ApiResponse({ status: 409, description: 'Nombre o código duplicado.' })
-  @ApiResponse({ status: 500, description: 'Error interno del servidor.' })
-  crear(@Body() dto: CreatePermisoDto): Promise<PermisoCreateResponse> {
-    return this.servicio.crear(dto, userId);
+  @ApiResponse({
+    status: 400,
+    description: 'Datos de entrada inválidos.',
+  })
+  @ApiResponse({
+    status: 409,
+    description: 'El código del permiso ya existe.',
+  })
+  crear(@Body() dto: CreatePermisoDto) {
+    return this.permisoService.crear(dto, userId);
   }
 
-  /**
-   * GET /api/permiso
-   * Lista por nombre o código con paginación, estado, fechas y ordenamiento.
-   * Devuelve 200; valida datos (400) y existencia/unicidad cuando corresponde.
-   */
+  /*
+  Nombre de la ruta: permiso
+  Método HTTP: GET
+  Descripción: Lista los permisos aplicando filtros,
+               búsqueda, ordenamiento y paginación.
+  */
+
   @Get()
   @ApiOperation({
-    summary: 'Listar permiso',
-    description:
-      'Lista por nombre o código con paginación, estado, fechas y ordenamiento.',
+    summary: 'Listar permisos',
+    description: 'Permite buscar, filtrar, ordenar y paginar los permisos.',
+  })
+  @ApiOkResponse({
+    description: 'Listado de permisos obtenido correctamente.',
   })
   @ApiResponse({
-    status: 200,
-    description: 'Operación realizada correctamente.',
-    schema: {
-      example: {
-        items: [
-          {
-            id: '550e8400-e29b-41d4-a716-446655440000',
-            nombre: 'Consultar usuarios',
-            codigo: 'USUARIO_CONSULTAR',
-            estado: 'ACTIVO',
-            responsable_creacion: '8b461287-8416-412e-84e7-b5c77615ea2a',
-            fecha_creacion: '2026-11-11T04:00:00.000Z',
-          },
-        ],
-        pagination: {
-          total: 1,
-          page: 1,
-          limit: 10,
-          totalPages: 1,
-          hasNextPage: false,
-          hasPreviousPage: false,
-        },
-      },
-    },
+    status: 403,
+    description: 'Acceso denegado.',
   })
-  @ApiResponse({ status: 400, description: 'Datos o parámetros inválidos.' })
-  @ApiResponse({ status: 500, description: 'Error interno del servidor.' })
-  listar(
-    @Query() query: QueryPermisoDto,
-  ): Promise<PaginatedResponse<PermisoListadoResponse>> {
-    return this.servicio.listar(query);
+  listar(@Query() query: QueryPermisoDto) {
+    return this.permisoService.listar(query);
   }
 
-  /**
-   * GET /api/permiso/buscar/:valor
-   * Consulta el detalle por UUID o código exacto.
-   * Devuelve 200; valida datos (400) y existencia/unicidad cuando corresponde.
-   */
-  @Get('buscar/:valor')
+  /*
+  Nombre de la ruta: permiso/:id
+  Método HTTP: GET
+  Descripción: Busca un permiso por su identificador.
+  */
+
+  @Get(':id')
   @ApiOperation({
-    summary: 'Buscar permiso',
-    description: 'Consulta el detalle por UUID o código exacto.',
+    summary: 'Obtener permiso por ID',
+    description: 'Busca un permiso mediante su identificador UUID.',
   })
-  @ApiParam({ name: 'valor', description: 'UUID o código.', type: String })
+  @ApiParam({
+    name: 'id',
+    description: 'Identificador UUID del permiso.',
+    example: '8b461287-8416-412e-84e7-b5c77615ea2a',
+  })
   @ApiResponse({
     status: 200,
-    description: 'Operación realizada correctamente.',
-    schema: {
-      example: {
-        id: '550e8400-e29b-41d4-a716-446655440000',
-        nombre: 'Consultar usuarios',
-        codigo: 'USUARIO_CONSULTAR',
-        estado: 'ACTIVO',
-        responsable_creacion: '8b461287-8416-412e-84e7-b5c77615ea2a',
-        fecha_creacion: '2026-11-11T04:00:00.000Z',
-        descripcion: 'Descripción de las funciones.',
-        responsable_actualizacion: null,
-        fecha_actualizacion: '2026-11-11T04:00:00.000Z',
-      },
-    },
+    description: 'Permiso encontrado.',
   })
-  @ApiResponse({ status: 400, description: 'Datos o parámetros inválidos.' })
-  @ApiResponse({ status: 404, description: 'Permiso no encontrado.' })
-  @ApiResponse({ status: 500, description: 'Error interno del servidor.' })
-  buscarPorIdentificador(
-    @Param('valor') valor: string,
-  ): Promise<PermisoDetalleResponse> {
-    return this.servicio.buscarPorIdentificador(valor);
+  @ApiResponse({
+    status: 404,
+    description: 'Permiso no encontrado.',
+  })
+  obtenerPorId(@Param('id') id: string) {
+    return this.permisoService.buscarPorId(id);
   }
 
-  /**
-   * PATCH /api/permiso/:id
-   * Actualiza los campos enviados validando nombre y código únicos.
-   * Devuelve 200; valida datos (400) y existencia/unicidad cuando corresponde.
-   */
+  /*
+  Nombre de la ruta: permiso/:id
+  Método HTTP: PATCH
+  Descripción: Actualiza parcialmente un permiso.
+  */
+
   @Patch(':id')
   @ApiOperation({
-    summary: 'Editar permiso',
+    summary: 'Actualizar permiso',
     description:
-      'Actualiza los campos enviados validando nombre y código únicos.',
+      'Permite modificar parcialmente el código y descripción de un permiso.',
   })
-  @ApiBody({ type: UpdatePermisoDto })
-  @ApiParam({ name: 'id', description: 'UUID del registro.', type: String })
+  @ApiParam({
+    name: 'id',
+    description: 'Identificador UUID del permiso.',
+  })
   @ApiResponse({
     status: 200,
-    description: 'Operación realizada correctamente.',
-    schema: {
-      example: {
-        id: '550e8400-e29b-41d4-a716-446655440000',
-        nombre: 'Consultar usuarios',
-        codigo: 'USUARIO_CONSULTAR',
-        estado: 'ACTIVO',
-        responsable_creacion: '8b461287-8416-412e-84e7-b5c77615ea2a',
-        fecha_creacion: '2026-11-11T04:00:00.000Z',
-        descripcion: 'Descripción de las funciones.',
-        responsable_actualizacion: null,
-        fecha_actualizacion: '2026-11-11T04:00:00.000Z',
-      },
-    },
+    description: 'Permiso actualizado correctamente.',
   })
-  @ApiResponse({ status: 400, description: 'Datos o parámetros inválidos.' })
-  @ApiResponse({ status: 404, description: 'Permiso no encontrado.' })
-  @ApiResponse({ status: 409, description: 'Nombre o código duplicado.' })
-  @ApiResponse({ status: 500, description: 'Error interno del servidor.' })
-  editar(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Body() dto: UpdatePermisoDto,
-  ): Promise<PermisoDetalleResponse> {
-    return this.servicio.editar(id, dto, userId);
+  @ApiResponse({
+    status: 404,
+    description: 'Permiso no encontrado.',
+  })
+  @ApiResponse({
+    status: 409,
+    description: 'El permiso está inactivo o el código ya existe.',
+  })
+  actualizar(@Param('id') id: string, @Body() dto: UpdatePermisoDto) {
+    return this.permisoService.actualizar(id, dto, userId);
   }
 
-  /**
-   * PATCH /api/permiso/:id/estado
-   * Alterna ACTIVO e INACTIVO sin recibir body.
-   * Devuelve 200; valida datos (400) y existencia/unicidad cuando corresponde.
-   */
+  /*
+  Nombre de la ruta: permiso/:id/estado
+  Método HTTP: PATCH
+  Descripción: Cambia el estado entre ACTIVO e INACTIVO.
+  */
+
   @Patch(':id/estado')
   @ApiOperation({
-    summary: 'Dar de alta o baja a permiso',
-    description: 'Alterna ACTIVO e INACTIVO sin recibir body.',
+    summary: 'Cambiar estado del permiso',
+    description: 'Alterna el estado del permiso entre ACTIVO e INACTIVO.',
   })
-  @ApiParam({ name: 'id', description: 'UUID del registro.', type: String })
+  @ApiParam({
+    name: 'id',
+    description: 'Identificador UUID del permiso.',
+  })
   @ApiResponse({
     status: 200,
-    description: 'Operación realizada correctamente.',
-    schema: {
-      example: {
-        message: 'Registro dado de baja correctamente.',
-        id: '550e8400-e29b-41d4-a716-446655440000',
-        estado: 'INACTIVO',
-      },
-    },
+    description: 'Estado del permiso actualizado.',
   })
-  @ApiResponse({ status: 400, description: 'Datos o parámetros inválidos.' })
-  @ApiResponse({ status: 404, description: 'Permiso no encontrado.' })
-  @ApiResponse({ status: 500, description: 'Error interno del servidor.' })
-  cambiarEstado(
-    @Param('id', ParseUUIDPipe) id: string,
-  ): Promise<PermisoEstadoResponse> {
-    return this.servicio.cambiarEstado(id, userId);
+  @ApiResponse({
+    status: 404,
+    description: 'Permiso no encontrado.',
+  })
+  cambiarEstado(@Param('id') id: string) {
+    return this.permisoService.cambiarEstado(id, userId);
   }
 }

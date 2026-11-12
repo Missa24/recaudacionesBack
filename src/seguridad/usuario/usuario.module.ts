@@ -17,18 +17,9 @@ import { UsuarioService } from './usuario.service';
  * Autor: Oscar Canchari
  */
 @Module({
-  imports: [
-    // Habilita el repositorio TypeORM de Usuario.
-    TypeOrmModule.forFeature([Usuario]),
-  ],
-
-  // Controller que recibe las solicitudes HTTP.
+  imports: [TypeOrmModule.forFeature([Usuario])],
   controllers: [UsuarioController],
-
-  // Servicio encargado de la lógica de negocio.
   providers: [UsuarioService],
-
-  // Permite usar UsuarioService desde otros módulos.
   exports: [UsuarioService],
 })
 export class UsuarioModule {}
