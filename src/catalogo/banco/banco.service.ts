@@ -88,7 +88,7 @@ export class BancoService {
     // Prepara la entidad asociando los datos del usuario creador
     const banco = this.bancoRepository.create({
       ...dto,
-      usuario_creador: { idUsuario },
+      usuario_creador: { id: idUsuario },
     });
     try {
       await this.bancoRepository.save(banco);
@@ -142,10 +142,10 @@ export class BancoService {
 
     // Campos permitidos para ordenar
     const camposOrdenamiento: Record<string, keyof Banco> = {
-      createdAt: '_created_at',
+      createdAt: 'createdAt',
     };
 
-    const campoOrdenamiento = camposOrdenamiento[sortBy] ?? '_created_at';
+    const campoOrdenamiento = camposOrdenamiento[sortBy] ?? 'createdAt';
 
     // Construir filtros
     const filtros: FindOptionsWhere<Banco> = {};
@@ -159,18 +159,18 @@ export class BancoService {
 
     // Filtro por rango de fechas (Bolivia)
     if (startDate && endDate) {
-      filtros._created_at = And(
+      filtros.createdAt = And(
         MoreThanOrEqual(new Date(`${startDate}T00:00:00.000`)),
         LessThan(
           new Date(new Date(`${endDate}T00:00:00.000`).getTime() + 86400000),
         ),
       );
     } else if (startDate) {
-      filtros._created_at = MoreThanOrEqual(
+      filtros.createdAt = MoreThanOrEqual(
         new Date(`${startDate}T00:00:00.000`),
       );
     } else if (endDate) {
-      filtros._created_at = LessThan(
+      filtros.createdAt = LessThan(
         new Date(new Date(`${endDate}T00:00:00.000`).getTime() + 86400000),
       );
     }
@@ -272,7 +272,7 @@ export class BancoService {
       where: {
         nombre,
         estado: 'ACTIVO',
-        _deleted_at: IsNull(),
+        deletedAt: IsNull(),
       },
       relations: {
         usuario_creador: true,
@@ -323,9 +323,9 @@ export class BancoService {
     }
 
     Object.assign(banco, dto);
-    banco._updated_at = new Date();
+    banco.updatedAt = new Date();
     banco._user_update = idUsuario;
-    banco.usuario_actualizador = { idUsuario } as Usuario;
+    banco.usuario_actualizador = { id: idUsuario } as Usuario;
 
     try {
       await this.bancoRepository.save(banco);
@@ -378,14 +378,14 @@ export class BancoService {
     banco.estado = nuevoEstado;
     if (nuevoEstado === 'INACTIVO') {
       banco._user_delete = idUsuario;
-      banco._deleted_at = new Date();
+      banco.deletedAt = new Date();
       banco._user_update = null;
-      banco._updated_at = null;
+      banco.updatedAt = null;
     } else {
       banco._user_update = idUsuario;
-      banco._updated_at = new Date();
+      banco.updatedAt = new Date();
       banco._user_delete = null;
-      banco._deleted_at = null;
+      banco.deletedAt = null;
     }
 
     try {

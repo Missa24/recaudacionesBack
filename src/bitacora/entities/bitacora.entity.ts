@@ -52,6 +52,6 @@ export class Bitacora {
     usuarioId!: string;  
 
   @ManyToOne(() => Usuario, { nullable: true })
-    @JoinColumn({ name: 'usuario_id', referencedColumnName: 'idUsuario' })
+    @JoinColumn({ name: 'usuario_id', referencedColumnName: 'id', })
     usuario!: Usuario;
 }

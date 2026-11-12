@@ -122,10 +122,10 @@ export class CuentaBancariaService {
       dependencia_id: dto.dependencia_id ?? null,
       tipo: dto.tipo,
       estado: 'ACTIVO',
-      _created_at: new Date(),
-      _updated_at: new Date(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
       _user_created: id_usuario,
-      usuario_creador: { idUsuario: id_usuario } as Usuario,
+      usuario_creador: { id: id_usuario } as Usuario,
     });
 
     try {
@@ -196,11 +196,11 @@ export class CuentaBancariaService {
       nro_cuenta: 'nro_cuenta',
       nombre_cuenta: 'nombre_cuenta',
       tipo: 'tipo',
-      createdAt: '_created_at',
-      updatedAt: '_updated_at',
+      createdAt: 'createdAt',
+      updatedAt: 'updatedAt',
     };
 
-    const campoOrdenamiento = camposOrdenamiento[sortBy] ?? '_created_at';
+    const campoOrdenamiento = camposOrdenamiento[sortBy] ?? 'createdAt';
 
     // Construir filtros comunes
     const filtros: FindOptionsWhere<CuentaBancaria> = {};
@@ -229,16 +229,16 @@ export class CuentaBancariaService {
 
     // Filtro por rango de fechas (horario Bolivia)
     if (startDate && endDate) {
-      filtros._created_at = And(
+      filtros.createdAt = And(
         MoreThanOrEqual(new Date(`${startDate}T00:00:00.000`)),
         LessThan(new Date(`${endDate}T23:59:59.999`)),
       );
     } else if (startDate) {
-      filtros._created_at = MoreThanOrEqual(
+      filtros.createdAt = MoreThanOrEqual(
         new Date(`${startDate}T00:00:00.000`),
       );
     } else if (endDate) {
-      filtros._created_at = LessThan(new Date(`${endDate}T23:59:59.999`));
+      filtros.createdAt = LessThan(new Date(`${endDate}T23:59:59.999`));
     }
 
     // Construir condiciones OR para búsqueda general
@@ -414,10 +414,10 @@ export class CuentaBancariaService {
       cuenta.tipo = dto.tipo;
     }
 
-    cuenta._updated_at = new Date();
+    cuenta.updatedAt = new Date();
     cuenta._user_update = id_usuario;
     cuenta.usuario_actualizador = {
-      idUsuario: id_usuario,
+      id: id_usuario,
     } as Usuario;
 
     try {
@@ -475,20 +475,20 @@ export class CuentaBancariaService {
     const estadoAnterior = cuenta.estado;
     cuenta.estado = cuenta.estado === 'ACTIVO' ? 'INACTIVO' : 'ACTIVO';
 
-    cuenta._updated_at = new Date();
+    cuenta.updatedAt = new Date();
     cuenta._user_update = id_usuario;
     cuenta.usuario_actualizador = {
-      idUsuario: id_usuario,
+      id: id_usuario,
     } as Usuario;
 
     if (cuenta.estado === 'INACTIVO') {
-      cuenta._deleted_at = new Date();
+      cuenta.deletedAt = new Date();
       cuenta._user_delete = id_usuario;
       cuenta.usuario_eliminador = {
-        idUsuario: id_usuario,
+        id: id_usuario,
       } as Usuario;
     } else {
-      cuenta._deleted_at = null;
+      cuenta.deletedAt = null;
       cuenta._user_delete = null;
       cuenta.usuario_eliminador = null;
     }

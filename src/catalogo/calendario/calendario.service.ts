@@ -114,10 +114,10 @@ export class CalendarioService {
       dia_habil: dto.habil ?? calcularDiaHabil(dto.fecha),
       descripcion: dto.descripcion ?? null,
       estado: 'ACTIVO',
-      _created_at: new Date(),
-      _updated_at: new Date(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
       _user_created: idUsuario,
-      usuario_creador: { idUsuario } as Usuario,
+      usuario_creador: { id: idUsuario } as Usuario,
     });
 
     try {
@@ -207,10 +207,10 @@ export class CalendarioService {
                 dia_habil: dto.habil ?? calcularDiaHabil(fecha),
                 descripcion: dto.descripcion ?? null,
                 estado: 'ACTIVO',
-                _created_at: fechaActual,
-                _updated_at: fechaActual,
+                createdAt: fechaActual,
+                updatedAt: fechaActual,
                 _user_created: idUsuario,
-                usuario_creador: { idUsuario } as Usuario,
+                usuario_creador: { id: idUsuario } as Usuario,
               }),
             );
 
@@ -298,8 +298,8 @@ export class CalendarioService {
       fecha: 'fecha',
       dia_habil: 'dia_habil',
       descripcion: 'descripcion',
-      createdAt: '_created_at',
-      updatedAt: '_updated_at',
+      createdAt: 'createdAt',
+      updatedAt: 'updatedAt',
     };
 
     const campoOrdenamiento = camposOrdenamiento[sortBy ?? 'fecha'] ?? 'fecha';
@@ -521,9 +521,9 @@ export class CalendarioService {
       calendario.descripcion = dto.descripcion;
     }
 
-    calendario._updated_at = new Date();
+    calendario.updatedAt = new Date();
     calendario._user_update = idUsuario;
-    calendario.usuario_actualizador = { idUsuario } as Usuario;
+    calendario.usuario_actualizador = { id: idUsuario } as Usuario;
 
     try {
       await this.calendarioRepository.save(calendario);
@@ -576,16 +576,16 @@ export class CalendarioService {
     const estadoAnterior = calendario.estado;
     calendario.estado = calendario.estado === 'ACTIVO' ? 'INACTIVO' : 'ACTIVO';
 
-    calendario._updated_at = new Date();
+    calendario.updatedAt = new Date();
     calendario._user_update = idUsuario;
-    calendario.usuario_actualizador = { idUsuario } as Usuario;
+    calendario.usuario_actualizador = { id: idUsuario } as Usuario;
 
     if (calendario.estado === 'INACTIVO') {
-      calendario._deleted_at = new Date();
+      calendario.deletedAt = new Date();
       calendario._user_delete = idUsuario;
-      calendario.usuario_eliminador = { idUsuario } as Usuario;
+      calendario.usuario_eliminador = { id: idUsuario } as Usuario;
     } else {
-      calendario._deleted_at = null;
+      calendario.deletedAt = null;
       calendario._user_delete = null;
       calendario.usuario_eliminador = null;
     }

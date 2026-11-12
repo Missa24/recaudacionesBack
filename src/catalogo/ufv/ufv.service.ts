@@ -213,7 +213,7 @@ export class UfvService {
 
     // Validar campo de ordenamiento
     const camposOrdenamiento: Record<string, string> = {
-      createdAt: '_created_at',
+      createdAt: 'createdAt',
       fecha: 'fecha',
       valor: 'valor',
     };

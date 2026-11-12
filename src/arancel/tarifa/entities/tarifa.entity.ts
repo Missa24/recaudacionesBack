@@ -45,7 +45,7 @@ export class Tarifa {
     type: 'timestamptz',
     default: () => 'clock_timestamp()',
   })
-  _created_at!: Date;
+  createdAt!: Date;
 
   @Column({
     name: '_updated_at',
@@ -53,29 +53,29 @@ export class Tarifa {
     default: () => 'clock_timestamp()',
     nullable: true,
   })
-  _updated_at!: Date;
+  updatedAt!: Date;
 
   @Column({ name: '_deleted_at', type: 'timestamptz', nullable: true })
-  _deleted_at!: Date | null;
+  deletedAt!: Date | null;
 
   @Column({ name: '_user_created', type: 'uuid' })
   _user_created!: string;
 
   @ManyToOne(() => Usuario, { nullable: false, onDelete: 'RESTRICT' })
-  @JoinColumn({ name: '_user_created', referencedColumnName: 'idUsuario' })
+  @JoinColumn({ name: '_user_created', referencedColumnName: 'id' })
   usuario_creador!: Usuario;
 
   @Column({ name: '_user_update', type: 'uuid', nullable: true })
   _user_update!: string | null;
 
   @ManyToOne(() => Usuario, { nullable: true, onDelete: 'RESTRICT' })
-  @JoinColumn({ name: '_user_update', referencedColumnName: 'idUsuario' })
+  @JoinColumn({ name: '_user_update', referencedColumnName: 'id' })
   usuario_actualizador!: Usuario | null;
 
   @Column({ name: '_user_delete', type: 'uuid', nullable: true })
   _user_delete!: string | null;
 
   @ManyToOne(() => Usuario, { nullable: true, onDelete: 'RESTRICT' })
-  @JoinColumn({ name: '_user_delete', referencedColumnName: 'idUsuario' })
+  @JoinColumn({ name: '_user_delete', referencedColumnName: 'id' })
   usuario_eliminador!: Usuario | null;
 }

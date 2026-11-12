@@ -65,7 +65,7 @@ export class Dependencia {
     type: 'timestamptz',
     default: () => 'CURRENT_TIMESTAMP',
   })
-  _created_at!: Date;
+  createdAt!: Date;
 
   /**
    * Fecha de la última actualización del registro.
@@ -76,7 +76,7 @@ export class Dependencia {
     type: 'timestamptz',
     nullable: true,
   })
-  _updated_at!: Date | null;
+  updatedAt!: Date | null;
 
   /**
    * Fecha en la que el registro fue dado de baja.
@@ -87,7 +87,7 @@ export class Dependencia {
     type: 'timestamptz',
     nullable: true,
   })
-  _deleted_at!: Date | null;
+  deletedAt!: Date | null;
 
   // Identificador del usuario que creó el registro.
   @Column({
@@ -103,7 +103,7 @@ export class Dependencia {
   @ManyToOne(() => Usuario, { nullable: false, onDelete: 'RESTRICT' })
   @JoinColumn({
     name: '_user_created',
-    referencedColumnName: 'idUsuario',
+    referencedColumnName: 'id',
   })
   usuario_creador!: Usuario;
 
@@ -121,7 +121,7 @@ export class Dependencia {
   @ManyToOne(() => Usuario, { nullable: true, onDelete: 'RESTRICT' })
   @JoinColumn({
     name: '_user_update',
-    referencedColumnName: 'idUsuario',
+    referencedColumnName: 'id',
   })
   usuario_actualizador!: Usuario | null;
 
@@ -139,7 +139,7 @@ export class Dependencia {
   @ManyToOne(() => Usuario, { nullable: true, onDelete: 'RESTRICT' })
   @JoinColumn({
     name: '_user_delete',
-    referencedColumnName: 'idUsuario',
+    referencedColumnName: 'id',
   })
   usuario_eliminador!: Usuario | null;
 }

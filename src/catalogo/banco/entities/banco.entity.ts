@@ -53,7 +53,7 @@ export class Banco {
     name: '_created_at',
     default: () => 'CURRENT_TIMESTAMP',
   })
-  _created_at!: Date;
+  createdAt!: Date;
 
   /**
    * Fecha y hora de la última actualización del registro.
@@ -63,7 +63,7 @@ export class Banco {
     type: 'timestamptz',
     nullable: true,
   })
-  _updated_at!: Date | null;
+  updatedAt!: Date | null;
 
   /**
    * Fecha y hora de inactivación lógica del registro.
@@ -73,7 +73,7 @@ export class Banco {
     name: '_deleted_at',
     nullable: true,
   })
-  _deleted_at!: Date | null;
+  deletedAt!: Date | null;
 
   /**
    * Identificador del usuario que creó el registro.
@@ -90,7 +90,7 @@ export class Banco {
   @ManyToOne(() => Usuario, { nullable: false, onDelete: 'RESTRICT' })
   @JoinColumn({
     name: '_user_created',
-    referencedColumnName: 'idUsuario',
+    referencedColumnName: 'id',
   })
   usuario_creador!: Usuario;
 
@@ -110,7 +110,7 @@ export class Banco {
   @ManyToOne(() => Usuario, { nullable: true, onDelete: 'RESTRICT' })
   @JoinColumn({
     name: '_user_update',
-    referencedColumnName: 'idUsuario',
+    referencedColumnName: 'id',
   })
   usuario_actualizador!: Usuario | null;
 
@@ -130,7 +130,7 @@ export class Banco {
   @ManyToOne(() => Usuario, { nullable: true, onDelete: 'RESTRICT' })
   @JoinColumn({
     name: '_user_delete',
-    referencedColumnName: 'idUsuario',
+    referencedColumnName: 'id',
   })
   usuario_eliminador!: Usuario | null;
 }

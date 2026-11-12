@@ -111,7 +111,7 @@ export class CorrelativoAnual {
   })
   @JoinColumn({
     name: '_user_created',
-    referencedColumnName: 'idUsuario',
+    referencedColumnName: 'id',
   })
   usuarioCreador!: Usuario;
 
@@ -134,7 +134,7 @@ export class CorrelativoAnual {
   })
   @JoinColumn({
     name: '_user_update',
-    referencedColumnName: 'idUsuario',
+    referencedColumnName: 'id',
   })
   usuarioActualizador!: Usuario | null;
 
@@ -157,7 +157,7 @@ export class CorrelativoAnual {
   })
   @JoinColumn({
     name: '_user_delete',
-    referencedColumnName: 'idUsuario',
+    referencedColumnName: 'id',
   })
   usuarioEliminador!: Usuario | null;
 }

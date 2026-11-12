@@ -75,21 +75,21 @@ export class ArancelDetalle {
     type: 'timestamptz',
     default: () => 'CURRENT_TIMESTAMP',
   })
-  _created_at!: Date;
+  createdAt!: Date;
 
   @Column({
     name: '_updated_at',
     type: 'timestamptz',
     nullable: true,
   })
-  _updated_at!: Date | null;
+  updatedAt!: Date | null;
 
   @Column({
     name: '_deleted_at',
     type: 'timestamptz',
     nullable: true,
   })
-  _deleted_at!: Date | null;
+  deletedAt!: Date | null;
 
   @Column({ name: '_user_created', type: 'uuid' })
   _user_created!: string;
@@ -100,7 +100,7 @@ export class ArancelDetalle {
   })
   @JoinColumn({
     name: '_user_created',
-    referencedColumnName: 'idUsuario',
+    referencedColumnName: 'id',
   })
   usuario_creador!: Usuario;
 
@@ -117,7 +117,7 @@ export class ArancelDetalle {
   })
   @JoinColumn({
     name: '_user_update',
-    referencedColumnName: 'idUsuario',
+    referencedColumnName: 'id',
   })
   usuario_actualizador!: Usuario | null;
 
@@ -134,7 +134,7 @@ export class ArancelDetalle {
   })
   @JoinColumn({
     name: '_user_delete',
-    referencedColumnName: 'idUsuario',
+    referencedColumnName: 'id',
   })
   usuario_eliminador!: Usuario | null;
 }

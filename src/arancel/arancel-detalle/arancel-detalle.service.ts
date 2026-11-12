@@ -72,7 +72,7 @@ export class ArancelDetalleService {
       const detalle = this.arancelDetalleRepository.create({
         ...dto,
         monto_variable: dto.monto_variable ?? false,
-        usuario_creador: { idUsuario } as Usuario,
+        usuario_creador: { id: idUsuario } as Usuario,
       });
 
       await this.arancelDetalleRepository.save(detalle);
@@ -124,18 +124,18 @@ export class ArancelDetalleService {
     if (arancel_gral_id) filtros.arancel_general_id = arancel_gral_id;
     if (tipo_tramite_id) filtros.tipo_tramite_id = tipo_tramite_id;
     if (startDate && endDate) {
-      filtros._created_at = And(
+      filtros.createdAt = And(
         MoreThanOrEqual(new Date(`${startDate}T00:00:00.000`)),
         LessThan(
           new Date(new Date(`${endDate}T00:00:00.000`).getTime() + 86400000),
         ),
       );
     } else if (startDate) {
-      filtros._created_at = MoreThanOrEqual(
+      filtros.createdAt = MoreThanOrEqual(
         new Date(`${startDate}T00:00:00.000`),
       );
     } else if (endDate) {
-      filtros._created_at = LessThan(
+      filtros.createdAt = LessThan(
         new Date(new Date(`${endDate}T00:00:00.000`).getTime() + 86400000),
       );
     }
@@ -154,7 +154,7 @@ export class ArancelDetalleService {
         usuario_creador: true,
         usuario_actualizador: true,
       },
-      order: { _created_at: sortOrder ?? 'DESC' },
+      order: { createdAt: sortOrder ?? 'DESC' },
       skip: (page - 1) * limit,
       take: limit,
     });
@@ -252,9 +252,9 @@ export class ArancelDetalleService {
 
       Object.assign(detalle, dto);
 
-      detalle._updated_at = new Date();
+      detalle.updatedAt = new Date();
       detalle._user_update = idUsuario;
-      detalle.usuario_actualizador = { idUsuario } as Usuario;
+      detalle.usuario_actualizador = { id: idUsuario } as Usuario;
 
       await this.arancelDetalleRepository.save(detalle);
 
@@ -291,14 +291,14 @@ export class ArancelDetalleService {
     }
     detalle.estado = detalle.estado === 'ACTIVO' ? 'INACTIVO' : 'ACTIVO';
     if (detalle.estado === 'INACTIVO') {
-      detalle._deleted_at = new Date();
+      detalle.deletedAt = new Date();
       detalle._user_delete = idUsuario;
-      detalle._updated_at = null;
+      detalle.updatedAt = null;
       detalle._user_update = null;
     } else {
-      detalle._deleted_at = null;
+      detalle.deletedAt = null;
       detalle._user_delete = null;
-      detalle._updated_at = new Date();
+      detalle.updatedAt = new Date();
       detalle._user_update = idUsuario;
     }
     await this.arancelDetalleRepository.save(detalle);

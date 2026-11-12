@@ -70,7 +70,7 @@ export class RequisitoService {
         ...dto,
         obligatorio: dto.obligatorio ?? true,
         orden: dto.orden ?? 1,
-        usuario_creador: { idUsuario } as Usuario,
+        usuario_creador: { id: idUsuario } as Usuario,
       });
 
       await this.requisitoRepository.save(requisito);
@@ -129,18 +129,18 @@ export class RequisitoService {
       filtros.requisito_catalogo_id = requisito_catalogo_id;
     }
     if (startDate && endDate) {
-      filtros._created_at = And(
+      filtros.createdAt = And(
         MoreThanOrEqual(new Date(`${startDate}T00:00:00.000`)),
         LessThan(
           new Date(new Date(`${endDate}T00:00:00.000`).getTime() + 86400000),
         ),
       );
     } else if (startDate) {
-      filtros._created_at = MoreThanOrEqual(
+      filtros.createdAt = MoreThanOrEqual(
         new Date(`${startDate}T00:00:00.000`),
       );
     } else if (endDate) {
-      filtros._created_at = LessThan(
+      filtros.createdAt = LessThan(
         new Date(new Date(`${endDate}T00:00:00.000`).getTime() + 86400000),
       );
     }
@@ -151,7 +151,7 @@ export class RequisitoService {
         usuario_creador: true,
         usuario_actualizador: true,
       },
-      order: { _created_at: sortOrder ?? 'DESC' },
+      order: { createdAt: sortOrder ?? 'DESC' },
       skip: (page - 1) * limit,
       take: limit,
     });
@@ -248,9 +248,9 @@ export class RequisitoService {
 
       Object.assign(requisito, dto);
 
-      requisito._updated_at = new Date();
+      requisito.updatedAt = new Date();
       requisito._user_update = idUsuario;
-      requisito.usuario_actualizador = { idUsuario } as Usuario;
+      requisito.usuario_actualizador = { id: idUsuario } as Usuario;
 
       await this.requisitoRepository.save(requisito);
 
@@ -287,14 +287,14 @@ export class RequisitoService {
     }
     requisito.estado = requisito.estado === 'ACTIVO' ? 'INACTIVO' : 'ACTIVO';
     if (requisito.estado === 'INACTIVO') {
-      requisito._deleted_at = new Date();
+      requisito.deletedAt = new Date();
       requisito._user_delete = idUsuario;
-      requisito._updated_at = null;
+      requisito.updatedAt = null;
       requisito._user_update = null;
     } else {
-      requisito._deleted_at = null;
+      requisito.deletedAt = null;
       requisito._user_delete = null;
-      requisito._updated_at = new Date();
+      requisito.updatedAt = new Date();
       requisito._user_update = idUsuario;
     }
     await this.requisitoRepository.save(requisito);

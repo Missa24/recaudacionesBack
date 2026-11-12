@@ -90,7 +90,7 @@ export class InteresService {
     // Prepara la entidad asociando los datos del usuario creador.
     const interes = this.interesRepository.create({
       ...dto,
-      usuario_creador: { idUsuario },
+      usuario_creador: { id: idUsuario },
     });
 
     try {
@@ -150,7 +150,7 @@ export class InteresService {
 
     // Definir campos permitidos para ordenar
     const camposOrdenamiento: Record<string, keyof Interes> = {
-      createdAt: '_created_at',
+      createdAt: 'createdAt',
       fecha_publicacion: 'fecha_publicacion',
       valor: 'valor',
     };
@@ -271,7 +271,7 @@ export class InteresService {
       where: {
         fecha_publicacion: fecha,
         estado: 'ACTIVO',
-        _deleted_at: IsNull(),
+        deletedAt: IsNull(),
       },
       relations: {
         usuario_creador: true,
@@ -319,7 +319,7 @@ export class InteresService {
     }
 
     // Impide modificar registros inactivos o eliminados.
-    if (interes.estado !== 'ACTIVO' || interes._deleted_at) {
+    if (interes.estado !== 'ACTIVO' || interes.deletedAt) {
       throw new ConflictException('No se puede actualizar el Interés.');
     }
 
@@ -344,7 +344,7 @@ export class InteresService {
 
     // Actualiza la información de auditoría.
     interes._user_update = idUsuario;
-    interes._updated_at = new Date();
+    interes.updatedAt = new Date();
 
     try {
       await this.interesRepository.save(interes);
@@ -407,15 +407,15 @@ export class InteresService {
     if (nuevoEstado === 'INACTIVO') {
       // Registra quién y cuándo realizó la desactivación.
       interes._user_delete = idUsuario;
-      interes._deleted_at = new Date();
+      interes.deletedAt = new Date();
       interes._user_update = null;
-      interes._updated_at = null;
+      interes.updatedAt = null;
     } else {
       // Al reactivar, limpia los datos de eliminación lógica.
       interes._user_update = idUsuario;
-      interes._updated_at = new Date();
+      interes.updatedAt = new Date();
       interes._user_delete = null;
-      interes._deleted_at = null;
+      interes.deletedAt = null;
     }
 
     try {
