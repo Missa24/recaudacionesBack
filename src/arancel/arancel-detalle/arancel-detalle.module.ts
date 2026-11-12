@@ -14,5 +14,6 @@ import { TipoTramiteCatalogoModule } from '../tipo-tramite-catalogo/tipo-tramite
   ],
   controllers: [ArancelDetalleController],
   providers: [ArancelDetalleService],
+  exports: [ArancelDetalleService],
 })
 export class ArancelDetalleModule {}

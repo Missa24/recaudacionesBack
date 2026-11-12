@@ -194,7 +194,7 @@ export class UsuarioRolService {
         );
       }
 
-      if (usuario.estado !== 'ACTIVO' || usuario._deleted_at) {
+      if (usuario.estado !== 'ACTIVO' || usuario.deletedAt) {
         throw new ConflictException(
           'No se pueden asignar roles a un usuario inactivo',
         );
@@ -204,7 +204,7 @@ export class UsuarioRolService {
         where: {
           id: In(dto.roles),
           estado: 'ACTIVO',
-          _deleted_at: IsNull(),
+          deletedAt: IsNull(),
         },
       });
 
@@ -487,7 +487,7 @@ export class UsuarioRolService {
         deletedAt: IsNull(),
         rol: {
           estado: 'ACTIVO',
-          _deleted_at: IsNull(),
+          deletedAt: IsNull(),
         },
       },
       relations: {

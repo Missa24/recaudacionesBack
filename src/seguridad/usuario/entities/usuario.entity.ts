@@ -59,7 +59,7 @@ export class Usuario {
     length: 100,
     nullable: true,
   })
-  nombres!: string;
+  nombres!: string | null;
 
   /** Apellido paterno del usuario. */
   @Column({
@@ -68,7 +68,7 @@ export class Usuario {
     length: 100,
     nullable: true,
   })
-  apellidoPaterno!: string;
+  apellidoPaterno!: string | null;
 
   /** Apellido materno, cuando corresponda. */
   @Column({
@@ -132,25 +132,32 @@ export class Usuario {
   })
   deletedAt!: Date | null;
 
-  // Identificador del usuario que creó el registro.
+  /**
+   * Identificador del usuario que creó el registro.
+   * Permite NULL para inicializar el primer usuario
+   * administrador del sistema.
+   */
   @Column({
     type: 'uuid',
     name: '_user_created',
+    nullable: true,
   })
-  _user_created!: string;
+  _user_created!: string | null;
 
   /**
    * Relación con el usuario responsable de la creación.
-   * No permite eliminar usuarios que tengan registros asociados.
    */
-  @ManyToOne(() => Usuario, { nullable: false, onDelete: 'RESTRICT' })
+  @ManyToOne(() => Usuario, {
+    nullable: true,
+    onDelete: 'RESTRICT',
+  })
   @JoinColumn({
     name: '_user_created',
     referencedColumnName: 'id',
   })
-  usuario_creador!: Usuario;
+  usuario_creador!: Usuario | null;
 
-  // Identificador del usuario que realizó la última actualización.
+  /** Identificador del usuario que realizó la actualización. */
   @Column({
     type: 'uuid',
     name: '_user_update',
@@ -161,14 +168,17 @@ export class Usuario {
   /**
    * Relación con el usuario responsable de la actualización.
    */
-  @ManyToOne(() => Usuario, { nullable: true, onDelete: 'RESTRICT' })
+  @ManyToOne(() => Usuario, {
+    nullable: true,
+    onDelete: 'RESTRICT',
+  })
   @JoinColumn({
     name: '_user_update',
     referencedColumnName: 'id',
   })
   usuario_actualizador!: Usuario | null;
 
-  // Identificador del usuario que realizó la eliminación lógica.
+  /** Identificador del usuario que realizó la eliminación lógica. */
   @Column({
     type: 'uuid',
     name: '_user_delete',
@@ -179,7 +189,10 @@ export class Usuario {
   /**
    * Relación con el usuario responsable de la eliminación lógica.
    */
-  @ManyToOne(() => Usuario, { nullable: true, onDelete: 'RESTRICT' })
+  @ManyToOne(() => Usuario, {
+    nullable: true,
+    onDelete: 'RESTRICT',
+  })
   @JoinColumn({
     name: '_user_delete',
     referencedColumnName: 'id',
