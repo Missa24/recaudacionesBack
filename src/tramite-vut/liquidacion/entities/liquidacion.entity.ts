@@ -20,7 +20,6 @@ import {
   JoinColumn,
   OneToMany,
   Unique,
-  Check,
 } from 'typeorm';
 
 /**
@@ -35,25 +34,12 @@ import {
 
 @Entity({ schema: 'tramite_vut', name: 'liquidacion' })
 @Unique('liquidacion_nro_liquidacion_key', ['nro_liquidacion'])
-@Check(
-  'liquidacion_check',
-  `(
-    (NOT "anulado" AND "motivo_anulacion" IS NULL)
-    OR
-    (
-      "anulado"
-      AND "motivo_anulacion" IS NOT NULL
-      AND length(btrim("motivo_anulacion")) > 0
-    )
-  )`,
-)
-@Check('liquidacion_monto_total_check', '"monto_total" >= 0')
 export class Liquidacion {
   /*
    * Identificador único de la liquidación.
    * UUID generado automáticamente por PostgreSQL.
    */
-  @PrimaryGeneratedColumn('uuid', { name: 'id_liquidacion' })
+  @PrimaryGeneratedColumn('uuid', { name: 'id' })
   id!: string;
 
   // Claves foráneas
@@ -257,7 +243,7 @@ export class Liquidacion {
     name: '_created_at',
     default: () => 'clock_timestamp()',
   })
-  _created_at!: Date;
+  createdAt!: Date;
 
   /*
    * Fecha y hora de última actualización.
@@ -268,7 +254,7 @@ export class Liquidacion {
     name: '_updated_at',
     default: () => 'clock_timestamp()',
   })
-  _updated_at!: Date;
+  updatedAt!: Date;
 
   /*
    * Fecha y hora de baja lógica.
@@ -278,7 +264,7 @@ export class Liquidacion {
     name: '_deleted_at',
     nullable: true,
   })
-  _deleted_at!: Date | null;
+  deletedAt!: Date | null;
 
   /*
    * Detalles asociados a la liquidación.

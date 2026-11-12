@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+} from '@nestjs/common';
 import { EventoTramiteService } from './evento-tramite.service';
 import { CreateEventoTramiteDto } from './dto/create-evento-tramite.dto';
 import { UpdateEventoTramiteDto } from './dto/update-evento-tramite.dto';
@@ -23,7 +31,10 @@ export class EventoTramiteController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateEventoTramiteDto: UpdateEventoTramiteDto) {
+  update(
+    @Param('id') id: string,
+    @Body() updateEventoTramiteDto: UpdateEventoTramiteDto,
+  ) {
     return this.eventoTramiteService.update(+id, updateEventoTramiteDto);
   }
 

@@ -156,7 +156,7 @@ export class Entrega {
     name: '_created_at',
     default: () => 'clock_timestamp()',
   })
-  _created_at!: Date;
+  createdAt!: Date;
 
   /*
    * Fecha y hora de última actualización.
@@ -167,7 +167,7 @@ export class Entrega {
     name: '_updated_at',
     default: () => 'clock_timestamp()',
   })
-  _updated_at!: Date;
+  updatedAt!: Date;
 
   /*
    * Fecha y hora de baja lógica.
@@ -177,7 +177,7 @@ export class Entrega {
     name: '_deleted_at',
     nullable: true,
   })
-  _deleted_at!: Date | null;
+  deletedAt!: Date | null;
 
   /*
    * Identificador del usuario creador.

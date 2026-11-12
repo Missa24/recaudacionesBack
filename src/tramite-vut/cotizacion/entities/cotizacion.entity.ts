@@ -139,7 +139,7 @@ export class Cotizacion {
     name: '_created_at',
     default: () => 'clock_timestamp()',
   })
-  _created_at!: Date;
+  createdAt!: Date;
 
   /*
    * Fecha y hora de última actualización.
@@ -150,7 +150,7 @@ export class Cotizacion {
     name: '_updated_at',
     default: () => 'clock_timestamp()',
   })
-  _updated_at!: Date;
+  updatedAt!: Date;
 
   /*
    * Fecha y hora de baja lógica.
@@ -160,7 +160,7 @@ export class Cotizacion {
     name: '_deleted_at',
     nullable: true,
   })
-  _deleted_at!: Date | null;
+  deletedAt!: Date | null;
 
   /*
    * Identificador del usuario creador.
@@ -180,7 +180,7 @@ export class Cotizacion {
   })
   @JoinColumn({
     name: '_user_created',
-    referencedColumnName: 'idUsuario',
+    referencedColumnName: 'id',
   })
   usuarioCreador!: Usuario;
 
@@ -203,7 +203,7 @@ export class Cotizacion {
   })
   @JoinColumn({
     name: '_user_update',
-    referencedColumnName: 'idUsuario',
+    referencedColumnName: 'id',
   })
   usuarioActualizador!: Usuario | null;
 
@@ -226,7 +226,7 @@ export class Cotizacion {
   })
   @JoinColumn({
     name: '_user_delete',
-    referencedColumnName: 'idUsuario',
+    referencedColumnName: 'id',
   })
   usuarioEliminador!: Usuario | null;
 }

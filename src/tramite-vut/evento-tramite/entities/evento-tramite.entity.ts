@@ -240,7 +240,7 @@ export class EventoTramite {
     name: '_created_at',
     default: () => 'clock_timestamp()',
   })
-  _created_at!: Date;
+  createdAt!: Date;
 
   /*
    * Fecha y hora de última actualización.
@@ -251,7 +251,7 @@ export class EventoTramite {
     name: '_updated_at',
     default: () => 'clock_timestamp()',
   })
-  _updated_at!: Date;
+  updatedAt!: Date;
 
   /*
    * Fecha y hora de baja lógica.
@@ -261,5 +261,5 @@ export class EventoTramite {
     name: '_deleted_at',
     nullable: true,
   })
-  _deleted_at!: Date | null;
+  deletedAt!: Date | null;
 }
